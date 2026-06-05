@@ -1,5 +1,3 @@
-import { ExtractedData } from "../entities/document.entity";
-
 export interface IUploadDocxFileRepository {
-  uploadDocxFile(file: FormData): Promise<ExtractedData[]>;
+  uploadDocxFile(subject: string, formData: FormData): Promise<boolean>;
 }
