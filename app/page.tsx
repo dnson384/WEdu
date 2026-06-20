@@ -1,16 +1,16 @@
 "use client";
-import NavBar from "@/presentation/components/layout/Navbar";
+import NavBarLanding from "@/presentation/components/layout/NavBarLanding";
 import { icons } from "@/presentation/common/icons";
 
 export default function Home() {
   return (
     <>
-      <NavBar />
+      <NavBarLanding />
       <main className="mt-32">
         {/* Over view */}
         <section className="flex flex-col items-center justify-center ">
           <div className="flex flex-col items-center gap-6">
-            <h4 className="w-fit bg-blue-50 px-4 py-2 rounded-full text-lg">
+            <h4 className="w-fit bg-blue-50 py-2 rounded-full text-lg">
               Tuân thủ công văn 7991 của Bộ giáo dục
             </h4>
             <h2 className="text-3xl">
@@ -24,18 +24,15 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex">
             <button className="text-lg min-w-40 py-3 bg-blue-500 rounded-xl text-white hover:bg-blue-600">
               Bắt đầu ngay
-            </button>
-            <button className="text-lg min-w-40 py-3 bg-blue-100 rounded-xl text-blue-700 hover:bg-blue-200">
-              Tìm hiểu thêm
             </button>
           </div>
         </section>
 
         {/* Features */}
-        <section className="mt-10 bg-blue-50/50 p-10 flex flex-col gap-10 items-center">
+        <section id="features" className="mt-10 bg-blue-50/50 p-10 flex flex-col gap-10 items-center">
           <div>
             <h2 className="text-2xl text-center mb-5">Tính Năng Nổi Bật</h2>
             <p className="text-gray-500 text-lg">
