@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 
-export default function NavBar() {
+interface Data {
+  avatarUrl: string;
+}
+
+export default function NavBar({ avatarUrl }: Data) {
   const navLinks = [
     {
       name: "Danh sách đề",
