@@ -61,7 +61,7 @@ export default function useStructure() {
     const draftId = await CreateDraftService(payload);
 
     if (draftId) {
-      router.push(`${pathname}/${draftId}`);
+      router.push(`/generate/${draftId}`);
     }
   };
 

@@ -98,7 +98,7 @@ export default function Home() {
 
             {/* Recent */}
             <section id="recent" className="mt-10">
-              {finalExams && (
+              {finalExams && finalExams.length > 0 && (
                 <div className="mb-10">
                   <h2 className="text-xl font-medium mb-5">
                     Đề tạo hoàn chỉnh gần đây
@@ -119,7 +119,7 @@ export default function Home() {
                 </div>
               )}
 
-              {finalDrafts && (
+              {finalDrafts && finalDrafts.length > 0 && (
                 <div>
                   <h2 className="text-xl font-medium mb-5">Đề nháp gần đây</h2>
                   <div className="flex flex-col gap-3">
