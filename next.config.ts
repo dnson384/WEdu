@@ -4,10 +4,10 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "8080",
-        pathname: "/static/**",
+        protocol: "https",
+        hostname: "fckedu-backend-storage-static.s3.ap-southeast-2.amazonaws.com",
+        port: "",
+        pathname: "/**",
       },
     ],
   },

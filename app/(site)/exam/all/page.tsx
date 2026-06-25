@@ -33,7 +33,7 @@ export default function AllExam() {
 
   return (
     <>
-      <NavBar avatarUrl={user.avatarUrl} />
+      <NavBar avatarUrl={user.avatarUrl} username={user.username} />
       {isLoading ? (
         <div className="h-screen mx-auto px-4 flex justify-center items-center">
           <div className="loader"></div>

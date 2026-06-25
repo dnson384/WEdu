@@ -22,11 +22,10 @@ export default function QuestionContent({ order, template, variables }: Data) {
           const key = part.slice(1, -1);
 
           if (variables && variables.image && variables.image[key]) {
-            const imgUrl = `/api/image${variables.image[key]}`;
             return (
               <span key={index}>
                 <Image
-                  src={imgUrl}
+                  src={variables.image[key]}
                   alt={key}
                   width={0}
                   height={0}

@@ -52,7 +52,7 @@ export default function GenerateExam() {
         </div>
       ) : (
         <>
-          <NavBar avatarUrl={user.avatarUrl} />
+          <NavBar avatarUrl={user.avatarUrl} username={user.username} />
           
           <main className="mt-32 w-6xl mx-auto px-4">
             <h1 className="text-4xl font-bold text-center">

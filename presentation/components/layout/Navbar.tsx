@@ -14,11 +14,10 @@ interface Data {
 }
 
 export default function NavBar({ avatarUrl, username }: Data) {
-  const {} = useNavBar();
+  const { isLoadLogout, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
+    useNavBar();
 
   const pathname = usePathname();
-
-  const imgUrl = `/api/image${avatarUrl}`;
 
   const navLinks = [
     {
@@ -70,20 +69,63 @@ export default function NavBar({ avatarUrl, username }: Data) {
           </div>
         </section>
 
-        <section id="user" className="border-t border-gray-200 pt-6">
-          <div>
-            <div id="user-avatar" className="flex items-center gap-5">
+        <section
+          id="user"
+          ref={userSectionRef}
+          className="border-t border-gray-200 pt-6 relative select-none"
+        >
+          {isUserMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-3 w-full bg-white rounded-lg shadow-xl border border-gray-100 py-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              {menu.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={item.onClick}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div
+            onClick={toggleUserMenu}
+            className="cursor-pointer p-1.5 -mx-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <div id="user-avatar" className="flex items-center gap-4">
               <Image
-                src={imgUrl}
+                src={avatarUrl}
                 alt="avatar-user"
-                width={0}
-                height={0}
-                className="h-auto w-10"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-full object-cover border border-gray-200"
               />
-              <p className="font-bold">{username}</p>
+              <div className="overflow-hidden">
+                <p className="font-bold text-sm text-gray-800 truncate">
+                  {username}
+                </p>
+                <p className="text-xs text-gray-400 font-normal">
+                  Quản lý tài khoản
+                </p>
+              </div>
             </div>
           </div>
         </section>
+
+        {isLoadLogout && (
+          <section
+            id="logout-theme"
+            className="fixed inset-0 z-50 bg-black/50 h-screen w-screen flex justify-center items-center"
+          >
+            <div className="flex flex-col items-center gap-5">
+              <h2 className="text-white text-2xl font-bold">
+                Đang đăng xuất. Đợi xí!
+              </h2>
+              <div className="loader-white"></div>
+            </div>
+          </section>
+        )}
       </div>
     </nav>
   );
