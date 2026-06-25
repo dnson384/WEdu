@@ -1,6 +1,7 @@
 import {
   AuthorizedResponseEntity,
   LoginPayloadEntity,
+  RegisterPayloadEntity,
 } from "@/domain/entities/auth.entity";
 import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
@@ -22,10 +23,40 @@ export class authRepositoryImpl implements IAuthRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  public async login(payload: LoginPayloadEntity): Promise<AuthorizedResponseEntity> {
+  public async login(
+    payload: LoginPayloadEntity,
+  ): Promise<AuthorizedResponseEntity> {
     const response = await axios.post(`${this.baseUrl}/user/login`, payload, {
       withCredentials: true,
     });
+
+    const authorizedResponse: AuthorizedResponseEntity = {
+      user: response.data,
+      accessToken: "",
+      refreshToken: "",
+    };
+
+    if (typeof response.headers.getSetCookie === "function") {
+      const cookies: string[] = response.headers.getSetCookie();
+
+      const accessToken = cookies[0].split(";")[0].split("=")[1];
+      const refreshToken = cookies[1].split(";")[0].split("=")[1];
+
+      authorizedResponse.accessToken = accessToken;
+      authorizedResponse.refreshToken = refreshToken;
+    }
+    return authorizedResponse;
+  }
+  public async register(
+    payload: RegisterPayloadEntity,
+  ): Promise<AuthorizedResponseEntity> {
+    const response = await axios.post(
+      `${this.baseUrl}/user/register`,
+      payload,
+      {
+        withCredentials: true,
+      },
+    );
 
     const authorizedResponse: AuthorizedResponseEntity = {
       user: response.data,
@@ -48,20 +79,11 @@ export class authRepositoryImpl implements IAuthRepository {
   public async logout(): Promise<boolean> {
     const cookieStore = await cookies();
 
-    const accessToken = cookieStore.get("accessToken")?.value;
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
     const { data } = await axios.post<boolean>(
       `${this.baseUrl}/user/logout`,
-      {
-        refreshToken,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        withCredentials: true,
-      },
+      refreshToken,
     );
 
     return data;

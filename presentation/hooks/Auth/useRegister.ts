@@ -1,4 +1,7 @@
 "use client";
+import { RegisterPayload } from "@/presentation/schemas/auth.schema";
+import { RegisterService } from "@/presentation/services/auth.service";
+import { isAxiosError } from "axios";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface FormData {
@@ -9,6 +12,8 @@ interface FormData {
 }
 
 export default function useRegister() {
+  const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
@@ -41,13 +46,38 @@ export default function useRegister() {
     setShowPassword((prev) => !prev);
   };
 
-  const handleRegisterSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (formData.confirmPassword != formData.password) {
-      return;
+
+    const payload: RegisterPayload = {
+      email: formData.email,
+      plainPassword: formData.password,
+      confirmPassword: formData.confirmPassword,
+      username: formData.username ,
+      loginMethod: "LOCAL",
+    };
+
+    try {
+      const authorized = await RegisterService(payload);
+      if (authorized) {
+        window.location.replace("/");
+      }
+    } catch (err) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data.message);
+      }
     }
-    alert(`${formData.email} - ${formData.password}`);
   };
+
+  useEffect(() => {
+    if (error !== null) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   return {
     // Data input
@@ -56,6 +86,9 @@ export default function useRegister() {
 
     // Password notification
     notiPassword,
+
+    // Error
+    error,
 
     // Show password
     showPassword,
