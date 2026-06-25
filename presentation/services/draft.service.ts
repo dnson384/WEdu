@@ -65,3 +65,12 @@ export async function GenerateMatrixDetails(draftId: string): Promise<boolean> {
   return response.data;
 }
 
+export async function GetRecentDraftService(): Promise<DraftEntity[]> {
+  const { data } = await axios.get<DraftEntity[]>(`/api/draft/recent`);
+  return data;
+}
+
+export async function getAllDraftService() {
+  const { data } = await axios.get<DraftEntity[]>(`/api/draft/all`);
+  return data;
+}

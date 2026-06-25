@@ -9,4 +9,5 @@ export interface IExamsRepository {
   getExamById(examId: string): Promise<ExamDetailReponseEntity>;
   getAllExams(): Promise<ExamResponseEntity[]>;
   exportExamWordFile(payload: ExamExportPayloadEntity[]): Promise<Buffer>;
+  getRecentExam(): Promise<ExamResponseEntity[]>;
 }

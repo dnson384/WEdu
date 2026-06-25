@@ -47,7 +47,7 @@ export default function useDocxUpload() {
       if (isSuccess !== null) {
         setIsSuccess(null);
       }
-    }, 3000);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [error, isSuccess]);

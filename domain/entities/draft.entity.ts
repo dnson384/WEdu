@@ -33,11 +33,10 @@ export interface ChapterDraft {
 
 export interface DraftEntity {
   id: string;
+  examName: string;
   questionsCount: number;
   questionTypes: string[];
   chapters: ChapterDraft[];
-  createAt?: Date;
-  expiredAt?: Date;
 }
 
 export interface UpdateDraftParamEntity {

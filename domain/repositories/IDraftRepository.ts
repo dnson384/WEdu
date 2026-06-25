@@ -12,4 +12,6 @@ export interface IDraftRepository {
   updateLessons(payload: UpdateLessonsDraftPayloadEntity): Promise<boolean>;
   generateMatrix(draftId: string): Promise<boolean>;
   generateMatrixDetails(draftId: string): Promise<boolean>;
+  getRecentDraft(): Promise<DraftEntity[]>;
+  getAllUserDrafts(): Promise<DraftEntity[]>;
 }

@@ -1,4 +1,7 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { LoginPayload } from "@/presentation/schemas/auth.schema";
+import { LoginService } from "@/presentation/services/auth.service";
+import { isAxiosError } from "axios";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface FormData {
   email: string;
@@ -6,6 +9,8 @@ interface FormData {
 }
 
 export default function useLogin() {
+  const [error, setError] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -23,15 +28,42 @@ export default function useLogin() {
     setShowPassword((prev) => !prev);
   };
 
-  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    alert(`${formData.email} - ${formData.password}`);
+
+    const payload: LoginPayload = {
+      email: formData.email,
+      plainPassword: formData.password,
+    };
+
+    try {
+      const authorized = await LoginService(payload);
+      if (authorized) {
+        window.location.replace("/");
+      }
+    } catch (err) {
+      if (isAxiosError(err)) {
+        setError(err.response?.data.message);
+      }
+    }
   };
+
+  useEffect(() => {
+    if (error !== null) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   return {
     formData,
     handleFormChange,
     showPassword,
     handleShowPasswordClick,
+    error,
     handleLoginSubmit,
   };
 }

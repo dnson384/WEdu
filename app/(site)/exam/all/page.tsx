@@ -6,8 +6,11 @@ import FilterBar from "@/presentation/components/Exam/Filter/FilterBar";
 import useAllExam from "@/presentation/hooks/Exam/useAllExam";
 import useCategory from "@/presentation/hooks/Generate/useCategory";
 import useExamFilter from "@/presentation/hooks/Exam/useExamFilter";
+import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 
 export default function AllExam() {
+  const { user, isLoadingUser } = useAuth();
+
   const { exams, isLoading, handleCardClick } = useAllExam();
   const { categories } = useCategory();
   const {
@@ -30,7 +33,7 @@ export default function AllExam() {
 
   return (
     <>
-      <NavBar />
+      <NavBar avatarUrl={user.avatarUrl} />
       {isLoading ? (
         <div className="h-screen mx-auto px-4 flex justify-center items-center">
           <div className="loader"></div>

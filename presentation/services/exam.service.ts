@@ -37,3 +37,8 @@ export async function exportWordFileService(payload: ExamExportPayload) {
 
   return response.data;
 }
+
+export async function getRecentExamService(): Promise<ExamResponseEntity[]> {
+  const { data } = await axios.get<ExamResponseEntity[]>(`/api/exam/recent`);
+  return data;
+}

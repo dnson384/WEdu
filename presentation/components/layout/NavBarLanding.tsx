@@ -14,6 +14,7 @@ export default function NavBarLanding() {
               <Link
                 href={"/auth/login"}
                 className="flex items-center justify-center ring ring-blue-500 text-blue-500 rounded-lg w-30 py-2 hover:bg-blue-100"
+                onClick={() => console.log("click")}
               >
                 Đăng nhập
               </Link>
