@@ -1,13 +1,50 @@
+"use client";
+
+import { GetRecentDraftService } from "@/presentation/services/draft.service";
+import { getRecentExamService } from "@/presentation/services/exam.service";
+import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import React from "react";
 
 export default function useDashboard() {
   const router = useRouter();
 
-  const redirect = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    router.push(`/${event.currentTarget.id}`);
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: ["draft-recent"],
+        queryFn: () => GetRecentDraftService(),
+        staleTime: 1000 * 60 * 5,
+        retry: false,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+      },
+      {
+        queryKey: ["exam-recent"],
+        queryFn: () => getRecentExamService(),
+        staleTime: 1000 * 60 * 5,
+        retry: false,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+      },
+    ],
+  });
+
+  // Data
+  const [draftQuery, examQuery] = results;
+  const recentDrafts = draftQuery.data ?? [];
+  const recentExams = examQuery.data ?? [];
+
+  const handleExamCardClick = (examId: string) => {
+    router.push(`/exam/${examId}`);
   };
 
-  return { redirect };
+  const handleDraftCardClick = (draftId: string) => {
+    router.push(`/generate/${draftId}`);
+  };
+  return {
+    recentDrafts,
+    recentExams,
+    handleExamCardClick,
+    handleDraftCardClick,
+  };
 }

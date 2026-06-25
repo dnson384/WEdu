@@ -1,21 +1,34 @@
-import { UserEntity } from "@/domain/entities/user.entity";
-import { getMeService } from "@/presentation/services/user.service";
-import { useQuery } from "@tanstack/react-query";
+import { icons } from "@/presentation/common/icons";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 export default function useNavBar() {
-  const initialUserData = (): UserEntity => ({
-    id: "",
-    email: "",
-    username: "",
-    role: "",
-    avatarUrl: "",
-  });
+  const router = useRouter();
 
-  const { data, isLoading } = useQuery<UserEntity>({
-    queryKey: ["user-profile"],
-    queryFn: () => getMeService(),
-  });
+  const handleLogoutClick = async () => {
+    try {
+      const response = axios
+    }
+  }
 
-  const user: UserEntity = data ? data : initialUserData();
-  return { user, isLoading };
+  const menu = [
+    {
+      label: "Thông tin cá nhân",
+      icon: icons.user,
+      onClick: () => {
+        router.push("/user/me");
+      },
+    },
+    {
+      label: "Đăng xuất",
+      icon: icons.logout,
+      onclick: () => {
+
+      }
+    },
+  ];
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+  const userSectionRef = useRef<HTMLDivElement>(null);
+  return {};
 }

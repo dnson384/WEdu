@@ -1,7 +1,6 @@
 import { LoginPayload } from "@/presentation/schemas/auth.schema";
 import { LoginService } from "@/presentation/services/auth.service";
 import { isAxiosError } from "axios";
-import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface FormData {
@@ -10,8 +9,6 @@ interface FormData {
 }
 
 export default function useLogin() {
-  const router = useRouter();
-
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
@@ -42,7 +39,7 @@ export default function useLogin() {
     try {
       const authorized = await LoginService(payload);
       if (authorized) {
-        // window.location.replace("/");
+        window.location.replace("/");
       }
     } catch (err) {
       if (isAxiosError(err)) {

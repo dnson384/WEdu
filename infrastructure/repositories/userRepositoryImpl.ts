@@ -17,7 +17,6 @@ export class UserRepositoryImpl implements IUserRepository {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
 
-    console.log(`${this.baseUrl}/user/me`);
     const { data } = await axios.get(`${this.baseUrl}/user/me`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,

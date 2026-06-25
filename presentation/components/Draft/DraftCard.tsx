@@ -1,28 +1,29 @@
 import { icons } from "@/presentation/common/icons";
 
 interface Data {
-  examId: string;
+  draftId: string;
   name: string;
   questionsCount: number;
-  handleCardClick: (examId: string) => void;
+  handleCardClick: (draftId: string) => void;
 }
 
-export default function ExamCard({
-  examId,
+export default function DraftCard({
+  draftId,
   name,
   questionsCount,
   handleCardClick,
 }: Data) {
+
   return (
     <div
-      className="bg-white border border-gray-100 shadow-sm rounded-xl py-6 px-8 select-none hover:bg-green-100/50 hover:scale-101 hover:shadow-lg transition-all duration-300 ease-out"
-      onClick={() => handleCardClick(examId)}
+      className="border border-gray-100 shadow-sm rounded-xl py-5 px-8 select-none hover:bg-blue-100/50 hover:scale-101 hover:shadow-lg transition-all duration-300 ease-out"
+      onClick={() => handleCardClick(draftId)}
     >
       <div className="flex items-center justify-between">
         {/* Left */}
         <div className="flex items-center gap-3">
-          <div className="bg-green-500/10 w-15 h-15 flex items-center justify-center rounded-xl">
-            <div className="text-green-500">{icons.docCheck}</div>
+          <div className="bg-orange-500/10 w-15 h-15 flex items-center justify-center rounded-xl">
+            <div className="text-orange-500">{icons.docEdit}</div>
           </div>
           <div className="flex items-center gap-5">
             <p className="text-xl">{name}</p>
@@ -37,8 +38,8 @@ export default function ExamCard({
         </div>
 
         {/* Right */}
-        <div className="w-fit bg-green-500/15 px-4 py-2 rounded-lg">
-          <p className="text-green-500 font-bold text-sm">Hoàn thiện</p>
+        <div className="w-fit bg-orange-500/15 px-4 py-2 rounded-lg">
+          <p className="text-orange-500 font-bold text-sm">Nháp</p>
         </div>
       </div>
     </div>

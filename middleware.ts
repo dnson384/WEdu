@@ -51,6 +51,8 @@ export async function middleware(request: NextRequest) {
 
   // Refresh AT
   if (!accessToken) {
+    debugger;
+
     if (!refreshToken) {
       return forceLogout(request);
     }
@@ -64,7 +66,7 @@ export async function middleware(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ refreshToken: refreshToken }),
-          cache: "no-store", // Ép Next.js không được cache cú gọi này
+          cache: "no-store",
         },
       );
 

@@ -152,7 +152,7 @@ export default function useDraft() {
   return {
     draft,
     categories,
-    isLoading,
+    isLoadingDraft: isLoading,
     isError,
     errorMessage,
     selectedChapters,

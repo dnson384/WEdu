@@ -1,4 +1,3 @@
-import { UserResponseEntity } from "@/domain/entities/user.entity";
 import axios from "axios";
 
 export async function getMeService() {
