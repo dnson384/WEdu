@@ -67,7 +67,8 @@ export default function Me() {
                       src={avatarUrl}
                       alt="avatar"
                       fill
-                      sizes="100px"
+                      sizes="200px"
+                      quality={100}
                       priority
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />

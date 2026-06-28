@@ -97,15 +97,20 @@ export default function NavBar({ avatarUrl, username }: Data) {
               <Image
                 src={avatarUrl}
                 alt="avatar-user"
-                width={40}
-                height={40}
+                width={80}
+                height={80}
+                quality={100}
                 className={`h-10 w-10 rounded-full object-cover ${pathname === "/me" ? "" : "border border-gray-200"}`}
               />
               <div className="overflow-hidden">
-                <p className={`font-bold text-sm ${pathname === "/me" ? "text-white" : "text-gray-800 truncate"}`}>
+                <p
+                  className={`font-bold text-sm ${pathname === "/me" ? "text-white" : "text-gray-800 truncate"}`}
+                >
                   {username}
                 </p>
-                <p className={`text-xs ${pathname === "/me" ? "text-white" : "text-gray-400"}`}>
+                <p
+                  className={`text-xs ${pathname === "/me" ? "text-white" : "text-gray-400"}`}
+                >
                   Quản lý tài khoản
                 </p>
               </div>

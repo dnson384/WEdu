@@ -25,4 +25,41 @@ export class UserRepositoryImpl implements IUserRepository {
     });
     return data;
   }
+
+  public async uploadAvatar(formData: FormData): Promise<string> {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+
+    const { data } = await axios.post<string>(
+      `${this.baseUrl}/storage/avatar`,
+      formData,
+      {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return data;
+  }
+
+  public async updateAvatar(s3Key: string): Promise<boolean> {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+
+    const { data } = await axios.put<boolean>(
+      `${this.baseUrl}/user/avatar`,
+      { s3Key },
+      {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    return data;
+  }
 }

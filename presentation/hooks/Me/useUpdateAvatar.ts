@@ -1,5 +1,6 @@
 "use client";
 
+import { updateAvatarService } from "@/presentation/services/user.service";
 import { ChangeEvent, useEffect, useState } from "react";
 
 interface Data {
@@ -9,6 +10,13 @@ interface Data {
 export default function useUpdateAvatar({ initialUrl }: Data) {
   const [avatarUrl, setAvatarUrl] = useState(initialUrl);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [updateAvatarError, setUpdateAvatarError] = useState<string | null>(
+    null,
+  );
+  const [updateAvatarSuccess, setUpdateAvatarSuccess] = useState<string | null>(
+    null,
+  );
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -24,13 +32,12 @@ export default function useUpdateAvatar({ initialUrl }: Data) {
 
     try {
       setIsUploading(true);
-      console.log("Đang upload file:", file.name);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const updated = await updateAvatarService(file);
+      if (updated) {
+        setUpdateAvatarSuccess("Cập nhật ảnh đại diện thành công");
+      }
     } catch (error) {
-      console.error("Lỗi upload avatar:", error);
-      alert("Cập nhật ảnh thất bại!");
-
       setAvatarUrl(initialUrl);
     } finally {
       setIsUploading(false);
@@ -42,6 +49,20 @@ export default function useUpdateAvatar({ initialUrl }: Data) {
       setAvatarUrl(initialUrl);
     }
   }, [initialUrl]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (
+        (updateAvatarError !== null && updateAvatarError.trim().length > 0) ||
+        (updateAvatarSuccess !== null && updateAvatarSuccess.trim().length > 0)
+      ) {
+        setUpdateAvatarError(null);
+        setUpdateAvatarSuccess(null);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [updateAvatarError, updateAvatarSuccess]);
 
   return {
     avatarUrl,
