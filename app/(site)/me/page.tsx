@@ -1,14 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+
+import { icons } from "@/presentation/common/icons";
 
 import NavBar from "@/presentation/components/layout/Navbar";
+import Error from "@/presentation/components/layout/Error";
+
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useUpdateAvatar from "@/presentation/hooks/Me/useUpdateAvatar";
-import { icons } from "@/presentation/common/icons";
 import useUpdateMe from "@/presentation/hooks/Me/useUpdateMe";
 import useChangePassword from "@/presentation/hooks/Me/useChangePassword";
+import Success from "@/presentation/components/layout/Success";
 
 const BLANK_IMAGE =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -16,11 +19,19 @@ const BLANK_IMAGE =
 export default function Me() {
   const { user, isLoadingUser } = useAuth();
 
-  const { avatarUrl, isUploading, handleAvatarChange } = useUpdateAvatar({
+  const {
+    avatarUrl,
+    isUploading,
+    updateAvatarError,
+    updateAvatarSuccess,
+    handleAvatarChange,
+  } = useUpdateAvatar({
     initialUrl: user?.avatarUrl || BLANK_IMAGE,
   });
 
   const {
+    updateMeError,
+    updateMeSuccess,
     isEditing,
     handleToggleEdit,
     formData,
@@ -29,7 +40,6 @@ export default function Me() {
     handleLockAccount,
     handleDeleteAccount,
   } = useUpdateMe({
-    email: user.email || "",
     username: user.username || "",
   });
 
@@ -51,7 +61,14 @@ export default function Me() {
       ) : (
         <>
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          <main className="lg:ml-60 py-15 px-20 mx-auto bg-blue-500/5 min-h-screen">
+          <main className="lg:ml-60 py-15 px-20 mx-auto bg-blue-500/5 min-h-screen relative">
+            <div className="fixed inset-0 h-fit top-10 flex justify-center">
+              {updateAvatarError && <Error message={updateAvatarError} />}
+              {updateMeError && <Error message={updateAvatarError} />}
+              {updateAvatarSuccess && <Success message={updateAvatarSuccess} />}
+              {updateMeSuccess && <Success message={updateMeSuccess} />}
+            </div>
+
             <h2 className="text-2xl text-blue-500 font-bold">
               Thông tin cá nhân
             </h2>
@@ -114,66 +131,67 @@ export default function Me() {
               </section>
 
               <section>
-                <form
-                  onSubmit={handleSaveProfile}
-                  className="grid grid-cols-2 gap-5"
-                >
-                  {/* Email */}
-                  <div>
-                    <label>
-                      <p className="font-bold mb-1.5">
-                        Địa chỉ Email <span className="text-red-500">*</span>
-                      </p>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        disabled={true}
-                        className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-slate-100 text-slate-500 font-medium cursor-not-allowed focus:outline-none"
-                      />
-                      <p className="text-xs text-slate-400 mt-1 italic">
-                        Email dùng để đăng nhập nên không thể tự thay đổi.
-                      </p>
-                    </label>
+                <form onSubmit={handleSaveProfile}>
+                  <div className="grid grid-cols-2 gap-5">
+                    {/* Email */}
+                    <div>
+                      <label>
+                        <p className="font-bold mb-1.5">
+                          Địa chỉ Email <span className="text-red-500">*</span>
+                        </p>
+                        <input
+                          type="email"
+                          value={user.email}
+                          disabled={true}
+                          className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-slate-100 text-slate-500 font-medium cursor-not-allowed focus:outline-none"
+                        />
+                        <p className="text-xs text-slate-400 mt-1 italic">
+                          Email dùng để đăng nhập nên không thể tự thay đổi.
+                        </p>
+                      </label>
+                    </div>
+
+                    {/* Username */}
+                    <div>
+                      <label>
+                        <p className="font-bold mb-1.5">
+                          Tên người dùng <span className="text-red-500">*</span>
+                        </p>
+                        <input
+                          type="text"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder="Nhập họ và tên hiển thị..."
+                          className={`w-full px-4 py-2.5 rounded-lg border transition-all focus:outline-none ${
+                            isEditing
+                              ? "border-blue-500 bg-white"
+                              : "border-slate-300 bg-slate-50"
+                          }`}
+                        />
+                      </label>
+                    </div>
                   </div>
 
-                  {/* Username */}
-                  <div>
-                    <label>
-                      <p className="font-bold mb-1.5">
-                        Tên người dùng <span className="text-red-500">*</span>
-                      </p>
-                      <input
-                        type="text"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        placeholder="Nhập họ và tên hiển thị..."
-                        className={`w-full px-4 py-2.5 rounded-lg border transition-all focus:outline-none ${
-                          isEditing
-                            ? "border-blue-500 bg-white"
-                            : "border-slate-300 bg-slate-50"
-                        }`}
-                      />
-                    </label>
-                  </div>
+                  {isEditing && (
+                    <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={handleToggleEdit}
+                        className="px-5 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25 transition-all"
+                      >
+                        Lưu thay đổi
+                      </button>
+                    </div>
+                  )}
                 </form>
-                {isEditing && (
-                  <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 animate-fadeIn">
-                    <button
-                      type="button"
-                      onClick={handleToggleEdit}
-                      className="px-5 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25 transition-all"
-                    >
-                      Lưu thay đổi
-                    </button>
-                  </div>
-                )}
               </section>
 
               <section>

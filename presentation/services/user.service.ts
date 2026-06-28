@@ -22,3 +22,10 @@ export async function updateAvatarService(file: File): Promise<boolean> {
 
   return responseUpdate.data;
 }
+
+export async function UpdateUsernameService(
+  username: string,
+): Promise<boolean> {
+  const { data } = await axios.put<boolean>("/api/user/username", { username });
+  return data;
+}

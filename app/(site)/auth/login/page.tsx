@@ -78,9 +78,11 @@ export default function Login() {
       </section>
 
       <section className="flex justify-center items-center h-full relative select-none">
-        <div className="absolute top-20">
-          <Error message={error} />
-        </div>
+        {error && (
+          <div className="absolute top-20">
+            <Error message={error} />
+          </div>
+        )}
 
         <div>
           <div className="mb-8">

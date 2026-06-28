@@ -52,11 +52,9 @@ export default function useUpdateAvatar({ initialUrl }: Data) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (
-        (updateAvatarError !== null && updateAvatarError.trim().length > 0) ||
-        (updateAvatarSuccess !== null && updateAvatarSuccess.trim().length > 0)
-      ) {
+      if (updateAvatarError && updateAvatarError.trim().length > 0) {
         setUpdateAvatarError(null);
+      } else if (updateAvatarSuccess && updateAvatarSuccess.trim().length > 0) {
         setUpdateAvatarSuccess(null);
       }
     }, 2000);
@@ -67,6 +65,8 @@ export default function useUpdateAvatar({ initialUrl }: Data) {
   return {
     avatarUrl,
     isUploading,
+    updateAvatarError,
+    updateAvatarSuccess,
     handleAvatarChange,
   };
 }

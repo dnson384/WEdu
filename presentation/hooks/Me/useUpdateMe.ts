@@ -1,18 +1,21 @@
 "use client";
 
+import { UpdateUsernameService } from "@/presentation/services/user.service";
+import { isAxiosError } from "axios";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface FormData {
-  email: string;
   username: string;
 }
 
-export default function useUpdateMe({ email, username }: FormData) {
+export default function useUpdateMe({ username }: FormData) {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
-    email: email,
     username: username,
   });
+
+  const [updateMeError, setUpdateMeError] = useState<string | null>(null);
+  const [updateMeSuccess, setUpdateMeSuccess] = useState<string | null>(null);
 
   const handleToggleEdit = () => {
     setIsEditing((prev) => !prev);
@@ -23,23 +26,48 @@ export default function useUpdateMe({ email, username }: FormData) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = (e: FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    try {
+      const response = await UpdateUsernameService(formData.username);
+
+      if (response) {
+        setUpdateMeSuccess("Cập nhật tài khoản thành công");
+      }
+    } catch (err) {
+      if (isAxiosError(err)) {
+        const message = err.response?.data.message;
+        setUpdateMeError(message);
+      }
+    }
   };
 
   const handleLockAccount = () => {};
   const handleDeleteAccount = () => {};
 
   useEffect(() => {
-    if (email !== "") {
-      setFormData((prev) => ({ ...prev, ["email"]: email }));
-    }
     if (username !== "") {
       setFormData((prev) => ({ ...prev, ["username"]: username }));
     }
-  }, [email, username]);
+  }, [username]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (updateMeSuccess && updateMeSuccess.trim().length > 0) {
+        setUpdateMeSuccess(null);
+        window.location.reload();
+      } else if (updateMeError && updateMeError.trim().length > 0) {
+        setUpdateMeError(null);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [updateMeSuccess, updateMeError]);
 
   return {
+    updateMeError,
+    updateMeSuccess,
     isEditing,
     handleToggleEdit,
     formData,
