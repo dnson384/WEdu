@@ -66,7 +66,7 @@ export default function GenerateExam() {
         </div>
       ) : (
         <>
-          <NavBar avatarUrl={user.avatarUrl} />
+          <NavBar avatarUrl={user.avatarUrl} username={user.username} />
 
           {isLoadingDraft ? (
             <div className="h-screen mx-auto px-4 flex justify-center items-center">

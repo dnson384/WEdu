@@ -25,7 +25,7 @@ export default function Upload() {
       ) : (
         <>
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          <main className="h-screen flex justify-center items-center">
+          <main className="lg:ml-60 h-screen flex items-center justify-center">
             <section className="relative mt-26">
               {/* Thông báo thành công */}
               {isSuccess && (

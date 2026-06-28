@@ -16,7 +16,7 @@ export default function DraftCard({
 
   return (
     <div
-      className="border border-gray-100 shadow-sm rounded-xl py-5 px-8 select-none hover:bg-blue-100/50 hover:scale-101 hover:shadow-lg transition-all duration-300 ease-out"
+      className="border border-gray-100 shadow-sm rounded-xl py-5 px-8 select-none bg-white hover:bg-orange-100/50 hover:scale-101 hover:shadow-lg transition-all duration-300 ease-out"
       onClick={() => handleCardClick(draftId)}
     >
       <div className="flex items-center justify-between">

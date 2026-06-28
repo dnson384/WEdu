@@ -91,7 +91,7 @@ export default function NavBar({ avatarUrl, username }: Data) {
 
           <div
             onClick={toggleUserMenu}
-            className="cursor-pointer p-1.5 -mx-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className={`cursor-pointer p-1.5 -mx-1.5 rounded-lg ${pathname === "/me" ? "bg-blue-500 hover:bg-blue-500/90 transition-colors" : "hover:bg-gray-100 transition-colors"}`}
           >
             <div id="user-avatar" className="flex items-center gap-4">
               <Image
@@ -99,13 +99,13 @@ export default function NavBar({ avatarUrl, username }: Data) {
                 alt="avatar-user"
                 width={40}
                 height={40}
-                className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                className={`h-10 w-10 rounded-full object-cover ${pathname === "/me" ? "" : "border border-gray-200"}`}
               />
               <div className="overflow-hidden">
-                <p className="font-bold text-sm text-gray-800 truncate">
+                <p className={`font-bold text-sm ${pathname === "/me" ? "text-white" : "text-gray-800 truncate"}`}>
                   {username}
                 </p>
-                <p className="text-xs text-gray-400 font-normal">
+                <p className={`text-xs ${pathname === "/me" ? "text-white" : "text-gray-400"}`}>
                   Quản lý tài khoản
                 </p>
               </div>

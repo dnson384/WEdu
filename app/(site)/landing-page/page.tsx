@@ -1,4 +1,7 @@
 "use client";
+
+import Link from "next/link";
+
 import NavBarLanding from "@/presentation/components/layout/NavBarLanding";
 import { icons } from "@/presentation/common/icons";
 
@@ -24,15 +27,19 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="flex">
-            <button className="text-lg min-w-40 py-3 bg-blue-500 rounded-xl text-white hover:bg-blue-600">
-              Bắt đầu ngay
-            </button>
-          </div>
+          <Link
+            href={"/auth/register"}
+            className="flex items-center justify-center text-lg min-w-40 py-3 bg-blue-500 rounded-xl text-white hover:bg-blue-600"
+          >
+            Bắt đầu ngay
+          </Link>
         </section>
 
         {/* Features */}
-        <section id="features" className="mt-10 bg-blue-50/50 p-10 flex flex-col gap-10 items-center">
+        <section
+          id="features"
+          className="mt-10 bg-blue-50/50 p-10 flex flex-col gap-10 items-center"
+        >
           <div>
             <h2 className="text-2xl text-center mb-5">Tính Năng Nổi Bật</h2>
             <p className="text-gray-500 text-lg">
@@ -43,7 +50,7 @@ export default function Landing() {
 
           <div className="grid grid-cols-3 gap-5 max-w-7xl">
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.generate}
               </div>
               <h2 className="text-xl">Tự Động Tạo Đề</h2>
@@ -54,7 +61,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.grid}
               </div>
               <h2 className="text-xl">Ma Trận Đề</h2>
@@ -65,7 +72,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.doc}
               </div>
               <h2 className="text-xl">Đặc Tả Ma Trận Đề</h2>
@@ -76,7 +83,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.download}
               </div>
               <h2 className="text-xl">Xuất File Docx</h2>
@@ -87,7 +94,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.list}
               </div>
               <h2 className="text-xl">Quản Lý Danh Sách Đề</h2>
@@ -98,7 +105,7 @@ export default function Landing() {
             </div>
 
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
-              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.upload}
               </div>
               <h2 className="text-xl">Ngân Hàng Câu Hỏi</h2>
@@ -126,27 +133,27 @@ export default function Landing() {
               <div className="bg-blue-50 px-6 py-8 rounded-xl w-lg">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <div>{icons.tick32}</div>
+                    <div className="text-blue-500">{icons.tick32}</div>
                     <h3 className="text-xl">Miễn Phí Hoàn Toàn</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div>{icons.tick24}</div>
+                    <div className="text-blue-500">{icons.tick24}</div>
                     <p className="text-gray-500">
                       Tạo đề tự động không giới hạn
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div>{icons.tick24}</div>
+                    <div className="text-blue-500">{icons.tick24}</div>
                     <p className="text-gray-500">
                       Thiết kế ma trận đề và đặc tả
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div>{icons.tick24}</div>
+                    <div className="text-blue-500">{icons.tick24}</div>
                     <p className="text-gray-500">Xuất file Docx</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div>{icons.tick24}</div>
+                    <div className="text-blue-500">{icons.tick24}</div>
                     <p className="text-gray-500">Quản lý danh sách đề</p>
                   </div>
                 </div>
@@ -156,7 +163,7 @@ export default function Landing() {
               {/* Cost */}
               <div className="border border-blue-100 px-6 py-8 rounded-xl w-lg flex flex-col gap-5">
                 <div className="flex items-center">
-                  <div>{icons.upload}</div>
+                  <div className="text-blue-500">{icons.upload}</div>
                   <h3 className="text-xl">Tính Phí Hợp Lý</h3>
                 </div>
                 <p className="text-gray-500">
@@ -164,11 +171,11 @@ export default function Landing() {
                 </p>
 
                 <div className="p-6 border border-gray-200 rounded-xl">
-                  <h4 className="text-gray-500 text-lg mb-1">
-                    Mỗi tài liệu tải lên:
-                  </h4>
-                  <p>Giá linh hoạt theo kích thước file</p>
-                  <p>Không phí ẩn, không ràng buộc</p>
+                  <h4 className="text-lg mb-1">Mỗi tài liệu tải lên:</h4>
+                  <p className="text-gray-500">
+                    Giá linh hoạt theo kích thước file
+                  </p>
+                  <p className="text-gray-500">Không phí ẩn, không ràng buộc</p>
                 </div>
               </div>
             </div>
@@ -183,7 +190,7 @@ export default function Landing() {
             </h2>
             <div className="grid grid-cols-3 gap-5">
               <div className="flex flex-col items-center gap-2">
-                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1">
+                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1 text-blue-500">
                   {icons.shield}
                 </div>
                 <h3 className="text-xl">Tuân Thủ Công Văn 7991</h3>
@@ -192,7 +199,7 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1">
+                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1 text-blue-500">
                   {icons.clock}
                 </div>
                 <h3 className="text-xl">Tiết Kiệm Thời Gian</h3>
@@ -201,7 +208,7 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex flex-col items-center gap-2">
-                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1">
+                <div className="bg-blue-100 w-fit p-3 rounded-full mb-1 text-blue-500">
                   {icons.tick32}
                 </div>
                 <h3 className="text-xl">Chất Lượng Đảm Bảo</h3>
@@ -221,7 +228,9 @@ export default function Landing() {
               Tham gia sử dụng hệ thống tạo đề tự động. Tạo đề miễn phí ngay hôm
               nay!
             </p>
-            <button className="bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600">Bắt đầu miễn phí</button>
+            <Link href={"/auth/register"} className="flex items-center justify-center bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600">
+              Bắt đầu miễn phí
+            </Link>
             <p className="text-gray-600">
               Không cần thẻ tín dụng • Chỉ trả phí khi tải tài liệu
             </p>

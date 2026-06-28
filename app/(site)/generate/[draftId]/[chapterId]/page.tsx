@@ -47,7 +47,7 @@ export default function GenerateExam() {
 
   return (
     <>
-      <NavBar avatarUrl={user.avatarUrl} />
+      <NavBar avatarUrl={user.avatarUrl} username={user.username} />
 
       {/* Thông báo lỗi */}
       {errorMessage && (

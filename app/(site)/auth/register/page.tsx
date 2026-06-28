@@ -23,7 +23,7 @@ export default function Register() {
           href={"/"}
           className="absolute flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm"
         >
-          {icons.arrowBackWhite}
+          <span className="text-white">{icons.arrowBack}</span>
           <span className="text-white">Về trang chủ</span>
         </Link>
 

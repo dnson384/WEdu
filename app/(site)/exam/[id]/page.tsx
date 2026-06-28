@@ -20,7 +20,6 @@ export default function Exam() {
         </div>
       ) : (
         <>
-          {" "}
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
           {isLoading ? (
             <div className="h-screen mx-auto px-4 flex justify-center items-center">

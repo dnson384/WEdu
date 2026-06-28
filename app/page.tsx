@@ -33,7 +33,7 @@ export default function Home() {
       ) : (
         <>
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          <main className="lg:ml-60 pt-10 px-20 bg-blue-500/5 h-screen">
+          <main className="lg:ml-60 my-15 px-20 bg-blue-500/5 min-h-screen">
             {/* Shortcut */}
             <section id="shortcut" className="grid grid-cols-3 gap-5">
               <Link

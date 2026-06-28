@@ -31,7 +31,14 @@ export default function useNavBar() {
       label: "Thông tin cá nhân",
       icon: icons.user,
       onClick: () => {
-        router.push("/user/me");
+        router.push("/me");
+      },
+    },
+    {
+      label: "Thanh toán",
+      icon: icons.creditCard,
+      onClick: () => {
+        router.push("/me/bill");
       },
     },
     {

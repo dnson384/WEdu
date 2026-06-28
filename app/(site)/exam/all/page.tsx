@@ -33,49 +33,57 @@ export default function AllExam() {
 
   return (
     <>
-      <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-      {isLoading ? (
-        <div className="h-screen mx-auto px-4 flex justify-center items-center">
+      {isLoadingUser ? (
+        <div className="h-screen mx-auto my-15 px-20 flex justify-center items-center">
           <div className="loader"></div>
         </div>
       ) : (
-        <main className="my-32 w-6xl mx-auto px-4">
-          <h3 className="text-4xl font-bold text-center text-blue-700 mb-5">
-            Danh sách đề kiểm tra
-          </h3>
+        <>
+          <NavBar avatarUrl={user.avatarUrl} username={user.username} />
+          {isLoading ? (
+            <div className="h-screen mx-auto my-15 px-20 flex justify-center items-center">
+              <div className="loader"></div>
+            </div>
+          ) : (
+            <main className="lg:ml-60 my-15 px-20 mx-auto">
+              <h3 className="text-4xl font-bold text-center text-blue-500 mb-5">
+                Danh sách đề
+              </h3>
 
-          <section id="filter" className="mb-5">
-            <FilterBar
-              selectedChapterIds={selectedChapterIds}
-              selectedLessonIds={selectedLessonIds}
-              chapterSearch={chapterSearch}
-              lessonSearch={lessonSearch}
-              setChapterSearch={setChapterSearch}
-              setLessonSearch={setLessonSearch}
-              filteredChapters={filteredChapters}
-              filteredLessons={filteredLessons}
-              toggleChapter={toggleChapter}
-              toggleLesson={toggleLesson}
-              totalChaptersSelected={totalChaptersSelected}
-              totalLessonsSelected={totalLessonsSelected}
-              handleFilterClick={handleFilterClick}
-            />
-          </section>
-
-          <section id="exams" className="flex flex-col gap-5">
-            {examFiltered.map((exam) => {
-              return (
-                <ExamCard
-                  key={exam.id}
-                  examId={exam.id}
-                  name={exam.name}
-                  questionsCount={exam.questionsCount}
-                  handleCardClick={handleCardClick}
+              <section id="filter" className="mb-5">
+                <FilterBar
+                  selectedChapterIds={selectedChapterIds}
+                  selectedLessonIds={selectedLessonIds}
+                  chapterSearch={chapterSearch}
+                  lessonSearch={lessonSearch}
+                  setChapterSearch={setChapterSearch}
+                  setLessonSearch={setLessonSearch}
+                  filteredChapters={filteredChapters}
+                  filteredLessons={filteredLessons}
+                  toggleChapter={toggleChapter}
+                  toggleLesson={toggleLesson}
+                  totalChaptersSelected={totalChaptersSelected}
+                  totalLessonsSelected={totalLessonsSelected}
+                  handleFilterClick={handleFilterClick}
                 />
-              );
-            })}
-          </section>
-        </main>
+              </section>
+
+              <section id="exams" className="flex flex-col gap-5">
+                {examFiltered.map((exam) => {
+                  return (
+                    <ExamCard
+                      key={exam.id}
+                      examId={exam.id}
+                      name={exam.name}
+                      questionsCount={exam.questionsCount}
+                      handleCardClick={handleCardClick}
+                    />
+                  );
+                })}
+              </section>
+            </main>
+          )}
+        </>
       )}
     </>
   );

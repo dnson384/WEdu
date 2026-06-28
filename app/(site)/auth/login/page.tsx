@@ -22,7 +22,7 @@ export default function Login() {
           href={"/"}
           className="absolute flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 text-sm"
         >
-          {icons.arrowBackWhite}
+          <span className="text-white">{icons.arrowBack}</span>
           <span className="text-white">Về trang chủ</span>
         </Link>
 
@@ -39,12 +39,12 @@ export default function Login() {
             <div className="my-20 grid grid-cols-2 gap-4">
               {[
                 {
-                  icon: icons.shieldWhite,
+                  icon: icons.shield24,
                   label: "Chuẩn 7991",
                   sub: "Bộ Giáo dục",
                 },
                 {
-                  icon: icons.clockWhtie,
+                  icon: icons.shield24,
                   label: "Tiết kiệm 80%",
                   sub: "Thời gian ra đề",
                 },
@@ -54,7 +54,7 @@ export default function Login() {
                   sub: "Tạo đề không giới hạn",
                 },
                 {
-                  icon: icons.checkWhite,
+                  icon: icons.check24,
                   label: "Chất lượng",
                   sub: "Đảm bảo chuẩn đầu ra",
                 },
@@ -63,7 +63,7 @@ export default function Login() {
                   key={item.label}
                   className="bg-white/10 rounded-xl p-4 flex flex-col gap-1"
                 >
-                  {item.icon}
+                  <div className="text-white">{item.icon}</div>
                   <p className="text-white font-medium text-sm">{item.label}</p>
                   <p className="text-blue-200 text-xs">{item.sub}</p>
                 </div>
@@ -77,7 +77,7 @@ export default function Login() {
         </div>
       </section>
 
-      <section className="flex justify-center items-center h-full relative">
+      <section className="flex justify-center items-center h-full relative select-none">
         <div className="absolute top-20">
           <Error message={error} />
         </div>
