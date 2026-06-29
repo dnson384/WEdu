@@ -1,16 +1,15 @@
 import UpdateLessonsDraftUsecase from "@/application/usecases/draft/updateLessons";
-import {
-  UpdateLessonsDraftPayloadEntity,
-} from "@/domain/entities/draft.entity";
+import { UpdateLessonsDraftPayloadEntity } from "@/domain/entities/draft.entity";
 import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
-import {
-  UpdateLessonssDraftPayload,
-} from "@/presentation/schemas/draft.schema";
+import { UpdateLessonssDraftPayload } from "@/presentation/schemas/draft.schema";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const body = await req.json();
 
     const validated = UpdateLessonssDraftPayload.safeParse(body);
@@ -36,7 +35,11 @@ export async function PUT(req: NextRequest) {
 
     const repo = new DraftRepositoryImpl();
     const usecase = new UpdateLessonsDraftUsecase(repo);
-    const response = await usecase.execute(payload);
+    const response = await usecase.execute(
+      payload,
+      accessToken!,
+      refreshToken!,
+    );
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

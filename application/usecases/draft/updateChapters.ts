@@ -4,7 +4,15 @@ import { IDraftRepository } from "@/domain/repositories/IDraftRepository";
 export default class UpdateChaptersUsecase {
   constructor(private readonly draftRepository: IDraftRepository) {}
 
-  async execute(payload: UpdateChaptersDraftPayloadEntity) {
-    return await this.draftRepository.updateChapters(payload);
+  async execute(
+    payload: UpdateChaptersDraftPayloadEntity,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    return await this.draftRepository.updateChapters(
+      payload,
+      accessToken,
+      refreshToken,
+    );
   }
 }

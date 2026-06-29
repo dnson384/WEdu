@@ -12,6 +12,7 @@ import useUpdateAvatar from "@/presentation/hooks/Me/useUpdateAvatar";
 import useUpdateMe from "@/presentation/hooks/Me/useUpdateMe";
 import useChangePassword from "@/presentation/hooks/Me/useChangePassword";
 import Success from "@/presentation/components/layout/Success";
+import useAccount from "@/presentation/hooks/Me/useAccount";
 
 const BLANK_IMAGE =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -37,13 +38,13 @@ export default function Me() {
     formData,
     handleInputChange,
     handleSaveProfile,
-    handleLockAccount,
-    handleDeleteAccount,
   } = useUpdateMe({
     username: user.username || "",
   });
 
   const {
+    changePasswordError,
+    changePasswordSuccess,
     passwordFormData,
     handleFormPasswordChange,
     notiNewPassword,
@@ -51,6 +52,13 @@ export default function Me() {
     handleShowPasswordClick,
     handleChangePasswordSubmit,
   } = useChangePassword();
+
+  const {
+    accountError,
+    accountSuccess,
+    handleLockAccountClick,
+    handleDeleteAccountClick,
+  } = useAccount();
 
   return (
     <>
@@ -62,11 +70,18 @@ export default function Me() {
         <>
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
           <main className="lg:ml-60 py-15 px-20 mx-auto bg-blue-500/5 min-h-screen relative">
-            <div className="fixed inset-0 h-fit top-10 flex justify-center">
+            <div className="fixed inset-0 h-fit z-50 top-10 flex justify-center">
               {updateAvatarError && <Error message={updateAvatarError} />}
-              {updateMeError && <Error message={updateAvatarError} />}
+              {updateMeError && <Error message={updateMeError} />}
+              {changePasswordError && <Error message={changePasswordError} />}
+              {accountError && <Error message={accountError} />}
+
               {updateAvatarSuccess && <Success message={updateAvatarSuccess} />}
               {updateMeSuccess && <Success message={updateMeSuccess} />}
+              {changePasswordSuccess && (
+                <Success message={changePasswordSuccess} />
+              )}
+              {accountSuccess && <Success message={accountSuccess} />}
             </div>
 
             <h2 className="text-2xl text-blue-500 font-bold">
@@ -308,7 +323,7 @@ export default function Me() {
 
                       <button
                         type="button"
-                        onClick={handleLockAccount}
+                        onClick={handleLockAccountClick}
                         className="min-w-30 py-2.5 rounded-xl border border-gray-300 transition-colors hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600"
                       >
                         Tạm khoá
@@ -330,7 +345,7 @@ export default function Me() {
 
                       <button
                         type="button"
-                        onClick={handleDeleteAccount}
+                        onClick={handleDeleteAccountClick}
                         className="min-w-40 py-2.5 rounded-xl border border-red-300 bg-red-50 text-red-500 transition-colors hover:bg-red-100"
                       >
                         Xoá tài khoản

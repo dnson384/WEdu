@@ -2,10 +2,13 @@ import { ExamExportPayload } from "../../../../presentation/schemas/export.schem
 import { NextRequest, NextResponse } from "next/server";
 import { ExamsRepositoryImpl } from "@/infrastructure/repositories/exam.repository";
 import { ExamExportPayloadEntity } from "@/domain/entities/exam.entity";
-import { ExportExamWordFileUsecase } from "@/application/usecases/exam/exportExamWordFile.usecase";
+import { ExportExamWordFileUsecase } from "@/application/usecases/exam/exportExamWordFileUsecase";
 
 export async function POST(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const payload: ExamExportPayload = await req.json();
 
     const payloadDomain: ExamExportPayloadEntity[] = payload.map((p) => ({
@@ -15,7 +18,11 @@ export async function POST(req: NextRequest) {
 
     const repo = new ExamsRepositoryImpl();
     const usecase = new ExportExamWordFileUsecase(repo);
-    const response = await usecase.execute(payloadDomain);
+    const response = await usecase.execute(
+      payloadDomain,
+      accessToken!,
+      refreshToken!,
+    );
 
     return new NextResponse(new Uint8Array(response), {
       status: 200,

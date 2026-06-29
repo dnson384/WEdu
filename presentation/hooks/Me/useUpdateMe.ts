@@ -43,9 +43,6 @@ export default function useUpdateMe({ username }: FormData) {
     }
   };
 
-  const handleLockAccount = () => {};
-  const handleDeleteAccount = () => {};
-
   useEffect(() => {
     if (username !== "") {
       setFormData((prev) => ({ ...prev, ["username"]: username }));
@@ -73,7 +70,5 @@ export default function useUpdateMe({ username }: FormData) {
     formData,
     handleInputChange,
     handleSaveProfile,
-    handleLockAccount,
-    handleDeleteAccount,
   };
 }

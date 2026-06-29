@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ChangePasswordPayload } from "../schemas/userSchema";
 
 export async function getMeService() {
   const response = await axios.get("/api/user/me", { withCredentials: true });
@@ -27,5 +28,26 @@ export async function UpdateUsernameService(
   username: string,
 ): Promise<boolean> {
   const { data } = await axios.put<boolean>("/api/user/username", { username });
+  return data;
+}
+
+export async function ChangePasswordService(
+  payload: ChangePasswordPayload,
+): Promise<boolean> {
+  const { data } = await axios.put<boolean>(
+    "/api/user/changePassword",
+    payload,
+  );
+
+  return data;
+}
+
+export async function lockAccoutService() {
+  const { data } = await axios.post<boolean>("/api/user/lock");
+  return data;
+}
+
+export async function deleteAccoutService() {
+  const { data } = await axios.delete<boolean>("/api/user/delete");
   return data;
 }

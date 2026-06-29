@@ -5,6 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const { draftId } = await req.json();
     if (!draftId) {
       return NextResponse.json({ message: "Thiếu mã nháp" }, { status: 400 });
@@ -12,7 +15,11 @@ export async function POST(req: NextRequest) {
 
     const repo = new ExamsRepositoryImpl();
     const usecase = new GenerateExamUsecase(repo);
-    const response = await usecase.execute(draftId);
+    const response = await usecase.execute(
+      draftId,
+      accessToken!,
+      refreshToken!,
+    );
 
     return NextResponse.json(response, { status: 201 });
   } catch (err) {

@@ -1,7 +1,6 @@
 import axios from "axios";
 import { ICategoryRepository } from "@/domain/repositories/ICategoryRepository";
 import { CategoryEntity } from "@/domain/entities/category.entity";
-import { cookies } from "next/headers";
 
 export class CategoryRepositoryImpl implements ICategoryRepository {
   private readonly baseUrl: string;
@@ -13,17 +12,24 @@ export class CategoryRepositoryImpl implements ICategoryRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  async getAll(): Promise<CategoryEntity[]> {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("accessToken")?.value;
+  async getAll(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<CategoryEntity[]> {
+    const cookieHeaderParts: string[] = [];
+
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
 
     const { data } = await axios.get<CategoryEntity[]>(
       `${this.baseUrl}/category/all`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          Cookie: customCookieHeader,
         },
-        withCredentials: true,
       },
     );
     return data;
