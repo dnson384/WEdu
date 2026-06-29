@@ -5,6 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const draftId = req.nextUrl.searchParams.get("draftId");
 
     if (!draftId) {
@@ -18,7 +21,11 @@ export async function PUT(req: NextRequest) {
 
     const repo = new DraftRepositoryImpl();
     const usecase = new GenerateMatrixUsecase(repo);
-    const response = await usecase.execute(draftId);
+    const response = await usecase.execute(
+      draftId,
+      accessToken!,
+      refreshToken!,
+    );
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

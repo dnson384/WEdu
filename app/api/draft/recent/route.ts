@@ -5,9 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const repo = new DraftRepositoryImpl();
     const usecase = new GetRecentDraftUsecase(repo);
-    const response = await usecase.execute();
+    const response = await usecase.execute(accessToken!, refreshToken!);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

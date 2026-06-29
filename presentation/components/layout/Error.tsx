@@ -11,7 +11,7 @@ export default function Error({ message }: Data) {
         id="error-message"
         className="flex items-center gap-3 bg-red-100 rounded-lg px-4 py-2"
       >
-        <div>{icons.error}</div>
+        <div className="text-red-500">{icons.error}</div>
         <p className="text-red-500 text-sm">{message}</p>
       </section>
     </>

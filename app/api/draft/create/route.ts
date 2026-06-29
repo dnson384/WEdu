@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const body = await req.json();
 
     const validated = CreateDraftPayload.safeParse(body);
@@ -29,7 +32,11 @@ export async function POST(req: NextRequest) {
 
     const repo = new DraftRepositoryImpl();
     const usecase = new CreateDraftUsecase(repo);
-    const response = await usecase.execute(payload);
+    const response = await usecase.execute(
+      payload,
+      accessToken!,
+      refreshToken!,
+    );
 
     return NextResponse.json(response, { status: 201 });
   } catch (err) {

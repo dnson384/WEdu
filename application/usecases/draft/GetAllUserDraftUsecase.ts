@@ -4,7 +4,10 @@ import { IDraftRepository } from "@/domain/repositories/IDraftRepository";
 export class GetAllUserDraftsUsecase {
   constructor(private readonly repo: IDraftRepository) {}
 
-  async execute(): Promise<DraftEntity[]> {
-    return this.repo.getAllUserDrafts();
+  async execute(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<DraftEntity[]> {
+    return this.repo.getAllUserDrafts(accessToken, refreshToken);
   }
 }

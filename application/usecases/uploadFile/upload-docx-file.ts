@@ -5,7 +5,17 @@ export class uploadDocxFileUsecase {
     private readonly uploadDocxFileRepository: IUploadDocxFileRepository,
   ) {}
 
-  async execute(subject: string, formData: FormData): Promise<boolean> {
-    return this.uploadDocxFileRepository.uploadDocxFile(subject, formData);
+  async execute(
+    subject: string,
+    formData: FormData,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    return this.uploadDocxFileRepository.uploadDocxFile(
+      subject,
+      formData,
+      accessToken,
+      refreshToken,
+    );
   }
 }

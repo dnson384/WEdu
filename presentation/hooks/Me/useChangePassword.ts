@@ -1,3 +1,6 @@
+import { ChangePasswordPayload } from "@/presentation/schemas/userSchema";
+import { ChangePasswordService } from "@/presentation/services/user.service";
+import { isAxiosError } from "axios";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface FormData {
@@ -18,7 +21,14 @@ export default function useChangePassword() {
     setPasswordFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const [notiNewPassword, setNotiNewPassword] = useState<String>("");
+  const [notiNewPassword, setNotiNewPassword] = useState<string>("");
+
+  const [changePasswordError, setChangePasswordError] = useState<string | null>(
+    null,
+  );
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (
@@ -37,14 +47,55 @@ export default function useChangePassword() {
     setShowPassword((prev) => !prev);
   };
 
-  const handleChangePasswordSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleChangePasswordSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    alert(
-      `oldPw: ${passwordFormData.oldPassword} \nnewPw: ${passwordFormData.newPassword}`,
-    );
+    if (passwordFormData.newPassword !== passwordFormData.confirmNewPassword) {
+      return;
+    }
+
+    try {
+      const payload: ChangePasswordPayload = {
+        oldPassword: passwordFormData.oldPassword,
+        newPassword: passwordFormData.newPassword,
+        confirmNewPassword: passwordFormData.confirmNewPassword,
+      };
+
+      const response = await ChangePasswordService(payload);
+
+      if (response === true || response === false) {
+        setChangePasswordSuccess(
+          "Đổi mật khẩu thành công! Các thiết bị khác đã bị đăng xuất",
+        );
+      }
+    } catch (err) {
+      if (isAxiosError(err)) {
+        const message = err.response?.data.message;
+        setChangePasswordError(message);
+      }
+    }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (changePasswordError) {
+        setChangePasswordError(null);
+      } else if (changePasswordSuccess) {
+        setChangePasswordSuccess(null);
+      }
+      setPasswordFormData({
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [changePasswordError, changePasswordSuccess]);
+
   return {
+    changePasswordError,
+    changePasswordSuccess,
     passwordFormData,
     handleFormPasswordChange,
     notiNewPassword,

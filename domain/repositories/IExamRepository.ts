@@ -5,9 +5,27 @@ import {
 } from "../entities/exam.entity";
 
 export interface IExamsRepository {
-  generateExam(draftId: string): Promise<boolean>;
-  getExamById(examId: string): Promise<ExamDetailReponseEntity>;
-  getAllExams(): Promise<ExamResponseEntity[]>;
-  exportExamWordFile(payload: ExamExportPayloadEntity[]): Promise<Buffer>;
-  getRecentExam(): Promise<ExamResponseEntity[]>;
+  generateExam(
+    draftId: string,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean>;
+  getExamById(
+    examId: string,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<ExamDetailReponseEntity>;
+  getAllExams(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<ExamResponseEntity[]>;
+  exportExamWordFile(
+    payload: ExamExportPayloadEntity[],
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<Buffer>;
+  getRecentExam(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<ExamResponseEntity[]>;
 }

@@ -5,6 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+    const refreshToken = req.cookies.get("refreshToken")?.value;
+
     const examId = req.nextUrl.searchParams.get("examId");
     if (!examId) {
       return NextResponse.json(
@@ -15,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     const repo = new ExamsRepositoryImpl();
     const usecase = new GetExamByIdUsecase(repo);
-    const response = await usecase.execute(examId);
+    const response = await usecase.execute(examId, accessToken!, refreshToken!);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

@@ -1,6 +1,5 @@
 import { IUploadDocxFileRepository } from "@/domain/repositories/IUploadFileRepository";
 import axios from "axios";
-import { cookies } from "next/headers";
 
 export class UploadDocxFileRepositoryImpl implements IUploadDocxFileRepository {
   private readonly baseUrl: string;
@@ -12,9 +11,18 @@ export class UploadDocxFileRepositoryImpl implements IUploadDocxFileRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  async uploadDocxFile(subject: string, formData: FormData): Promise<boolean> {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get("accessToken")?.value;
+  async uploadDocxFile(
+    subject: string,
+    formData: FormData,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    const cookieHeaderParts: string[] = [];
+
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
 
     if (!formData.has("subject")) {
       formData.append("subject", subject);
@@ -26,8 +34,8 @@ export class UploadDocxFileRepositoryImpl implements IUploadDocxFileRepository {
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          Cookie: customCookieHeader,
         },
-        withCredentials: true,
       },
     );
     return data;

@@ -4,6 +4,9 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
+  const accessToken = req.cookies.get("accessToken")?.value;
+  const refreshToken = req.cookies.get("refreshToken")?.value;
+
   const { s3Key }: { s3Key: string } = await req.json();
 
   if (s3Key.trim().length === 0) {
@@ -13,7 +16,7 @@ export async function PUT(req: NextRequest) {
   try {
     const repo = new UserRepositoryImpl();
     const usecase = new UpdateAvatarUsecase(repo);
-    const response = await usecase.execute(s3Key);
+    const response = await usecase.execute(s3Key, accessToken!, refreshToken!);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
