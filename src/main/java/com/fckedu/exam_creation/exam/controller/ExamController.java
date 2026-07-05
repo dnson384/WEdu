@@ -1,9 +1,10 @@
 package com.fckedu.exam_creation.exam.controller;
 
+import com.fckedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.fckedu.exam_creation.exam.dto.request.GenerateExamPayload;
 import com.fckedu.exam_creation.exam.dto.response.ExamDTO;
-import com.fckedu.exam_creation.exam.dto.response.ExamDetailDTO;
+import com.fckedu.exam_creation.exam.usecase.ExamService;
 import com.fckedu.exam_creation.exam.usecase.ExamUsecase;
 import com.fckedu.exam_creation.user.usecase.UserService;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +16,12 @@ import java.util.List;
 @RequestMapping("/exam")
 public class ExamController {
     private final ExamUsecase examUsecase;
+    private final ExamService examService;
     private final UserService userService;
 
-    public ExamController(ExamUsecase examUsecase, UserService userService) {
+    public ExamController(ExamUsecase examUsecase, ExamService examService, UserService userService) {
         this.examUsecase = examUsecase;
+        this.examService = examService;
         this.userService = userService;
     }
 
@@ -32,7 +35,7 @@ public class ExamController {
 
     @GetMapping("/{examId}")
     public ResponseEntity<ExamDetailDTO> getExamById(@PathVariable String examId) {
-        return ResponseEntity.ok(examUsecase.getExamById(examId));
+        return ResponseEntity.ok(examService.getExamById(examId));
     }
 
     @GetMapping("/all")

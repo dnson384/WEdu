@@ -1,11 +1,15 @@
 package com.fckedu.exam_creation.exam.dto.mapper;
 
+import com.fckedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
+import com.fckedu.exam_creation.common.dto.exam.response.ExamQuestionDTO;
+import com.fckedu.exam_creation.common.dto.exam.response.QuestionDetailResponseDTO;
 import com.fckedu.exam_creation.common.dto.question.response.ContentDTO;
 import com.fckedu.exam_creation.common.dto.question.response.QuestionDTO;
 import com.fckedu.exam_creation.common.dto.question.response.VariablesDTO;
 import com.fckedu.exam_creation.exam.domain.entity.ChapterExamEntity;
 import com.fckedu.exam_creation.exam.domain.entity.ExamEntity;
-import com.fckedu.exam_creation.exam.dto.response.*;
+import com.fckedu.exam_creation.exam.dto.response.ExamChapterDTO;
+import com.fckedu.exam_creation.exam.dto.response.ExamDTO;
 import com.fckedu.exam_creation.storage.service.S3Service;
 import org.springframework.stereotype.Component;
 
@@ -43,9 +47,9 @@ public class ExamDTOMapper {
                 .map(groupedList -> {
                     QuestionDTO sampleQuestion = groupedList.get(0);
 
-                    List<QuestionDetailDTO> detailDTOs = groupedList.stream()
+                    List<QuestionDetailResponseDTO> detailDTOs = groupedList.stream()
                             .map(q -> {
-                                QuestionDetailDTO questionDetailDTO = new QuestionDetailDTO();
+                                QuestionDetailResponseDTO questionDetailDTO = new QuestionDetailResponseDTO();
                                 questionDetailDTO.setId(q.getId());
 
                                 ContentDTO question = q.getQuestion();
@@ -90,7 +94,7 @@ public class ExamDTOMapper {
                                             );
                                         })
                                         .toList();
-                                return new QuestionDetailDTO(
+                                return new QuestionDetailResponseDTO(
                                         q.getId(),
                                         newQuestion,
                                         newOptions);
