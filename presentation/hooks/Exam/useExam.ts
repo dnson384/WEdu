@@ -1,7 +1,7 @@
 "use client";
 
 import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
-import { ExamExportPayload } from "@/presentation/schemas/export.schema";
+import { ExportPayload } from "@/presentation/schemas/export.schema";
 import {
   exportWordFileService,
   GetExamService,
@@ -32,21 +32,19 @@ export default function useExam() {
 
   const details = data || initialResponse();
 
-  const handleExportDocx = async (groupedQuestions: TransformedExamUI) => {
-    const payload: ExamExportPayload = Object.entries(groupedQuestions).map(
-      ([type, questions]) => ({
-        questionType: type,
-        questionIds: questions.map((q) => q.id),
-      }),
-    );
+  const handleExportDocx = async () => {
+    const payload: ExportPayload = {
+      examId: details.id,
+      examName: details.name,
+    };
 
     try {
       const blob = await exportWordFileService(payload);
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Đề kiểm tra.docx`;
+      a.download = `${details.name}.docx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
