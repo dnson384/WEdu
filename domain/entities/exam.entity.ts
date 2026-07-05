@@ -19,15 +19,15 @@ export interface ExamQuestion {
 }
 
 export interface ExamChapterReposneEntity {
-  id: string
-  lessonIds: string[]
+  id: string;
+  lessonIds: string[];
 }
 
 export interface ExamResponseEntity {
-  id: string
-  name: string
-  chapters: ExamChapterReposneEntity[]
-  questionsCount: number
+  id: string;
+  name: string;
+  chapters: ExamChapterReposneEntity[];
+  questionsCount: number;
 }
 
 export interface ExamDetailReponseEntity {
@@ -36,7 +36,7 @@ export interface ExamDetailReponseEntity {
   groups: ExamQuestion[];
 }
 
-export interface ExamExportPayloadEntity {
-  questionType: string;
-  questionIds: string[];
+export interface ExportEntity {
+  examId: string;
+  examName: string;
 }

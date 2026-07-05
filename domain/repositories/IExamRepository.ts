@@ -1,5 +1,5 @@
 import {
-  ExamExportPayloadEntity,
+  ExportEntity,
   ExamDetailReponseEntity,
   ExamResponseEntity,
 } from "../entities/exam.entity";
@@ -20,7 +20,7 @@ export interface IExamsRepository {
     refreshToken: string,
   ): Promise<ExamResponseEntity[]>;
   exportExamWordFile(
-    payload: ExamExportPayloadEntity[],
+    payload: ExportEntity,
     accessToken: string,
     refreshToken: string,
   ): Promise<Buffer>;

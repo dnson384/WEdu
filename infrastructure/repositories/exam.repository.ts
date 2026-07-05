@@ -1,7 +1,7 @@
 import {
-  ExamExportPayloadEntity,
   ExamDetailReponseEntity,
   ExamResponseEntity,
+  ExportEntity,
 } from "@/domain/entities/exam.entity";
 import { IExamsRepository } from "@/domain/repositories/IExamRepository";
 import axios from "axios";
@@ -90,7 +90,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
   }
 
   async exportExamWordFile(
-    payload: ExamExportPayloadEntity[],
+    payload: ExportEntity,
     accessToken: string,
     refreshToken: string,
   ): Promise<Buffer> {
@@ -102,7 +102,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
     const customCookieHeader = cookieHeaderParts.join("; ");
 
     const { data } = await axios.post<Buffer>(
-      `${this.baseUrl}/exam/export`,
+      `${this.baseUrl}/exporter/word`,
       payload,
       {
         responseType: "arraybuffer",
