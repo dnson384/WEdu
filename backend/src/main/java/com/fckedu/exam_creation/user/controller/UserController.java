@@ -8,6 +8,7 @@ import com.fckedu.exam_creation.user.usecase.UserService;
 import com.fckedu.exam_creation.user.usecase.UserUsecase;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(
-            @RequestBody NewUserRequestDTO newUser,
+            @Valid @RequestBody NewUserRequestDTO newUser,
             HttpServletResponse response) {
         AuthorizedResponseDTO dto = userUsecase.register(newUser);
 
@@ -40,11 +41,11 @@ public class UserController {
         response.addCookie(accessToken);
 
         Cookie refreshToken = new Cookie(
-                "refeshToken",
+                "refreshToken",
                 dto.getRefreshToken()
         );
         refreshToken.setHttpOnly(true);
-        refreshToken.setMaxAge(15 * 60);
+        refreshToken.setMaxAge(7 * 24 * 60 * 60);
         refreshToken.setPath("/");
         // refreshToken.setSecure(true);
 
@@ -71,11 +72,11 @@ public class UserController {
         response.addCookie(accessToken);
 
         Cookie refreshToken = new Cookie(
-                "refeshToken",
+                "refreshToken",
                 dto.getRefreshToken()
         );
         refreshToken.setHttpOnly(true);
-        refreshToken.setMaxAge(15 * 60);
+        refreshToken.setMaxAge(7 * 24 * 60 * 60);
         refreshToken.setPath("/");
         // refreshToken.setSecure(true);
 

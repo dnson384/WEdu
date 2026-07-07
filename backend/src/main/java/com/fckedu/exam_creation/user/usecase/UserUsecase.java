@@ -4,6 +4,7 @@ import com.fckedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.fckedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
 import com.fckedu.exam_creation.common.dto.token.ATPayload;
 import com.fckedu.exam_creation.common.dto.token.RTPayload;
+import com.fckedu.exam_creation.common.exception.BadRequestException;
 import com.fckedu.exam_creation.common.exception.InternalServerException;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -39,6 +41,15 @@ public class UserUsecase {
     }
 
     public AuthorizedResponseDTO register(NewUserRequestDTO newUser) {
+        if (!newUser.getPlainPassword().equals(newUser.getConfirmPassword())) {
+            throw new BadRequestException("Mật khẩu xác nhận không trùng khớp");
+        }
+
+        Optional<UserEntity> userEntityOptional = repo.findByEmail(newUser.getEmail());
+        if (userEntityOptional.isPresent()) {
+            throw new BadRequestException("Tài khoản đã tồn tại");
+        }
+
         String hashedPassword = securityService.hashPassword(newUser.getPlainPassword());
         UserEntity newUserEntity = new UserEntity(
                 null,
@@ -57,6 +68,10 @@ public class UserUsecase {
         UserEntity createdUser = repo.save(newUserEntity);
 
         UserResponseDTO user = mapperDTO.toUserResponseDTO(createdUser);
+
+        if (user == null) {
+            throw new InternalServerException("Lỗi trong quá trình chuyển đổi entity -> dto");
+        }
 
         // AT
         ATPayload accessTokenPayload = new ATPayload(
