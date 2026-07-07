@@ -1,10 +1,10 @@
-package com.example.demo;
+package com.fckedu.exam_creation;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class FckEduBackendApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
