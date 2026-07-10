@@ -9,6 +9,7 @@ import com.fckedu.exam_creation.user.usecase.UserUsecase;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,6 +93,10 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<CommonUserResponseDTO> getMe(@RequestHeader("Authorization") String authorization) {
+        if (!authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
         String accessToken = authorization.substring(7);
         return ResponseEntity.ok(userService.getMe(accessToken));
     }
