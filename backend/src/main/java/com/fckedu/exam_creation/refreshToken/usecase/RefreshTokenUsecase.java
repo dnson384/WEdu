@@ -36,6 +36,10 @@ public class RefreshTokenUsecase {
 
         RefreshTokenEntity token = this.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
 
+        if (token == null) {
+            throw new UnAuthorizedException("RT không tồn tại");
+        }
+
         CommonUserResponseAllDTO user = userService.findById(token.getUserId());
 
         if (user == null) {
