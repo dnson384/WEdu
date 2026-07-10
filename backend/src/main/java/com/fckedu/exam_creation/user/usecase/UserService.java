@@ -38,6 +38,10 @@ public class UserService {
         String userId = securityService.getPayloadFromAccessToken(accessToken).getUserId();
         UserEntity user = repo.findById(userId);
 
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy người dùng");
+        }
+
         CommonUserResponseDTO userResponse = mapper.toCommonDTO(user);
 
         String avatarUrl = s3Service.generatePresignedUrl(userResponse.getAvatarUrl());

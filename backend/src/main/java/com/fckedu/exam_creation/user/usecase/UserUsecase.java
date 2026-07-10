@@ -157,19 +157,34 @@ public class UserUsecase {
     }
 
     public boolean updateAvatar(String userId, String s3Key) {
+        if (s3Key.isEmpty()) {
+            throw new BadRequestException("s3Key rỗng");
+        }
+
         UserEntity user = repo.findById(userId);
         if (user == null) {
             throw new NotFoundException("Không tìm thấy tài khoản");
         }
 
         String oldAvatar = user.getAvatarUrl();
-        String newAvatar = "avatars/" + s3Key;
 
-        user.setAvatarUrl(newAvatar);
+        user.setAvatarUrl(s3Key);
         UserEntity updatedUser = repo.save(user);
 
-        if (updatedUser != null && !oldAvatar.equals("avatars/default-avatar-user.png")) {
-            s3Service.deleteFile(oldAvatar);
+        if (updatedUser == null) {
+            try {
+                s3Service.deleteFile(s3Key);
+            } catch (Exception e) {
+                System.err.printf("Không xóa được ảnh %s: %s", s3Key, e.getMessage());
+            }
+
+            throw new InternalServerException("Có lỗi trong quá trình cập nhật avatar");
+        } else if (!oldAvatar.equals("avatars/default-avatar-user.png")) {
+            try {
+                s3Service.deleteFile(oldAvatar);
+            } catch (Exception e) {
+                System.err.printf("Không xóa được ảnh cũ %s: %s", oldAvatar, e.getMessage());
+            }
         }
         return true;
     }

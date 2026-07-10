@@ -51,12 +51,11 @@ public class UserControllerRegisterTest {
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private UserResponseDTO mockUserResponse;
     private AuthorizedResponseDTO mockAuthorizedResponse;
 
     @BeforeEach
     void setUp() {
-        mockUserResponse = new UserResponseDTO(
+        UserResponseDTO mockUserResponse = new UserResponseDTO(
                 "user-123",
                 "anv@gmail.com",
                 "Nguyen Van A",
