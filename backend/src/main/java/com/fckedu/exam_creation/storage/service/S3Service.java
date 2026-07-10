@@ -1,6 +1,7 @@
 package com.fckedu.exam_creation.storage.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.fckedu.exam_creation.common.exception.BadRequestException;
+import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,21 +16,43 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class S3Service {
+    private final Tika tika = new Tika();
+    private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
+    private final String bucketName;
+    private final List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png");
 
-    @Autowired
-    private S3Client s3Client;
 
-    @Autowired
-    private S3Presigner s3Presigner;
-
-    @Value("${aws.bucketName}")
-    private String bucketName;
+    public S3Service(
+            S3Client s3Client,
+            S3Presigner s3Presigner,
+            @Value("${aws.bucketName}") String bucketName
+    ) {
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
+        this.bucketName = bucketName;
+    }
 
     public String uploadFile(MultipartFile file, String folderName) throws IOException {
+        if (file.isEmpty()) {
+            throw new BadRequestException("Lỗi: Đầu vào là file trống");
+        }
+
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new BadRequestException("Lỗi: File lớn hơn 5MB");
+        }
+
+        String detectedType = tika.detect(file.getInputStream());
+        if (!ALLOWED_MIME_TYPES.contains(detectedType)) {
+            throw new BadRequestException("Lỗi: File không đúng định dạng");
+        }
+
         String originalFilename = file.getOriginalFilename();
         String extension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -48,7 +71,7 @@ public class S3Service {
         s3Client.putObject(putObjectRequest,
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return fileName;
+        return s3Key;
     }
 
     public String uploadLocalFile(File file, String folderName) {

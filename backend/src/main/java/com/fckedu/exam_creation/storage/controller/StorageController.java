@@ -1,7 +1,6 @@
 package com.fckedu.exam_creation.storage.controller;
 
 import com.fckedu.exam_creation.storage.service.S3Service;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,9 +14,11 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/storage")
 public class StorageController {
+    private final S3Service s3Service;
 
-    @Autowired
-    private S3Service s3Service;
+    public StorageController(S3Service s3Service) {
+        this.s3Service = s3Service;
+    }
 
     @PostMapping("/avatar")
     public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
