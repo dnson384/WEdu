@@ -1,6 +1,7 @@
 package com.fckedu.exam_creation.user.infrastructure.repository;
 
 import com.fckedu.exam_creation.common.exception.InternalServerException;
+import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.storage.service.S3Service;
 import com.fckedu.exam_creation.user.domain.entity.UserEntity;
 import com.fckedu.exam_creation.user.domain.repository.IUserRepository;
@@ -45,6 +46,11 @@ public class UserRepositoryImpl implements IUserRepository {
     @Override
     public UserEntity findById(String userId) {
         UserDocument user = mongoTemplate.findById(userId, UserDocument.class);
+
+        if (user == null) {
+            throw new NotFoundException("Không tìm thấy người dùng");
+        }
+        
         return mapper.toEntity(user);
     }
 
