@@ -45,8 +45,8 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(InternalError.class)
-    public ResponseEntity<?> handleInternalError(InternalServerException ex) {
+    @ExceptionHandler(InternalServerException.class)
+    public ResponseEntity<?> handleInternalServer(InternalServerException ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));

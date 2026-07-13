@@ -87,7 +87,7 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Boolean> logout(@RequestBody String refreshToken) {
+    public ResponseEntity<Boolean> logout(@CookieValue(value = "refreshToken") String refreshToken) {
         return ResponseEntity.ok(userUsecase.logout(refreshToken));
     }
 
