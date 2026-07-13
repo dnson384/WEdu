@@ -29,8 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UserUsecaseRegisterTest {
@@ -85,6 +83,7 @@ public class UserUsecaseRegisterTest {
                 "avatars/default-avatar-user.png"
         );
     }
+
     @Nested
     @DisplayName("Success cases")
     class SuccessCases {
@@ -239,5 +238,4 @@ public class UserUsecaseRegisterTest {
             verify(refreshTokenService, times(1)).save(any(NewRTRequestDTO.class));
         }
     }
-
 }
