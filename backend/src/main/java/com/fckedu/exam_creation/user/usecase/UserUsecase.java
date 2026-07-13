@@ -18,6 +18,8 @@ import com.fckedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
 import com.fckedu.exam_creation.user.dto.response.UserResponseDTO;
 import com.fckedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -200,6 +202,7 @@ public class UserUsecase {
         return repo.save(user) != null;
     }
 
+    @Transactional
     public boolean changePassword(String userId, ChangePasswordRequestDTO reqPayload) {
         ChangePasswordPayloadRequestDTO payload = reqPayload.getPayload();
 
@@ -221,26 +224,10 @@ public class UserUsecase {
         String newHashedPassword = securityService.hashPassword(payload.getNewPassword());
 
         user.setHashedPassword(newHashedPassword);
-        UserEntity savedUser = repo.save(user);
-
-        if (savedUser != null) {
-            List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(savedUser.getId());
-
-            List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
-
-            List<String> jtisToDelete = tokenJtis.stream()
-                    .filter(token -> !token.equals(rtPayload.getJti()))
-                    .toList();
-
-            if (tokenJtis.isEmpty()) {
-                return true;
-            }
-
-            return refreshTokenService.deleteMany(jtisToDelete);
-        }
-        return false;
+        return saveUserAndRevokeRT(user, rtPayload.getJti());
     }
 
+    @Transactional
     public boolean lockAccount(String userId, String refreshToken) {
         UserEntity user = repo.findById(userId);
 
@@ -252,24 +239,7 @@ public class UserUsecase {
 
         user.setIsActive(false);
 
-        UserEntity savedUser = repo.save(user);
-
-        if (savedUser != null) {
-            List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(savedUser.getId());
-
-            List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
-
-            List<String> jtisToDelete = tokenJtis.stream()
-                    .filter(token -> !token.equals(rtPayload.getJti()))
-                    .toList();
-
-            if (jtisToDelete.isEmpty()) {
-                return true;
-            }
-
-            return refreshTokenService.deleteMany(jtisToDelete);
-        }
-        return repo.save(user) != null;
+        return saveUserAndRevokeRT(user, rtPayload.getJti());
     }
 
     public boolean deleteAccount(String userId) {
@@ -285,6 +255,32 @@ public class UserUsecase {
             }
 
             return refreshTokenService.deleteMany(tokenJtis);
+        }
+        return false;
+    }
+
+    @Transactional
+    protected boolean saveUserAndRevokeRT(UserEntity user, String jti) {
+        try {
+            UserEntity savedUser = repo.save(user);
+
+            if (savedUser != null) {
+                List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(savedUser.getId());
+
+                List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
+
+                List<String> jtisToDelete = tokenJtis.stream()
+                        .filter(token -> !token.equals(jti))
+                        .toList();
+
+                if (jtisToDelete.isEmpty()) {
+                    return true;
+                }
+
+                return refreshTokenService.deleteMany(jtisToDelete);
+            }
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         return false;
     }
