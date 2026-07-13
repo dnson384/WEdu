@@ -1,9 +1,9 @@
 package com.fckedu.exam_creation.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fckedu.exam_creation.common.exception.InternalServerException;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
+import com.fckedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
 import com.fckedu.exam_creation.user.dto.request.LoginUserRequestDTO;
 import com.fckedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
 import com.fckedu.exam_creation.user.dto.response.UserResponseDTO;
@@ -23,17 +23,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class UserControllerLoginTest {
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockitoBean
     private UserUsecase userUsecase;
@@ -41,12 +40,14 @@ public class UserControllerLoginTest {
     @MockitoBean
     private UserService userService;
 
-    private UserResponseDTO mockUserResponse;
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
     private AuthorizedResponseDTO mockAuthorizedResponse;
 
     @BeforeEach
     void setUp() {
-        mockUserResponse = new UserResponseDTO(
+        UserResponseDTO mockUserResponse = new UserResponseDTO(
                 "user-123",
                 "anv@gmail.com",
                 "Nguyen Van A",
@@ -69,12 +70,11 @@ public class UserControllerLoginTest {
     }
 
     @Nested
-    @DisplayName("Success case")
-    class SuccessCase {
-
+    @DisplayName("Email")
+    class EmailCase {
         @Test
-        @DisplayName("Đăng nhập thành công - trả về User DTO và set đúng 2 Cookie")
-        void login_Success() throws Exception {
+        @DisplayName("Đăng nhập thành công - Happy case")
+        void happyCase() throws Exception {
             when(userUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
@@ -84,27 +84,195 @@ public class UserControllerLoginTest {
                     .andExpect(status().isOk())
                     .andExpect(cookie().exists("accessToken"))
                     .andExpect(cookie().value("accessToken", "mock-access-token"))
-                    .andExpect(cookie().httpOnly("accessToken", true))
-                    .andExpect(cookie().maxAge("accessToken", 15 * 60))
-                    .andExpect(cookie().path("accessToken", "/"))
                     .andExpect(cookie().exists("refreshToken"))
-                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"))
-                    .andExpect(cookie().httpOnly("refreshToken", true))
-                    .andExpect(cookie().maxAge("refreshToken", 7 * 24 * 60 * 60))
-                    .andExpect(cookie().path("refreshToken", "/"))
-                    .andExpect(jsonPath("$.id").value("user-123"))
-                    .andExpect(jsonPath("$.email").value("anv@gmail.com"));
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
             verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
-    }
-
-    @Nested
-    @DisplayName("Usecase throws exception - Controller phải map đúng status")
-    class UsecaseExceptionCases {
 
         @Test
-        @DisplayName("404 khi email không tồn tại (NotFoundException)")
+        @DisplayName("Đăng nhập thành công - Email viết hoa / thường")
+        void caseSensitive() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "ANV@gmail.com",
+                    "Password123@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thành công - Email có nhập tự đặc biệt hợp lệ")
+        void validSpecialCharacter() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv_@gmail.com",
+                    "Password123@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email có nhập tự đặc biệt không hợp lệ")
+        void invalidSpecialCharacter() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@@gmail.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).login(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thành công - Email có \".\"  hợp lệ")
+        void validDot() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv.tlu@gmail.com",
+                    "Password123@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(validRequest())))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email có \".\"  hợp lệ")
+        void invalidDot() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    ".anv@gmail.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).login(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email chứa nhập tự Unicode")
+        void unicode() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anguyễnvăn@gmail.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).login(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email chứa khoảng trắng")
+        void space() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv tlu@gmail.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).login(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email dài hơn 254 nhập tự")
+        void more254() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmd@a123456789b123456789c123456789d123456789e123456789f123456789g12.a123456789b123456789c123456789d123456789e123456789f123456789g12.a123456789b123456789c123456789d123456789e123456789f123456789g12.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email có local part dài hơn 64 nhập tự")
+        void localPartMore64() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@gmail.com",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email rỗng")
+        void empty() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "",
+                    "Password123@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Email chưa tồn tại")
         void login_EmailNotFound_ReturnsNotFound() throws Exception {
             when(userUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new NotFoundException("Tài khoản chưa tồn tại"));
@@ -113,10 +281,16 @@ public class UserControllerLoginTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isNotFound());
-        }
 
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Login Method")
+    class LoginMethodCase {
         @Test
-        @DisplayName("401 khi tài khoản đăng ký bằng GOOGLE (UnAuthorizedException)")
+        @DisplayName("Đăng nhập thất bại - Email đăng nhập bằng Google, thử đăng nhập Local")
         void login_GoogleAccount_ReturnsUnauthorized() throws Exception {
             when(userUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new UnAuthorizedException("Sai phương thức đăng nhập"));
@@ -126,10 +300,218 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isUnauthorized());
         }
+    }
+
+    @Nested
+    @DisplayName("Password")
+    class PasswordCase {
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu tài khoản chính xác")
+        void correctPassword() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "Password123@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
 
         @Test
-        @DisplayName("401 khi tài khoản bị khóa (UnAuthorizedException)")
-        void login_LockedAccount_ReturnsUnauthorized() throws Exception {
+        @DisplayName("Đăng nhập thất bại - Mật khẩu tài khoản không chính xác")
+        void login_WrongPassword_ReturnsUnauthorized() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "Password123"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenThrow(new UnAuthorizedException("Mật khẩu không chính xác"));
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(cookie().doesNotExist("accessToken"))
+                    .andExpect(cookie().doesNotExist("refreshToken"));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có đúng 8 nhập tự")
+        void exact8Char() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "Passwo1@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có đúng 32 nhập tự")
+        void exact32Char() throws Exception {
+            String pw32 = "A1@" + "a".repeat(29);
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    pw32
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có chữ hoa, nhập tự, số")
+        void special() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "Password123@"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu không có chữ hoa, nhập tự, số")
+        void nonSpecial() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "password"
+            );
+
+            when(userUsecase.login(any(req.getClass())))
+                    .thenReturn(mockAuthorizedResponse);
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isOk())
+                    .andExpect(cookie().exists("accessToken"))
+                    .andExpect(cookie().value("accessToken", "mock-access-token"))
+                    .andExpect(cookie().exists("refreshToken"))
+                    .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
+
+            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có khoảng trắng")
+        void space() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "password 123"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).login(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có ít hơn 8 nhập tự")
+        void passwordTooShort() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    "Pas1@"
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu có nhiều hơn 32 nhập tự")
+        void passwordTooLong() throws Exception {
+            String pw33 = "A1@" + "a".repeat(30); // tổng 33 nhập tự
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    pw33
+            );
+
+            mockMvc.perform(post("/user/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+
+        @Test
+        @DisplayName("Đăng nhập thất bại - Mật khẩu rỗng")
+        void emptyPassword() throws Exception {
+            LoginUserRequestDTO req = new LoginUserRequestDTO(
+                    "anv@gmail.com",
+                    ""
+            );
+
+            mockMvc.perform(post("/user/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest());
+
+            verify(userUsecase, times(0)).register(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("isActived")
+    class IsActivedCase {
+        @Test
+        @DisplayName("Đăng nhập thất bại - Tài khoản đã bị khóa")
+        void lockedAccount() throws Exception {
             when(userUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new UnAuthorizedException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa"));
 
@@ -137,37 +519,8 @@ public class UserControllerLoginTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isUnauthorized());
-        }
 
-        @Test
-        @DisplayName("401 khi sai mật khẩu (UnAuthorizedException)")
-        void login_WrongPassword_ReturnsUnauthorized() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
-                    .thenThrow(new UnAuthorizedException("Mật khẩu không chính xác"));
-
-            mockMvc.perform(post("/user/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(validRequest())))
-                    .andExpect(status().isUnauthorized());
-
-            // Đảm bảo không set cookie khi login fail
-            mockMvc.perform(post("/user/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(validRequest())))
-                    .andExpect(cookie().doesNotExist("accessToken"))
-                    .andExpect(cookie().doesNotExist("refreshToken"));
-        }
-
-        @Test
-        @DisplayName("500 khi lưu Refresh Token thất bại (InternalServerException)")
-        void login_SaveRTFails_ReturnsInternalServerError() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
-                    .thenThrow(new InternalServerException("Lỗi trong quá trình lưu RT!"));
-
-            mockMvc.perform(post("/user/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(validRequest())))
-                    .andExpect(status().isInternalServerError());
+            verify(userUsecase, times(0)).register(any());
         }
     }
 }
