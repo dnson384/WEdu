@@ -57,7 +57,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<UserResponseDTO> login(
-            @RequestBody LoginUserRequestDTO payload,
+            @Valid @RequestBody LoginUserRequestDTO payload,
             HttpServletResponse response) {
         AuthorizedResponseDTO dto = userUsecase.login(payload);
 

@@ -12,20 +12,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NewUserRequestDTO {
-    @Email
-    @NotBlank
+    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "Email không được để trống")
+    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+            message = "Email không được chứa ký tự Unicode")
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 8, max = 32, message = "Mật khẩu phải từ 8-32 ký tự")
     private String plainPassword;
 
 
-    @NotBlank
+    @NotBlank(message = "Xác nhận mật khẩu không được để trống")
     @Size(min = 8, max = 32, message = "Mật khẩu phải từ 8-32 ký tự")
     private String confirmPassword;
 
-    @NotBlank
+    @NotBlank(message = "Tên người dùng không được để trống")
     private String username;
 
     @Pattern(
