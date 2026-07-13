@@ -442,7 +442,7 @@ public class UserControllerLoginTest {
 
         @Test
         @DisplayName("Đăng nhập thất bại - Mật khẩu có khoảng trắng")
-        void space() throws Exception {
+        void passwordSpace() throws Exception {
             LoginUserRequestDTO req = new LoginUserRequestDTO(
                     "anv@gmail.com",
                     "password 123"
