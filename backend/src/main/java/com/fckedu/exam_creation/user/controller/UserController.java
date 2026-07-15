@@ -92,25 +92,21 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<CommonUserResponseDTO> getMe(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken
-    ) {
+    public ResponseEntity<CommonUserResponseDTO> getMe(@RequestHeader("Authorization") String authorization) {
         if (!authorization.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         String accessToken = authorization.substring(7);
-        return ResponseEntity.ok(userService.getMe(accessToken, refreshToken));
+        return ResponseEntity.ok(userService.getMe(accessToken));
     }
 
     @PutMapping("/avatar")
     public ResponseEntity<Boolean> updateAvatar(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody UpdateAvatarRequestDTO payload) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken);
 
         return ResponseEntity.ok(userUsecase.updateAvatar(user.getId(), payload.getS3Key()));
     }
@@ -118,10 +114,9 @@ public class UserController {
     @PutMapping("/update-user")
     public ResponseEntity<Boolean> updateUser(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody UpdateUserRequestDTO payload) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken);
 
         return ResponseEntity.ok(userUsecase.updateUser(user.getId(), payload));
     }
@@ -129,11 +124,10 @@ public class UserController {
     @PutMapping("/change-password")
     public ResponseEntity<Boolean> changePassword(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody ChangePasswordRequestDTO reqPayload
     ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken);
 
         return ResponseEntity.ok(userUsecase.changePassword(user.getId(), reqPayload));
     }
@@ -144,17 +138,14 @@ public class UserController {
             @CookieValue(value = "refreshToken") String refreshToken
     ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken);
 
         return ResponseEntity.ok(userUsecase.lockAccount(user.getId(), refreshToken));
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<Boolean> deleteAccount(
-            @CookieValue(value = "accessToken") String accessToken,
-            @CookieValue(value = "refreshToken") String refreshToken
-    ) {
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+    public ResponseEntity<Boolean> deleteAccount(@CookieValue(value = "accessToken") String accessToken) {
+        CommonUserResponseDTO user = userService.getMe(accessToken);
 
         return ResponseEntity.ok(userUsecase.deleteAccount(user.getId()));
     }

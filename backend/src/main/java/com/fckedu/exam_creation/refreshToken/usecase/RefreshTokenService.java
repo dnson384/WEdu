@@ -25,6 +25,10 @@ public class RefreshTokenService {
         return refreshTokenEntities.stream().map(mapper::toResponseDTO).toList();
     }
 
+    public boolean checkExist(String jti, String userId) {
+        return repo.checkExist(jti, userId);
+    }
+
     public boolean save(NewRTRequestDTO newRT) {
         RefreshTokenEntity entity = new RefreshTokenEntity(
                 null,
