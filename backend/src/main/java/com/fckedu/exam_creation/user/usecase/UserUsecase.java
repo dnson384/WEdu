@@ -156,6 +156,8 @@ public class UserUsecase {
             return refreshTokenService.delete(payload.getJti());
         } catch (JwtException | IllegalArgumentException ex) {
             throw new UnAuthorizedException("RT không hợp lệ");
+        } catch (InternalServerException ex) {
+            throw ex;
         }
     }
 
