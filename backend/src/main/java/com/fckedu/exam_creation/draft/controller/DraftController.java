@@ -24,65 +24,92 @@ public class DraftController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<String> createDraft(@RequestHeader("Authorization") String authorization, @RequestBody CreateDraftDTO payload) {
+    public ResponseEntity<String> createDraft(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestBody CreateDraftDTO payload
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.createDraft(payload, user.getId()));
     }
 
     @GetMapping("/{draftId}")
-    public ResponseEntity<DraftDTO> getDraft(@RequestHeader("Authorization") String authorization, @PathVariable String draftId) {
+    public ResponseEntity<DraftDTO> getDraft(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @PathVariable String draftId
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.getDraft(draftId, user.getId()));
     }
 
     @PutMapping("/chapter")
-    public ResponseEntity<Boolean> updateChapters(@RequestHeader("Authorization") String authorization, @RequestBody UpdateChaptersDraftDTO payload) {
+    public ResponseEntity<Boolean> updateChapters(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestBody UpdateChaptersDraftDTO payload
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.updateChapters(payload, user.getId()));
     }
 
     @PutMapping("/lesson")
-    public ResponseEntity<Boolean> updateLessons(@RequestHeader("Authorization") String authorization, @RequestBody UpdateLessonsDraftDTO payload) {
+    public ResponseEntity<Boolean> updateLessons(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestBody UpdateLessonsDraftDTO payload) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.updateLessons(payload, user.getId()));
     }
 
     @PutMapping("/generate-matrix")
-    public ResponseEntity<Boolean> generateMatrix(@RequestHeader("Authorization") String authorization, @RequestParam String draftId) {
+    public ResponseEntity<Boolean> generateMatrix(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestParam String draftId) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.generateMatrix(draftId, user.getId()));
     }
 
     @PutMapping("/generate-matrix-details")
-    public ResponseEntity<Boolean> generateMatrixDetails(@RequestHeader("Authorization") String authorization, @RequestParam String draftId) {
+    public ResponseEntity<Boolean> generateMatrixDetails(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestParam String draftId) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.generateMatrixDetails(draftId, user.getId()));
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<List<DraftDTO>> getRecentDraft(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<List<DraftDTO>> getRecentDraft(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.getRecentDraft(user.getId()));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<DraftDTO>> getAllUserDrafts(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<List<DraftDTO>> getAllUserDrafts(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(draftUsecase.getAllUserDrafts(user.getId()));
     }
