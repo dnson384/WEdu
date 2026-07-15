@@ -31,6 +31,18 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
         return savedRefreshToken.getId() != null;
     }
 
+    public boolean checkExist(String jti, String userId) {
+        Criteria criteria = new Criteria();
+        criteria.andOperator(
+                Criteria.where("jti").is(jti),
+                Criteria.where("userId").is(userId)
+        );
+
+        Query query = new Query(criteria);
+
+        return mongoTemplate.exists(query, RefreshTokenDocument.class);
+    }
+
     public RefreshTokenEntity getRefreshTokenByJti(String jti, String userId) {
         Criteria criteria = new Criteria();
         criteria.andOperator(
