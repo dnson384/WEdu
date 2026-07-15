@@ -31,22 +31,18 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of(
-                        "message", ex.getMessage()
-                ));
+                .body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<?> handleNotfound(NotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(Map.of(
-                        "message", ex.getMessage()
-                ));
+                .body(Map.of("message", ex.getMessage()));
     }
 
-    @ExceptionHandler(InternalError.class)
-    public ResponseEntity<?> handleInternalError(InternalServerException ex) {
+    @ExceptionHandler(InternalServerException.class)
+    public ResponseEntity<?> handleInternalServer(InternalServerException ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));

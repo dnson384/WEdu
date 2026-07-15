@@ -17,6 +17,7 @@ import com.fckedu.exam_creation.user.dto.request.*;
 import com.fckedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
 import com.fckedu.exam_creation.user.dto.response.UserResponseDTO;
 import com.fckedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
+import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -148,14 +149,16 @@ public class UserUsecase {
     }
 
     public boolean logout(String refreshToken) {
-        boolean isValidated = securityService.validateRefreshToken(refreshToken);
+        try {
+            securityService.validateRefreshToken(refreshToken);
 
-        if (isValidated) {
             RTPayload payload = securityService.getPayloadFromRefreshToken(refreshToken);
             return refreshTokenService.delete(payload.getJti());
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new UnAuthorizedException("RT không hợp lệ");
+        } catch (InternalServerException ex) {
+            throw ex;
         }
-
-        return false;
     }
 
     public boolean updateAvatar(String userId, String s3Key) {

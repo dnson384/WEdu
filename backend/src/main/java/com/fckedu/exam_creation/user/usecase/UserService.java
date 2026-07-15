@@ -1,25 +1,32 @@
 package com.fckedu.exam_creation.user.usecase;
 
+import com.fckedu.exam_creation.common.dto.token.RTPayload;
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
+import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
+import com.fckedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.fckedu.exam_creation.security.service.SecurityService;
 import com.fckedu.exam_creation.storage.service.S3Service;
 import com.fckedu.exam_creation.user.domain.entity.UserEntity;
 import com.fckedu.exam_creation.user.dto.mapper.UserDTOMapper;
 import com.fckedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
+import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
     private final UserRepositoryImpl repo;
     private final UserDTOMapper mapper;
+    private final RefreshTokenService refreshTokenService;
     private final SecurityService securityService;
     private final S3Service s3Service;
 
-    public UserService(UserRepositoryImpl repo, UserDTOMapper mapper, SecurityService securityService, S3Service s3Service) {
+    public UserService(UserRepositoryImpl repo, UserDTOMapper mapper, RefreshTokenService refreshTokenService, SecurityService securityService, S3Service s3Service) {
         this.repo = repo;
         this.mapper = mapper;
+        this.refreshTokenService = refreshTokenService;
+
         this.securityService = securityService;
         this.s3Service = s3Service;
     }
@@ -34,19 +41,33 @@ public class UserService {
         return mapper.toCommonAllDTO(repo.findById(userId));
     }
 
-    public CommonUserResponseDTO getMe(String accessToken) {
-        String userId = securityService.getPayloadFromAccessToken(accessToken).getUserId();
-        UserEntity user = repo.findById(userId);
+    public CommonUserResponseDTO getMe(String accessToken, String refreshToken) {
+        try {
+            String userId = securityService.getPayloadFromAccessToken(accessToken).getUserId();
+            RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
 
-        if (user == null) {
-            throw new NotFoundException("Không tìm thấy người dùng");
+            if (!rtPayload.getUserId().equals(userId)) {
+                throw new UnAuthorizedException("userId không trùng khớp");
+            }
+
+            if (!refreshTokenService.checkExist(rtPayload.getJti(), userId)) {
+                throw new NotFoundException("RT không tồn tại");
+            }
+
+            UserEntity user = repo.findById(userId);
+
+            if (user == null) {
+                throw new NotFoundException("Không tìm thấy người dùng");
+            }
+
+            CommonUserResponseDTO userResponse = mapper.toCommonDTO(user);
+
+            String avatarUrl = s3Service.generatePresignedUrl(userResponse.getAvatarUrl());
+            userResponse.setAvatarUrl(avatarUrl);
+
+            return userResponse;
+        } catch (JwtException ex) {
+            throw new UnAuthorizedException("Token không hợp lệ");
         }
-
-        CommonUserResponseDTO userResponse = mapper.toCommonDTO(user);
-
-        String avatarUrl = s3Service.generatePresignedUrl(userResponse.getAvatarUrl());
-        userResponse.setAvatarUrl(avatarUrl);
-
-        return userResponse;
     }
 }
