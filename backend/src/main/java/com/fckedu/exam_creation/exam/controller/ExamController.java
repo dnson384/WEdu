@@ -26,9 +26,13 @@ public class ExamController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<String> generateExam(@RequestHeader("Authorization") String authorization, @RequestBody GenerateExamPayload payload) {
+    public ResponseEntity<String> generateExam(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @RequestBody GenerateExamPayload payload
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(examUsecase.generateExam(payload.getDraftId(), user.getId()));
     }
@@ -39,17 +43,23 @@ public class ExamController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ExamDTO>> getAllExams(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<List<ExamDTO>> getAllExams(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(examUsecase.getAllUserExams(user.getId()));
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<List<ExamDTO>> getRecentExam(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<List<ExamDTO>> getRecentExam(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken
+    ) {
         String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(examUsecase.getRecentExams(user.getId()));
     }
