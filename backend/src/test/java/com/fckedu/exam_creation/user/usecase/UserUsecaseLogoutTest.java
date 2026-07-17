@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserUsecaseLogoutTest {
+    private final String VALID_AT = "valid-access-token";
     private final String VALID_RT = "valid-refresh-token";
     private final String INVALID_RT = "invalid-refresh-token";
     private final String VALID_JTI = "jti-123456";
@@ -61,7 +62,7 @@ public class UserUsecaseLogoutTest {
         when(refreshTokenService.delete(VALID_JTI)).thenReturn(true);
 
         // When
-        boolean result = userUsecase.logout(VALID_RT);
+        boolean result = userUsecase.logout(VALID_AT, VALID_RT);
 
         // Then
         assertThat(result).isTrue();
@@ -78,7 +79,7 @@ public class UserUsecaseLogoutTest {
         when(securityService.validateRefreshToken(INVALID_RT)).thenReturn(false);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(INVALID_RT))
+        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, INVALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("RT không hợp lệ");
 
@@ -90,7 +91,7 @@ public class UserUsecaseLogoutTest {
     @DisplayName("RT null")
     void nullRT() {
         // When
-        assertThatThrownBy(() -> userUsecase.logout(null))
+        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, null))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("RT không hợp lệ");
 
@@ -110,7 +111,7 @@ public class UserUsecaseLogoutTest {
                 .thenReturn(false);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_RT))
+        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("RT không tồn tại");
 
@@ -131,7 +132,7 @@ public class UserUsecaseLogoutTest {
                 .when(refreshTokenService).delete(VALID_JTI);
 
         // When & Then
-        assertThatThrownBy(() -> userUsecase.logout(VALID_RT))
+        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(InternalServerException.class)
                 .hasMessage("Dữ liệu không nhất quán, xóa dư!");
     }

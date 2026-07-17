@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerLogoutTest {
 
     private static final String COOKIE_NAME = "refreshToken";
+    private static final String VALID_AT = "mock-at";
     private static final String VALID_RT = "mock-rt";
     private static final String INVALID_RT = "abc.xyz.jqk";
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,7 +47,7 @@ public class UserControllerLogoutTest {
     @Test
     @DisplayName("Case 1: Đăng xuất thành công với RT hợp lệ")
     void validRT() throws Exception {
-        when(userUsecase.logout(VALID_RT))
+        when(userUsecase.logout(VALID_AT, VALID_RT))
                 .thenReturn(true);
 
         mockMvc.perform(post("/user/logout")
@@ -55,7 +56,7 @@ public class UserControllerLogoutTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(userUsecase, times(1)).logout(VALID_RT);
+        verify(userUsecase, times(1)).logout(VALID_AT, VALID_RT);
     }
 
     @Test
@@ -63,7 +64,7 @@ public class UserControllerLogoutTest {
     void malformedRT() throws Exception {
         String malformedRT = "chuoi-token-bay-ba";
 
-        when(userUsecase.logout(malformedRT))
+        when(userUsecase.logout(VALID_AT, malformedRT))
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
@@ -71,13 +72,13 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
-        verify(userUsecase, times(1)).logout(malformedRT);
+        verify(userUsecase, times(1)).logout(VALID_AT, malformedRT);
     }
 
     @Test
     @DisplayName("Case 3: RT không hợp lệ")
     void invalidRT() throws Exception {
-        when(userUsecase.logout(INVALID_RT))
+        when(userUsecase.logout(VALID_AT, INVALID_RT))
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
@@ -85,7 +86,7 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
-        verify(userUsecase, times(1)).logout(INVALID_RT);
+        verify(userUsecase, times(1)).logout(VALID_AT, INVALID_RT);
     }
 
 
@@ -94,7 +95,7 @@ public class UserControllerLogoutTest {
     void nonExistedRT() throws Exception {
         String nonExistedRT = "non-existed-rt";
 
-        when(userUsecase.logout(nonExistedRT))
+        when(userUsecase.logout(VALID_AT, nonExistedRT))
                 .thenThrow(new InternalServerException("Xóa Refresh Token thất bại do không tìm thấy hoặc xóa dư. Đang thực hiện Rollback!"));
 
         mockMvc.perform(post("/user/logout")
@@ -102,7 +103,7 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        verify(userUsecase, times(1)).logout(nonExistedRT);
+        verify(userUsecase, times(1)).logout(VALID_AT, nonExistedRT);
     }
 
     @Test

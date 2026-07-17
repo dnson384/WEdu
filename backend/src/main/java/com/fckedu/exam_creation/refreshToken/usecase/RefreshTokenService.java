@@ -25,7 +25,7 @@ public class RefreshTokenService {
         return refreshTokenEntities.stream().map(mapper::toResponseDTO).toList();
     }
 
-    public boolean checkExist(String jti, String userId) {
+    public boolean exists(String jti, String userId) {
         return repo.checkExist(jti, userId);
     }
 

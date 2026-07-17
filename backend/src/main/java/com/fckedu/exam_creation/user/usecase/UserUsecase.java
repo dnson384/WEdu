@@ -76,14 +76,15 @@ public class UserUsecase {
             throw new InternalServerException("Lỗi trong quá trình chuyển đổi entity -> dto");
         }
 
+        String jti = UUID.randomUUID().toString();
+
         // AT
         ATPayload accessTokenPayload = new ATPayload(
-                user.getId(), user.getEmail(), user.getRole()
+                jti, user.getId(), user.getEmail(), user.getRole()
         );
         String accessToken = securityService.generateAccessToken(accessTokenPayload);
 
         // RT
-        String jti = UUID.randomUUID().toString();
         RTPayload refreshTokenPayload = new RTPayload(
                 jti, user.getId(), user.getEmail(), user.getRole()
         );
@@ -122,14 +123,15 @@ public class UserUsecase {
 
         UserResponseDTO userDto = mapperDTO.toUserResponseDTO(user);
 
+        String jti = UUID.randomUUID().toString();
+
         // AT
         ATPayload accessTokenPayload = new ATPayload(
-                user.getId(), user.getEmail(), user.getRole()
+                jti, user.getId(), user.getEmail(), user.getRole()
         );
         String accessToken = securityService.generateAccessToken(accessTokenPayload);
 
         // RT
-        String jti = UUID.randomUUID().toString();
         RTPayload refreshTokenPayload = new RTPayload(
                 jti, user.getId(), user.getEmail(), user.getRole()
         );
@@ -148,16 +150,34 @@ public class UserUsecase {
         );
     }
 
-    public boolean logout(String refreshToken) {
-        try {
-            securityService.validateRefreshToken(refreshToken);
+    public boolean logout(String accessToken, String refreshToken) {
+        if (refreshToken == null || !securityService.validateRefreshToken(refreshToken)) {
+            throw new UnAuthorizedException("RT không hợp lệ");
+        }
 
-            RTPayload payload = securityService.getPayloadFromRefreshToken(refreshToken);
-            return refreshTokenService.delete(payload.getJti());
+        if (accessToken == null || !securityService.validateAccessToken(accessToken)) {
+            throw new UnAuthorizedException("AT không hợp lệ");
+        }
+
+        try {
+            RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
+            ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
+
+            if (!rtPayload.getUserId().equals(atPayload.getUserId())) {
+                throw new UnAuthorizedException("userId không trùng khớp");
+            }
+
+            if (!rtPayload.getJti().equals(atPayload.getParentJti())) {
+                throw new UnAuthorizedException("Phiên không trùng khớp");
+            }
+
+            if (!refreshTokenService.exists(rtPayload.getJti(), rtPayload.getUserId())) {
+                throw new NotFoundException("RT không tồn tại");
+            }
+
+            return refreshTokenService.delete(rtPayload.getJti());
         } catch (JwtException | IllegalArgumentException ex) {
             throw new UnAuthorizedException("RT không hợp lệ");
-        } catch (InternalServerException ex) {
-            throw ex;
         }
     }
 

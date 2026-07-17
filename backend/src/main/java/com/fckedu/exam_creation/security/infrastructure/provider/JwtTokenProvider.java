@@ -40,6 +40,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(payload.getUserId())
+                .claim("parentJti", payload.getParentJti())
                 .claim("email", payload.getEmail())
                 .claim("role", payload.getRole())
                 .issuedAt(now).expiration(expiryDate)
@@ -55,6 +56,7 @@ public class JwtTokenProvider {
                 .getPayload();
 
         return new ATPayload(
+                claims.get("parentJti", String.class),
                 claims.getSubject(),
                 claims.get("email", String.class),
                 claims.get("role", String.class)

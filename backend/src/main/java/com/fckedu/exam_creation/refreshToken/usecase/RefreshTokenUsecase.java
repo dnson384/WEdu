@@ -9,6 +9,7 @@ import com.fckedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
 import com.fckedu.exam_creation.refreshToken.infrastructure.repository.RefreshTokenRepositoryImpl;
 import com.fckedu.exam_creation.security.service.SecurityService;
 import com.fckedu.exam_creation.user.usecase.UserService;
+import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +25,13 @@ public class RefreshTokenUsecase {
     }
 
     public RefreshTokenEntity getRefreshToken(String jti, String userId) {
-        return repo.getRefreshTokenByJti(jti, userId);
+        RefreshTokenEntity entity = repo.getRefreshTokenByJti(jti, userId);
+
+        if (entity == null) {
+            throw new NotFoundException("RT không tồn tại");
+        }
+
+        return entity;
     }
 
     public String generateAccessToken(String refreshToken) {
@@ -32,24 +39,24 @@ public class RefreshTokenUsecase {
             throw new UnAuthorizedException("RT không hợp lệ");
         }
 
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
+        try {
+            RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
 
-        RefreshTokenEntity token = this.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
+            RefreshTokenEntity token = this.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
 
-        if (token == null) {
-            throw new UnAuthorizedException("RT không tồn tại");
+            CommonUserResponseAllDTO user = userService.findById(token.getUserId());
+
+            if (user == null) {
+                throw new NotFoundException("Người dùng không tồn tại");
+            }
+
+            ATPayload atPayload = new ATPayload(
+                    rtPayload.getJti(), user.getId(), user.getEmail(), user.getRole()
+            );
+
+            return securityService.generateAccessToken(atPayload);
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new UnAuthorizedException("RT không hợp lệ");
         }
-
-        CommonUserResponseAllDTO user = userService.findById(token.getUserId());
-
-        if (user == null) {
-            throw new NotFoundException("Người dùng không tồn tại");
-        }
-
-        ATPayload atPayload = new ATPayload(
-                user.getId(), user.getEmail(), user.getRole()
-        );
-
-        return securityService.generateAccessToken(atPayload);
     }
 }

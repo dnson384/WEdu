@@ -50,7 +50,7 @@ public class UserService {
                 throw new UnAuthorizedException("userId không trùng khớp");
             }
 
-            if (!refreshTokenService.checkExist(rtPayload.getJti(), userId)) {
+            if (!refreshTokenService.exists(rtPayload.getJti(), userId)) {
                 throw new NotFoundException("RT không tồn tại");
             }
 

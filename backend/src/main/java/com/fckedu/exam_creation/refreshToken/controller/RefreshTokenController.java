@@ -1,11 +1,10 @@
 package com.fckedu.exam_creation.refreshToken.controller;
 
-import com.fckedu.exam_creation.refreshToken.dto.request.ReGenATDTO;
 import com.fckedu.exam_creation.refreshToken.dto.response.NewAccessTokenResponseDTO;
 import com.fckedu.exam_creation.refreshToken.usecase.RefreshTokenUsecase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,8 +18,8 @@ public class RefreshTokenController {
     }
 
     @PostMapping("generate-access-token")
-    public ResponseEntity<NewAccessTokenResponseDTO> generateAccessToken(@RequestBody ReGenATDTO payload) {
-        String newAT = usecase.generateAccessToken(payload.getRefreshToken());
+    public ResponseEntity<NewAccessTokenResponseDTO> generateAccessToken(@CookieValue(value = "refreshToken") String refreshToken) {
+        String newAT = usecase.generateAccessToken(refreshToken);
         return ResponseEntity.ok(new NewAccessTokenResponseDTO(newAT));
     }
 }

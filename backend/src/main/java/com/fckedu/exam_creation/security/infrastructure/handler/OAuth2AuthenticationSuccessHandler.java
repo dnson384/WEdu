@@ -48,10 +48,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
 
         UserEntity curUser = userEntity.get();
-        String accessToken = tokenProvider.generateAccessToken(
-                new ATPayload(curUser.getId(), curUser.getEmail(), curUser.getRole()));
 
         String jti = UUID.randomUUID().toString();
+
+        String accessToken = tokenProvider.generateAccessToken(
+                new ATPayload(jti, curUser.getId(), curUser.getEmail(), curUser.getRole()));
+
         String refreshToken = tokenProvider.generateRefreshToken(
                 new RTPayload(jti, curUser.getId(), curUser.getEmail(), curUser.getRole()));
 

@@ -1,7 +1,6 @@
 package com.fckedu.exam_creation.refreshToken.infrastructure.repository;
 
 import com.fckedu.exam_creation.common.exception.InternalServerException;
-import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
 import com.fckedu.exam_creation.refreshToken.domain.repository.IRefreshTokenRepository;
 import com.fckedu.exam_creation.refreshToken.infrastructure.document.RefreshTokenDocument;
@@ -54,9 +53,6 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
 
         RefreshTokenDocument doc = mongoTemplate.findOne(query, RefreshTokenDocument.class);
 
-        if (doc == null) {
-            throw new NotFoundException("Không tìm thấy RT");
-        }
         return mapper.toEntity(doc);
     }
 
@@ -78,9 +74,6 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
             throw new InternalServerException("Dữ liệu không nhất quán, xóa dư!");
         }
 
-        if (result.getDeletedCount() == 0) {
-            throw new InternalServerException("Không tìm thấy Refresh Token để xóa");
-        }
         return true;
     }
 
