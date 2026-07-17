@@ -26,7 +26,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 public class UserControllerLogoutTest {
 
-    private static final String COOKIE_NAME = "refreshToken";
     private static final String VALID_AT = "mock-at";
     private static final String VALID_RT = "mock-rt";
     private static final String INVALID_RT = "abc.xyz.jqk";
@@ -51,7 +50,8 @@ public class UserControllerLogoutTest {
                 .thenReturn(true);
 
         mockMvc.perform(post("/user/logout")
-                        .cookie(new Cookie(COOKIE_NAME, VALID_RT))
+                        .cookie(new Cookie("accessToken", VALID_AT))
+                        .cookie(new Cookie("refreshToken", VALID_RT))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
@@ -68,7 +68,8 @@ public class UserControllerLogoutTest {
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
-                        .cookie(new Cookie(COOKIE_NAME, malformedRT))
+                        .cookie(new Cookie("accessToken", VALID_AT))
+                        .cookie(new Cookie("refreshToken", malformedRT))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
@@ -82,7 +83,8 @@ public class UserControllerLogoutTest {
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
-                        .cookie(new Cookie(COOKIE_NAME, INVALID_RT))
+                        .cookie(new Cookie("accessToken", VALID_AT))
+                        .cookie(new Cookie("refreshToken", INVALID_RT))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
@@ -99,7 +101,8 @@ public class UserControllerLogoutTest {
                 .thenThrow(new InternalServerException("Xóa Refresh Token thất bại do không tìm thấy hoặc xóa dư. Đang thực hiện Rollback!"));
 
         mockMvc.perform(post("/user/logout")
-                        .cookie(new Cookie(COOKIE_NAME, nonExistedRT))
+                        .cookie(new Cookie("accessToken", VALID_AT))
+                        .cookie(new Cookie("refreshToken", nonExistedRT))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
@@ -110,7 +113,8 @@ public class UserControllerLogoutTest {
     @DisplayName("Case 5: Gọi API logout sai HTTP Method (GET thay vì POST)")
     void wrongHttpMethod() throws Exception {
         mockMvc.perform(get("/user/logout")
-                        .cookie(new Cookie(COOKIE_NAME, VALID_RT)))
+                        .cookie(new Cookie("accessToken", VALID_AT))
+                        .cookie(new Cookie("refreshToken", VALID_RT)))
                 .andExpect(status().isMethodNotAllowed()); // Trả về 405 Method Not Allowed
 
         verifyNoInteractions(userUsecase);

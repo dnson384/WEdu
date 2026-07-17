@@ -61,7 +61,7 @@ public class UserServiceMeTest {
     void setUp() {
         userService = new UserService(repo, mapperDTO, refreshTokenService, securityService, s3Service);
 
-        mockAtPayload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_USER");
+        mockAtPayload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
         mockRtPayload = new RTPayload(JTI, USER_ID, EMAIL, "ROLE_TEACHER");
 
         mockUserEntity = new UserEntity();
