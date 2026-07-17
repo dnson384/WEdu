@@ -1,6 +1,8 @@
 package com.fckedu.exam_creation.security.infrastructure.filter;
 
 import com.fckedu.exam_creation.common.dto.token.ATPayload;
+import com.fckedu.exam_creation.common.exception.ForbiddenException;
+import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
 import com.fckedu.exam_creation.security.dto.CookieDataDTO;
 import com.fckedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
@@ -8,7 +10,6 @@ import com.fckedu.exam_creation.security.infrastructure.service.CustomUserDetail
 import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.UnavailableException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,8 +22,10 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @NullMarked
@@ -65,8 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException, java.io.IOException {
+            FilterChain filterChain
+    ) throws ServletException, IOException, java.io.IOException {
         try {
             CookieDataDTO jwt = getJwtFromRequest(request);
 
@@ -78,7 +81,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Validate token
             if (jwt.getAccessToken() != null && tokenProvider.validateAccessToken(jwt.getAccessToken())) {
-
                 // Giải mã lấy ATPayload record bạn đã tạo
                 ATPayload payload = tokenProvider.getPayloadFromAccessToken(jwt.getAccessToken());
 
@@ -86,7 +88,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(payload.getEmail());
 
                 if (!userDetails.isEnabled()) {
-                    throw new UnavailableException("Tài khoản đã bị khóa!");
+                    throw new ForbiddenException("Tài khoản đã bị khóa");
                 }
 
                 // Cấp quyền và nhét vào SecurityContext
@@ -96,6 +98,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (NotFoundException ex) {
+            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, ex.getMessage());
+            return;
+        } catch (UnAuthorizedException ex) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
+            return;
+        } catch (ForbiddenException ex) {
+            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, ex.getMessage());
+            return;
         } catch (Exception ex) {
             log.error("Không thể xác thực người dùng trong Security Context", ex);
         }
@@ -116,5 +127,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return res;
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException, java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(
+                new ObjectMapper().writeValueAsString(Map.of("message", message))
+        );
     }
 }
