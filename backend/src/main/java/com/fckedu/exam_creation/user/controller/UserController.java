@@ -1,6 +1,7 @@
 package com.fckedu.exam_creation.user.controller;
 
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
+import com.fckedu.exam_creation.common.exception.BadRequestException;
 import com.fckedu.exam_creation.user.dto.request.*;
 import com.fckedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
 import com.fckedu.exam_creation.user.dto.response.UserResponseDTO;
@@ -9,7 +10,6 @@ import com.fckedu.exam_creation.user.usecase.UserUsecase;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -98,11 +98,20 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @CookieValue(value = "refreshToken") String refreshToken
     ) {
+        if (authorization == null || authorization.trim().isEmpty()) {
+            throw new BadRequestException("Authorization rỗng");
+        }
+
         if (!authorization.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            throw new BadRequestException("Authorization sai định dạng Bearer");
         }
 
         String accessToken = authorization.substring(7);
+
+        if (accessToken.trim().isEmpty()) {
+            throw new BadRequestException("AT rỗng");
+        }
+
         return ResponseEntity.ok(userService.getMe(accessToken, refreshToken));
     }
 
