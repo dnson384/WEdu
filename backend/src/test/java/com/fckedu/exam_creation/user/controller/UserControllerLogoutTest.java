@@ -17,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,7 +44,7 @@ public class UserControllerLogoutTest {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
-    @DisplayName("Đăng xuất thành công - Đăng xuất thành công với RT hợp lệ")
+    @DisplayName("Case 1: Đăng xuất thành công với RT hợp lệ")
     void validRT() throws Exception {
         when(userUsecase.logout(VALID_RT))
                 .thenReturn(true);
@@ -58,7 +59,23 @@ public class UserControllerLogoutTest {
     }
 
     @Test
-    @DisplayName("Đăng xuất thất bại - RT không hợp lệ")
+    @DisplayName("Case 2: Đăng xuất với RT sai định dạng JWT")
+    void malformedRT() throws Exception {
+        String malformedRT = "chuoi-token-bay-ba";
+
+        when(userUsecase.logout(malformedRT))
+                .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
+
+        mockMvc.perform(post("/user/logout")
+                        .cookie(new Cookie(COOKIE_NAME, malformedRT))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+
+        verify(userUsecase, times(1)).logout(malformedRT);
+    }
+
+    @Test
+    @DisplayName("Case 3: RT không hợp lệ")
     void invalidRT() throws Exception {
         when(userUsecase.logout(INVALID_RT))
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
@@ -73,7 +90,7 @@ public class UserControllerLogoutTest {
 
 
     @Test
-    @DisplayName("Đăng xuất thất bại - RT không tồn tại")
+    @DisplayName("Case 4: RT không tồn tại")
     void nonExistedRT() throws Exception {
         String nonExistedRT = "non-existed-rt";
 
@@ -86,5 +103,25 @@ public class UserControllerLogoutTest {
                 .andExpect(status().isInternalServerError());
 
         verify(userUsecase, times(1)).logout(nonExistedRT);
+    }
+
+    @Test
+    @DisplayName("Case 5: Gọi API logout sai HTTP Method (GET thay vì POST)")
+    void wrongHttpMethod() throws Exception {
+        mockMvc.perform(get("/user/logout")
+                        .cookie(new Cookie(COOKIE_NAME, VALID_RT)))
+                .andExpect(status().isMethodNotAllowed()); // Trả về 405 Method Not Allowed
+
+        verifyNoInteractions(userUsecase);
+    }
+
+    @Test
+    @DisplayName("Case 6: Không truyền cookie refreshToken")
+    void missingCookie() throws Exception {
+        mockMvc.perform(post("/user/logout")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userUsecase);
     }
 }
