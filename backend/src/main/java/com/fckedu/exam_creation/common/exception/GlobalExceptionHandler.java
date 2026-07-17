@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +29,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, String>> handleMultipartException(MultipartException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Thiếu file đầu vào");
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<Map<String, String>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
         Map<String, String> error = new HashMap<>();
@@ -41,7 +50,7 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
 
         if (ex.getHeaderName().equals("Authorization")) {
-            error.put("message", "Thiếu header Authorization xác thực người dùng");
+            error.put("message", "Thiếu header Authorization");
         } else {
             error.put("message", "Thiếu header: " + ex.getHeaderName());
         }
