@@ -3,6 +3,7 @@ package com.fckedu.exam_creation.security.service;
 import com.fckedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.fckedu.exam_creation.common.dto.token.ATPayload;
 import com.fckedu.exam_creation.common.dto.token.RTPayload;
+import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
 import com.fckedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,11 +38,19 @@ public class SecurityService {
 
     // Parse Token
     public ATPayload getPayloadFromAccessToken(String token) {
-        return provider.getPayloadFromAccessToken(token);
+        try {
+            return provider.getPayloadFromAccessToken(token);
+        } catch (Exception ex) {
+            throw new UnAuthorizedException("Token không hợp lệ");
+        }
     }
 
     public RTPayload getPayloadFromRefreshToken(String token) {
-        return provider.getPayloadFromRefreshToken(token);
+        try {
+            return provider.getPayloadFromRefreshToken(token);
+        } catch (Exception ex) {
+            throw new UnAuthorizedException("Token không hợp lệ");
+        }
     }
 
     public NewRTRequestDTO parseNewRefreshToken(String token) {
