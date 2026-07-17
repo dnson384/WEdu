@@ -73,6 +73,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             CookieDataDTO jwt = getJwtFromRequest(request);
 
+            if (jwt.getAccessToken() == null && jwt.getRefreshToken() == null) {
+                throw new UnAuthorizedException("Không có AT và RT");
+            }
+
             if (jwt.getRefreshToken() == null || jwt.getRefreshToken().trim().isEmpty()) {
                 throw new UnAuthorizedException("Không có RT");
             } else {
