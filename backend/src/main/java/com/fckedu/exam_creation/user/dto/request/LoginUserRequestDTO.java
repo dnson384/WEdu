@@ -20,5 +20,7 @@ public class LoginUserRequestDTO {
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 8, max = 32, message = "Mật khẩu phải từ 8-32 ký tự")
+    @Pattern(regexp = "^\\S+$",
+            message = "Mật khẩu không được phép có khoảng trắng")
     private String plainPassword;
 }
