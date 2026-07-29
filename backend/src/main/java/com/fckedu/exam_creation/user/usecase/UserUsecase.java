@@ -10,7 +10,10 @@ import com.fckedu.exam_creation.security.service.SecurityService;
 import com.fckedu.exam_creation.storage.service.S3Service;
 import com.fckedu.exam_creation.user.domain.entity.UserEntity;
 import com.fckedu.exam_creation.user.dto.mapper.UserDTOMapper;
-import com.fckedu.exam_creation.user.dto.request.*;
+import com.fckedu.exam_creation.user.dto.request.ChangePasswordPayloadRequestDTO;
+import com.fckedu.exam_creation.user.dto.request.ChangePasswordRequestDTO;
+import com.fckedu.exam_creation.user.dto.request.LoginUserRequestDTO;
+import com.fckedu.exam_creation.user.dto.request.NewUserRequestDTO;
 import com.fckedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
 import com.fckedu.exam_creation.user.dto.response.UserResponseDTO;
 import com.fckedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
@@ -215,15 +218,31 @@ public class UserUsecase {
         return true;
     }
 
-    public boolean updateUser(String userId, UpdateUserRequestDTO payload) {
+    public boolean updateUser(String userId, String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new BadRequestException("Tên người dùng rỗng");
+        }
+
+        if (username.trim().length() > 254) {
+            throw new BadRequestException("Tên người dùng quá dài");
+        }
+
         UserEntity user = repo.findById(userId);
         if (user == null) {
             throw new NotFoundException("Không tìm thấy tài khoản");
         }
 
-        user.setUsername(payload.getUsername());
+        if (!user.getIsActive()) {
+            throw new ForbiddenException("Tài khoản đã bị khóa");
+        }
 
-        return repo.save(user) != null;
+        user.setUsername(username);
+        UserEntity updatedUser = repo.save(user);
+
+        if (updatedUser == null) {
+            throw new InternalServerException("Có lỗi trong quá trình cập nhật tài khoản");
+        }
+        return true;
     }
 
     @Transactional

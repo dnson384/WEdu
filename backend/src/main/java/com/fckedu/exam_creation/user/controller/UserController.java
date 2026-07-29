@@ -134,7 +134,7 @@ public class UserController {
         String accessToken = checkAuth(authorization);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
-        return ResponseEntity.ok(userUsecase.updateUser(user.getId(), payload));
+        return ResponseEntity.ok(userUsecase.updateUser(user.getId(), payload.getUsername()));
     }
 
     @PutMapping("/change-password")

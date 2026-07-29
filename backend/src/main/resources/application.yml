@@ -7,6 +7,10 @@ spring:
       max-file-size: "50MB"
       max-request-size: "65MB"
 
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
   mongodb:
     uri: "mongodb+srv://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@cluster0.96svcb8.mongodb.net/?appName=Cluster0"
     database: "test"
