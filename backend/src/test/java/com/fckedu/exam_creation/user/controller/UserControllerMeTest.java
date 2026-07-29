@@ -89,7 +89,7 @@ public class UserControllerMeTest {
                         .cookie(new Cookie("refreshToken", VALID_RT))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("message").value("Thiếu header Authorization xác thực người dùng"));
+                .andExpect(jsonPath("message").value("Thiếu header Authorization"));
 
         // Then
         verify(userService, never()).getMe(anyString(), anyString());
