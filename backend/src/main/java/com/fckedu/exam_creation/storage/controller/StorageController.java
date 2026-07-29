@@ -23,15 +23,7 @@ public class StorageController {
             @RequestParam("file") MultipartFile file,
             @RequestHeader("Authorization") String authorization
     ) {
-        if (authorization == null || authorization.trim().isEmpty()) {
-            throw new BadRequestException("Authorization rỗng");
-        }
-
-        if (!authorization.startsWith("Bearer ")) {
-            throw new BadRequestException("Authorization sai định dạng Bearer");
-        }
-
-        String accessToken = authorization.substring(7);
+        String accessToken = checkAuth(authorization);
 
         if (accessToken.trim().isEmpty()) {
             throw new BadRequestException("AT rỗng");
@@ -52,6 +44,18 @@ public class StorageController {
             @RequestHeader("Authorization") String authorization
 
     ) {
+        String accessToken = checkAuth(authorization);
+
+        try {
+            String s3Key = s3Service.uploadFile(file, "documents", accessToken);
+            return ResponseEntity.ok(s3Key);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Upload document thất bại: " + e.getMessage());
+        }
+    }
+
+    private String checkAuth(String authorization) {
         if (authorization == null || authorization.trim().isEmpty()) {
             throw new BadRequestException("Authorization rỗng");
         }
@@ -66,12 +70,6 @@ public class StorageController {
             throw new BadRequestException("AT rỗng");
         }
 
-        try {
-            String s3Key = s3Service.uploadFile(file, "documents", accessToken);
-            return ResponseEntity.ok(s3Key);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Upload document thất bại: " + e.getMessage());
-        }
+        return accessToken;
     }
 }
