@@ -3,6 +3,7 @@ package com.fckedu.exam_creation.user.usecase;
 import com.fckedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.fckedu.exam_creation.common.dto.token.ATPayload;
 import com.fckedu.exam_creation.common.dto.token.RTPayload;
+import com.fckedu.exam_creation.common.exception.ForbiddenException;
 import com.fckedu.exam_creation.common.exception.InternalServerException;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
@@ -178,7 +179,7 @@ public class UserUsecaseLoginTest {
             when(repo.findByEmail("anv@gmail.com")).thenReturn(Optional.of(lockedUser));
 
             assertThatThrownBy(() -> userUsecase.login(loginRequest))
-                    .isInstanceOf(UnAuthorizedException.class)
+                    .isInstanceOf(ForbiddenException.class)
                     .hasMessage("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
 
             verify(securityService, never()).validatePassword(anyString(), anyString());
