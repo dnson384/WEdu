@@ -110,6 +110,7 @@ public class UserControllerUpdateAvatarTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("message").value("Có lỗi trong quá trình cập nhật avatar"));
 
+        verify(userService, times(1)).getMe(anyString(), anyString());
         verify(userUsecase, times(1)).updateAvatar(anyString(), anyString());
     }
 
