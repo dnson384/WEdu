@@ -120,7 +120,7 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody UpdateAvatarRequestDTO payload) {
-        String accessToken = authorization.substring(7);
+        String accessToken = checkAuth(authorization);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(userUsecase.updateAvatar(user.getId(), payload.getS3Key()));
@@ -131,7 +131,7 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody UpdateUserRequestDTO payload) {
-        String accessToken = authorization.substring(7);
+        String accessToken = checkAuth(authorization);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(userUsecase.updateUser(user.getId(), payload));
@@ -143,7 +143,7 @@ public class UserController {
             @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody ChangePasswordRequestDTO reqPayload
     ) {
-        String accessToken = authorization.substring(7);
+        String accessToken = checkAuth(authorization);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(userUsecase.changePassword(user.getId(), reqPayload));
@@ -154,7 +154,7 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @CookieValue(value = "refreshToken") String refreshToken
     ) {
-        String accessToken = authorization.substring(7);
+        String accessToken = checkAuth(authorization);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(userUsecase.lockAccount(user.getId(), refreshToken));
@@ -168,5 +168,23 @@ public class UserController {
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
         return ResponseEntity.ok(userUsecase.deleteAccount(user.getId()));
+    }
+
+    private String checkAuth(String authorization) {
+        if (authorization == null || authorization.trim().isEmpty()) {
+            throw new BadRequestException("Authorization rỗng");
+        }
+
+        if (!authorization.startsWith("Bearer ")) {
+            throw new BadRequestException("Authorization sai định dạng Bearer");
+        }
+
+        String accessToken = authorization.substring(7);
+
+        if (accessToken.trim().isEmpty()) {
+            throw new BadRequestException("AT rỗng");
+        }
+
+        return accessToken;
     }
 }

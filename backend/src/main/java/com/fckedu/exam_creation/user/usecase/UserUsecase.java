@@ -4,10 +4,7 @@ import com.fckedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.fckedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
 import com.fckedu.exam_creation.common.dto.token.ATPayload;
 import com.fckedu.exam_creation.common.dto.token.RTPayload;
-import com.fckedu.exam_creation.common.exception.BadRequestException;
-import com.fckedu.exam_creation.common.exception.InternalServerException;
-import com.fckedu.exam_creation.common.exception.NotFoundException;
-import com.fckedu.exam_creation.common.exception.UnAuthorizedException;
+import com.fckedu.exam_creation.common.exception.*;
 import com.fckedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.fckedu.exam_creation.security.service.SecurityService;
 import com.fckedu.exam_creation.storage.service.S3Service;
@@ -113,7 +110,7 @@ public class UserUsecase {
         }
 
         if (!user.getIsActive()) {
-            throw new UnAuthorizedException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
+            throw new ForbiddenException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
         }
 
         // Validate password
@@ -189,6 +186,10 @@ public class UserUsecase {
         UserEntity user = repo.findById(userId);
         if (user == null) {
             throw new NotFoundException("Không tìm thấy tài khoản");
+        }
+
+        if (!user.getIsActive()) {
+            throw new ForbiddenException("Tài khoản đã bị khóa");
         }
 
         String oldAvatar = user.getAvatarUrl();

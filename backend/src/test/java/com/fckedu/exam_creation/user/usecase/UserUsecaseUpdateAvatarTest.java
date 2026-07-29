@@ -176,10 +176,13 @@ public class UserUsecaseUpdateAvatarTest {
     @Test
     @DisplayName("Update khi user đã bị khóa")
     void lockedUser() throws Exception {
+        UserEntity lockedUser = new UserEntity();
+        lockedUser.setId(USER_ID);
+        lockedUser.setAvatarUrl(OLD_S3KEY);
+        lockedUser.setIsActive(false);
+
         when(repo.findById(anyString()))
-                .thenReturn(mockOldUserEntity);
-        when(repo.save(any(UserEntity.class)))
-                .thenReturn(mockNewUserEntity);
+                .thenReturn(lockedUser);
 
         assertThatThrownBy(() -> userUsecase.updateAvatar(USER_ID, NEW_S3KEY))
                 .isInstanceOf(ForbiddenException.class)
