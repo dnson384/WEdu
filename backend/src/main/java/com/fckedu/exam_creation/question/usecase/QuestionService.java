@@ -1,5 +1,8 @@
 package com.fckedu.exam_creation.question.usecase;
 
+import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
+import com.fckedu.exam_creation.common.dto.category.response.LessonDataResponseDTO;
+import com.fckedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.fckedu.exam_creation.common.dto.question.NewQuestionDTO;
 import com.fckedu.exam_creation.common.dto.question.response.QuestionDTO;
@@ -33,7 +36,9 @@ public class QuestionService {
                 .toList();
     }
 
-    public List<ExamQuestionGeneratedDTO> generateExamQuestions(List<ExamMatrixDetailDTO> matrixDetails) {
+    public ExamGeneratedDTO generateExamQuestions(List<CategoryResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) {
+        List<String> errors = new ArrayList<>();
+
         // Tạo mảng lessonId không trùng id
         List<String> uniqueLessonIds = matrixDetails.stream()
                 .map(ExamMatrixDetailDTO::getLessonId)
@@ -41,7 +46,7 @@ public class QuestionService {
                 .toList();
 
         if (uniqueLessonIds.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
 
         // Lấy toàn bộ câu hỏi
@@ -51,6 +56,8 @@ public class QuestionService {
         List<QuestionEntity> availablePool = new ArrayList<>(allQuestionsInLessons);
 
         Map<String, ExamQuestionGeneratedDTO> groupedResult = new LinkedHashMap<>();
+
+        Map<String, Integer> missingCountByPair = new LinkedHashMap<>();
 
         for (ExamMatrixDetailDTO detail : matrixDetails) {
             if (detail.getLimit() <= 0) {
@@ -67,20 +74,51 @@ public class QuestionService {
                     )
                     .toList();
 
-            // Log thiếu câu hỏi
-            if (matchingQuestions.size() < detail.getLimit()) {
-                System.err.printf("[Thiếu câu hỏi] Yêu cầu %d nhưng chỉ có %d câu phù hợp cho %s",
-                        detail.getLimit(), matchingQuestions.size(), detail.getLearningOutcome());
+            List<QuestionEntity> shuffledMatches = new ArrayList<>(matchingQuestions);
+            Collections.shuffle(shuffledMatches);
+
+            // Lấy lượng câu hỏi cần thiết (nếu thiếu thì lấy tối đa số đang có)
+            int takeCount = Math.min(detail.getLimit(), shuffledMatches.size());
+            List<QuestionEntity> selectedQuestions = shuffledMatches.subList(0, takeCount);
+
+            // Tính toán và ghi nhận số lượng thiếu cho cặp này
+            CategoryResponseDTO curChapter = categories.stream()
+                    .filter(cate -> cate.getId().equals(detail.getChapterId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (curChapter == null) {
+                continue;
             }
 
-            // Trộn câu hỏi
-            Collections.shuffle(new ArrayList<>(matchingQuestions));
+            LessonDataResponseDTO curLesson = curChapter.getLessons().stream()
+                    .filter(l -> l.getId().equals(detail.getLessonId()))
+                    .findFirst()
+                    .orElse(null);
 
-            // Lấy lượng câu hỏi cần thiết
-            int takeCount = Math.min(detail.getLimit(), matchingQuestions.size());
-            List<QuestionEntity> selectedQuestions = matchingQuestions.subList(0, takeCount);
+            if (curLesson == null) {
+                continue;
+            }
+
+            int missingCount = detail.getLimit() - takeCount;
+            if (missingCount > 0) {
+                // Sử dụng định dạng có cấu trúc (hoặc format thành chuỗi JSON nếu muốn AI dễ đọc hơn)
+                String errorMsg = String.format(
+                        "Thiếu %d câu hỏi | Chương: %s | Bài: %s | Loại: %s | Mức độ: %s | YCCĐ: %s",
+                        missingCount,
+                        curChapter.getChapter(),
+                        curLesson.getName(),
+                        detail.getQuestionType(),
+                        detail.getDifficultyLevel(),
+                        detail.getLearningOutcome()
+                );
+                errors.add(errorMsg);
+            }
 
             if (!selectedQuestions.isEmpty()) {
+                // QUAN TRỌNG: Xóa các câu đã chọn khỏi pool để không bị bốc trùng ở vòng lặp sau
+                availablePool.removeAll(selectedQuestions);
+
                 List<String> selectedIds = selectedQuestions.stream()
                         .map(QuestionEntity::getId)
                         .toList();
@@ -88,15 +126,17 @@ public class QuestionService {
                 String groupKey = detail.getQuestionType() + "_" + detail.getDifficultyLevel();
 
                 // Gom nhóm
-                ExamQuestionGeneratedDTO group = groupedResult.
-                        computeIfAbsent(groupKey, k -> new ExamQuestionGeneratedDTO(
-                                detail.getQuestionType(),
-                                detail.getDifficultyLevel(),
-                                new ArrayList<>()));
+                ExamQuestionGeneratedDTO group = groupedResult.computeIfAbsent(groupKey, k -> new ExamQuestionGeneratedDTO(
+                        detail.getQuestionType(),
+                        detail.getDifficultyLevel(),
+                        new ArrayList<>()
+                ));
 
                 group.getQuestionIds().addAll(selectedIds);
             }
+
         }
-        return new ArrayList<>(groupedResult.values());
+
+        return new ExamGeneratedDTO(new ArrayList<>(groupedResult.values()), errors);
     }
 }
