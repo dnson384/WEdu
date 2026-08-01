@@ -1,3 +1,4 @@
+import { ExamGeneratedResponseEntity } from "@/domain/entities/exam.entity";
 import { IExamsRepository } from "@/domain/repositories/IExamRepository";
 
 export class GenerateExamUsecase {
@@ -7,7 +8,7 @@ export class GenerateExamUsecase {
     draftId: string,
     accessToken: string,
     refreshToken: string,
-  ): Promise<boolean> {
+  ): Promise<ExamGeneratedResponseEntity> {
     return await this.repo.generateExam(draftId, accessToken, refreshToken);
   }
 }

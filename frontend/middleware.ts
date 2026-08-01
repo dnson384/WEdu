@@ -64,8 +64,8 @@ export async function middleware(request: NextRequest) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Cookie: `refreshToken=${refreshToken}`,
           },
-          body: JSON.stringify({ refreshToken: refreshToken }),
           cache: "no-store",
         },
       );

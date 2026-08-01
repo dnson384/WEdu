@@ -16,10 +16,11 @@ import { useEffect, useState } from "react";
 export default function useDraft() {
   const router = useRouter();
   const pathname = usePathname();
-  const draftId = pathname.split("/")[pathname.split("/").length - 1];
+  const draftId = pathname.split("/")[pathname.split("/").length - 2];
 
   const initalDraftEntity: DraftEntity = {
     id: "",
+    examName: "",
     questionsCount: 0,
     questionTypes: [],
     chapters: [],
@@ -125,14 +126,18 @@ export default function useDraft() {
     });
 
     if (payload.add.length === 0 && payload.del.length === 0) {
-      router.push(`${pathname}/${selectedChaptersId[0]}`);
+      router.push(`${pathname.slice(0, -7)}/${selectedChaptersId[0]}`);
     }
 
     const response = await UpdateChapters(payload);
 
     if (response) {
-      router.push(`${pathname}/${selectedChaptersId[0]}`);
+      router.push(`/${pathname.slice(0, -7)}/${selectedChaptersId[0]}`);
     }
+  };
+
+  const handleBackClick = () => {
+    router.push(`/${pathname.split("/")[1]}/${pathname.split("/")[2]}`);
   };
 
   useEffect(() => {
@@ -159,6 +164,7 @@ export default function useDraft() {
     setSelectedChapters,
     handleChapterSelect,
     handleAddChapter,
+    handleBackClick,
     handleContinueClick,
   };
 }

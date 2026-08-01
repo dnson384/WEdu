@@ -43,7 +43,7 @@ export default function NavBar({ avatarUrl, username }: Data) {
   ];
 
   return (
-    <nav className="fixed z-20 bg-white top-0 left-0 h-screen hidden lg:block lg:w-60 shadow-md px-3 py-6">
+    <nav className="fixed z-100 bg-white top-0 left-0 h-screen hidden lg:block lg:w-60 shadow-md px-3 py-6">
       <div className="h-full flex flex-col justify-between">
         <section id="content">
           <div className="px-3 mb-10">
@@ -72,7 +72,7 @@ export default function NavBar({ avatarUrl, username }: Data) {
         <section
           id="user"
           ref={userSectionRef}
-          className="border-t border-gray-200 pt-6 relative select-none"
+          className="relative select-none"
         >
           {isUserMenuOpen && (
             <div className="absolute bottom-full left-0 mb-3 w-full bg-white rounded-lg shadow-xl border border-gray-100 py-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">

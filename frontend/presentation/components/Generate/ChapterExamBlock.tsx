@@ -60,17 +60,6 @@ export default function ChapterExamBlock({
         onOpen={() => setIsOpen(true)}
         onClose={() => setIsOpen(false)}
       />
-
-      <div className="flex justify-center mt-5">
-        {index === selectedChapters.length - 1 && chaptersData.length !== 0 && (
-          <button
-            className="w-50 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium cursor-pointer hover:bg-blue-600  hover:text-white transition-all"
-            onClick={handleAddChapter}
-          >
-            Thêm chương / chủ đề
-          </button>
-        )}
-      </div>
     </div>
   );
 }

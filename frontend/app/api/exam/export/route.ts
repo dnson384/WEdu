@@ -38,16 +38,22 @@ export async function POST(req: NextRequest) {
       refreshToken!,
     );
 
-    return new NextResponse(new Uint8Array(response), {
+    const uint8Array = new Uint8Array(response as unknown as ArrayBuffer);
+
+    const encodedFileName = encodeURIComponent(`${examName}.docx`);
+
+    return new NextResponse(uint8Array, {
       status: 200,
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${examName}.docx"`,
+        "Content-Disposition": `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`,
       },
     });
-  } catch (error: any) {
-    console.error("Lỗi tại Next.js BFF:", error.message);
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Lỗi không xác định";
+    console.error("Lỗi tại Next.js BFF:", errorMessage);
     return NextResponse.json(
       { error: "Lỗi khi xuất file từ Backend" },
       { status: 500 },

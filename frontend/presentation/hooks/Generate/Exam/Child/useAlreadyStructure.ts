@@ -1,10 +1,37 @@
+import { DraftEntity } from "@/domain/entities/draft.entity";
 import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
-import { CreateDraftService } from "@/presentation/services/draft.service";
+import {
+  CreateDraftService,
+  GetDraft,
+} from "@/presentation/services/draft.service";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useState } from "react";
 
-export default function useStructure() {
+export default function useAlreadyStructure() {
   const router = useRouter();
+  const pathname = usePathname();
+  const draftId = pathname.split("/")[pathname.split("/").length - 1];
+
+  const initialDraftEntity: DraftEntity = {
+    id: "",
+    examName: "",
+    questionsCount: 0,
+    questionTypes: [],
+    chapters: [],
+  };
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["draft", draftId],
+    queryFn: () => GetDraft(draftId),
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    enabled: !!draftId,
+  });
+
+  const draft = data ?? initialDraftEntity;
 
   const [examName, setExamName] = useState<string>("");
   const [questionsCount, setQuestionsCount] = useState<number>(0);
@@ -13,6 +40,13 @@ export default function useStructure() {
     "Đúng sai": true,
     "Trả lời ngắn": true,
   });
+
+  useEffect(() => {
+    if (draft) {
+      setExamName(draft.examName);
+      setQuestionsCount(draft.questionsCount);
+    }
+  }, [draft]);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -51,16 +85,8 @@ export default function useStructure() {
       return;
     }
 
-    const payload: CreateDraftPayload = {
-      examName: examName,
-      questionsCount: questionsCount,
-      questionTypes: questionTypesArr,
-    };
-
-    const draftId = await CreateDraftService(payload);
-
     if (draftId) {
-      router.push(`/generate/${draftId}`);
+      router.push(`${pathname}/chapter`);
     }
   };
 
@@ -75,6 +101,7 @@ export default function useStructure() {
   }, [error]);
 
   return {
+    isLoading,
     examName,
     questionsCount,
     questionTypes,

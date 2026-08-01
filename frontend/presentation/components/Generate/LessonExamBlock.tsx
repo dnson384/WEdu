@@ -4,8 +4,6 @@ import ExamLessonSelect from "./ExamLessonSelect";
 
 interface LessonBlockData {
   currentLesson: { id: string; name: string };
-  lessonsCount: number;
-  selectedLessons: { id: string; name: string }[];
   index: number;
   lessonsData: LessonData[];
   setSelectedLessons: Dispatch<SetStateAction<{ id: string; name: string }[]>>;
@@ -15,18 +13,14 @@ interface LessonBlockData {
     name: string,
     index: number,
   ): void;
-  handleAddLesson(): void;
 }
 
 export default function LessonExamBlock({
   currentLesson,
-  lessonsCount,
-  selectedLessons,
   index,
   lessonsData,
   setSelectedLessons,
   handleLessonSelect,
-  handleAddLesson,
 }: LessonBlockData) {
   const [search, setSearch] = useState<string>(currentLesson.name);
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -61,17 +55,7 @@ export default function LessonExamBlock({
         onClose={() => setIsOpen(false)}
       />
 
-      <div className="flex justify-center mt-5">
-        {index === selectedLessons.length - 1 &&
-          selectedLessons.length !== lessonsCount && (
-            <button
-              className="px-4 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium cursor-pointer hover:bg-blue-600  hover:text-white transition-all"
-              onClick={handleAddLesson}
-            >
-              Thêm nội dung / đơn vị kiến thức
-            </button>
-          )}
-      </div>
+      
     </div>
   );
 }

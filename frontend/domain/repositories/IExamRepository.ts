@@ -2,6 +2,7 @@ import {
   ExportEntity,
   ExamDetailReponseEntity,
   ExamResponseEntity,
+  ExamGeneratedResponseEntity,
 } from "../entities/exam.entity";
 
 export interface IExamsRepository {
@@ -9,7 +10,7 @@ export interface IExamsRepository {
     draftId: string,
     accessToken: string,
     refreshToken: string,
-  ): Promise<boolean>;
+  ): Promise<ExamGeneratedResponseEntity>;
   getExamById(
     examId: string,
     accessToken: string,
