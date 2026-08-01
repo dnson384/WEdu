@@ -2,11 +2,9 @@ package com.fckedu.exam_creation.draft.usecase;
 
 import com.fckedu.exam_creation.category.usecase.CategoryService;
 import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
-import com.fckedu.exam_creation.common.dto.category.response.LessonDataResponseDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
-import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.draft.domain.entity.DraftEntity;
 import com.fckedu.exam_creation.draft.domain.entity.MatrixItemEntity;
 import com.fckedu.exam_creation.draft.domain.payload.*;
@@ -20,10 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class DraftUsecase {
@@ -98,38 +93,8 @@ public class DraftUsecase {
             return true;
         }
 
-        List<String> chapterIds = draft.getChapters().stream()
-                .map(ChapterDraftDTO::getId).toList();
-        List<CategoryResponseDTO> categories = categoryService.getByIds(chapterIds);
-        Map<String, CategoryResponseDTO> cateMap = categories.stream()
-                .collect(Collectors.toMap(CategoryResponseDTO::getId, category -> category));
-
-        Map<String, List<LessonDataResponseDTO>> lessonsData = new HashMap<>();
-
-        for (ChapterDraftDTO chapter : draft.getChapters()) {
-            List<String> lessonIds = chapter.getLessons().stream()
-                    .map(LessonDraftDTO::getId)
-                    .toList();
-            CategoryResponseDTO curChapter = cateMap.get(chapter.getId());
-
-            if (curChapter == null) {
-                throw new NotFoundException("Chương không tồn tại");
-            }
-
-            List<LessonDataResponseDTO> curLessons = curChapter.getLessons().stream()
-                    .filter(lesson -> lessonIds.contains(lesson.getId()))
-                    .toList();
-
-            lessonsData.put(chapter.getId(), curLessons);
-        }
-
-        if (lessonsData.isEmpty()) {
-            throw new NotFoundException("Nội dung không tồn tại");
-        }
-
         List<ChapterDraftDTO> newDraftChapters = new ArrayList<>(draft.getChapters());
         util.generateMatrix(
-                lessonsData,
                 newDraftChapters,
                 draft.getQuestionTypes(),
                 draft.getQuestionsCount()

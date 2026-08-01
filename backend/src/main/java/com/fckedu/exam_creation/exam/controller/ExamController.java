@@ -4,6 +4,7 @@ import com.fckedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.fckedu.exam_creation.exam.dto.request.GenerateExamPayload;
 import com.fckedu.exam_creation.exam.dto.response.ExamDTO;
+import com.fckedu.exam_creation.exam.dto.response.ExamGeneratedResponseDTO;
 import com.fckedu.exam_creation.exam.usecase.ExamService;
 import com.fckedu.exam_creation.exam.usecase.ExamUsecase;
 import com.fckedu.exam_creation.user.usecase.UserService;
@@ -26,9 +27,9 @@ public class ExamController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<String> generateExam(
+    public ResponseEntity<ExamGeneratedResponseDTO> generateExam(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "RefreshToken") String refreshToken,
+            @CookieValue(value = "refreshToken") String refreshToken,
             @RequestBody GenerateExamPayload payload) {
         String accessToken = authorization.substring(7);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
@@ -44,7 +45,7 @@ public class ExamController {
     @GetMapping("/all")
     public ResponseEntity<List<ExamDTO>> getAllExams(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "RefreshToken") String refreshToken
+            @CookieValue(value = "refreshToken") String refreshToken
     ) {
         String accessToken = authorization.substring(7);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
@@ -55,7 +56,7 @@ public class ExamController {
     @GetMapping("/recent")
     public ResponseEntity<List<ExamDTO>> getRecentExam(
             @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "RefreshToken") String refreshToken
+            @CookieValue(value = "refreshToken") String refreshToken
     ) {
         String accessToken = authorization.substring(7);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
