@@ -38,11 +38,11 @@ export default function ExamLessonSelect({
   }, [onClose]);
 
   return (
-    <div className="flex items-center justify-center gap-4">
-      <div className="relative" ref={dropdownRef}>
+    <div className="w-full flex items-center justify-center gap-4">
+      <div className="relative w-full" ref={dropdownRef}>
         <input
           type="text"
-          className="w-xl px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
           placeholder="Tên nội dung / đơn vị kiến thức"
           value={searchLesson}
           onChange={(e) => onSearchChange(e.target.value)}

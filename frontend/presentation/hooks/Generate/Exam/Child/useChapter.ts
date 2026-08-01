@@ -25,6 +25,7 @@ export default function useChapter() {
 
   const initalDraftEntity: DraftEntity = {
     id: "",
+    examName: "",
     questionsCount: 0,
     questionTypes: [],
     chapters: [],
@@ -113,6 +114,10 @@ export default function useChapter() {
 
   const handleAddLesson = () => {
     setSelectedLessons((prev) => [...prev, newSelectedLesson()]);
+  };
+
+  const handleBackClick = () => {
+    router.push(`${pathname.replace(chapterId, "chapter")}`)
   };
 
   const handleContinueClick = async () => {
@@ -212,6 +217,7 @@ export default function useChapter() {
     setSelectedLessons,
     handleLessonSelect,
     handleAddLesson,
+    handleBackClick,
     handleContinueClick,
   };
 }

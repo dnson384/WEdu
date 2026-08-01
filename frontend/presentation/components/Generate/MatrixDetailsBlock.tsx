@@ -11,13 +11,13 @@ export default function MatrixDetailsBlock({
 }: Props) {
   return (
     <div>
-      <h3 className="text-2xl font-semibold text-blue-600">{level}</h3>
+      <h3 className="text-xl font-bold">{level}</h3>
 
-      <div className="mt-4">
+      <div>
         {Object.entries(levelData).map(([outcome, questionType]) => {
           return (
             <div key={outcome} className="mt-3">
-              <h2 className="text-lg font-semibold text-blue-600">{outcome}</h2>
+              <h2 className="text-lg">{outcome}</h2>
 
               <div
                 className="grid space-x-5"
@@ -29,8 +29,8 @@ export default function MatrixDetailsBlock({
                   return (
                     <div key={type} className="mt-2 flex flex-col">
                       <label
+                      className="italic text-black/75"
                         htmlFor={`${lessonId}-${level}-${outcome}-${type}`}
-                        className="text-blue-500 font-semibold"
                       >
                         {type}
                       </label>

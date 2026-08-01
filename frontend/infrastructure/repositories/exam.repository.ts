@@ -1,5 +1,6 @@
 import {
   ExamDetailReponseEntity,
+  ExamGeneratedResponseEntity,
   ExamResponseEntity,
   ExportEntity,
 } from "@/domain/entities/exam.entity";
@@ -20,7 +21,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
     draftId: string,
     accessToken: string,
     refreshToken: string,
-  ): Promise<boolean> {
+  ): Promise<ExamGeneratedResponseEntity> {
     const cookieHeaderParts: string[] = [];
 
     cookieHeaderParts.push(`accessToken=${accessToken}`);
@@ -28,7 +29,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
 
     const customCookieHeader = cookieHeaderParts.join("; ");
 
-    const { data } = await axios.post<boolean>(
+    const { data } = await axios.post<ExamGeneratedResponseEntity>(
       `${this.baseUrl}/exam/generate`,
       { draftId },
       {

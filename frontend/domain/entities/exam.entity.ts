@@ -40,3 +40,8 @@ export interface ExportEntity {
   examId: string;
   examName: string;
 }
+
+export interface ExamGeneratedResponseEntity {
+  examId: string;
+  errors: string[];
+}

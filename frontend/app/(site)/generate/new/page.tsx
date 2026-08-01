@@ -51,89 +51,86 @@ export default function GenerateExam() {
           <div className="loader"></div>
         </div>
       ) : (
-        <>
+        <div className="bg-blue-50/50 h-screen pt-20">
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          
-          <main className="mt-32 w-6xl mx-auto px-4">
-            <h1 className="text-4xl font-bold text-center">
-              Cấu trúc đề kiểm tra
-            </h1>
 
-            <section className="mt-10 flex flex-col items-center">
-              {/* Tên bài kiểm tra */}
-              <label
-                htmlFor="questions_name"
-                className="flex items-center gap-4"
-              >
-                <p className="w-40 text-lg font-semibold text-blue-600">
-                  Tên bài kiểm tra
-                </p>
-                <input
-                  type="text"
-                  id="questions_name"
-                  placeholder="Nhập tên bài kiểm tra"
-                  className="w-xl px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={examName.trim().length > 0 ? examName : ""}
-                  onChange={handleExamNameChange}
-                />
-              </label>
+          <main className="ml-60">
+            <section className="bg-white rounded-2xl shadow-lg w-4xl mx-auto py-10 px-15">
+              <h1 className="text-4xl font-bold">Cấu trúc đề kiểm tra</h1>
 
-              {/* Số lượng câu hỏi */}
-              <label
-                htmlFor="questions_count"
-                className="mt-4 flex items-center gap-4"
-              >
-                <p className="w-40 text-lg font-semibold text-blue-600">
-                  Số lượng câu hỏi
-                </p>
-                <input
-                  type="text"
-                  pattern="[0-9]*"
-                  id="questions_count"
-                  placeholder="Nhập số lượng câu hỏi"
-                  className="w-xl px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={questionsCount ? questionsCount : ""}
-                  onChange={handleQuestionsCountChange}
-                />
-              </label>
+              <article className="mt-10 flex flex-col items-center">
+                {/* Tên bài kiểm tra */}
+                <label htmlFor="questions_name" className="w-full">
+                  <p className="font-semibold text-black/60 mb-1">
+                    TÊN BÀI KIỂM TRA
+                  </p>
+                  <input
+                    type="text"
+                    id="questions_name"
+                    placeholder="Nhập tên bài kiểm tra"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={examName.trim().length > 0 ? examName : ""}
+                    onChange={handleExamNameChange}
+                  />
+                </label>
 
-              {/* Loại câu hỏi */}
-              <div className="mt-4 flex gap-4">
-                <p className="w-40 text-lg font-semibold text-blue-600">
-                  Loại câu hỏi
-                </p>
-                <div className="w-xl">
-                  {Object.entries(questionTypes).map(([type, checked]) => (
-                    <div key={type} className="w-full flex gap-2">
-                      <input
-                        type="checkbox"
-                        id={type}
-                        checked={checked}
-                        className="accent-blue-600"
-                        onChange={handleQuestionTypesChange}
-                      />
-                      <label className="w-full" htmlFor={type}>
-                        {type}
-                      </label>
+                <div className="w-full grid grid-cols-2 gap-x-5 mt-4">
+                  {/* Số lượng câu hỏi */}
+                  <label htmlFor="questions_count" className="w-full">
+                    <p className="font-semibold text-black/60 mb-1">
+                      SỐ LƯỢNG CÂU HỎI
+                    </p>
+                    <input
+                      type="text"
+                      pattern="[0-9]*"
+                      id="questions_count"
+                      placeholder="0"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      value={questionsCount ? questionsCount : ""}
+                      onChange={handleQuestionsCountChange}
+                    />
+                  </label>
+
+                  {/* Loại câu hỏi */}
+                  <div className="">
+                    <p className="font-semibold text-black/60 mb-1">
+                      LOẠI CÂU HỎI
+                    </p>
+                    <div className="w-xl">
+                      {Object.entries(questionTypes).map(([type, checked]) => (
+                        <div
+                          key={type}
+                          className="w-full flex items-center gap-2"
+                        >
+                          <input
+                            type="checkbox"
+                            id={type}
+                            checked={checked}
+                            className="accent-blue-600 w-4 h-4"
+                            onChange={handleQuestionTypesChange}
+                          />
+                          <label className="w-full" htmlFor={type}>
+                            {type}
+                          </label>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </article>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
-              <div className="max-w-6xl mx-auto flex justify-end">
+              <div className="mt-10 flex justify-end">
                 <button
                   type="button"
                   onClick={handleContinueClick}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-semibold shadow-md transition-colors cursor-pointer"
                 >
                   Tiếp tục
                 </button>
               </div>
-            </div>
+            </section>
           </main>
-        </>
+        </div>
       )}
     </>
   );

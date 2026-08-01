@@ -18,7 +18,7 @@ export default function MatrixBlock({
 }: Props) {
   return (
     <div>
-      <h3 className="text-xl font-semibold text-blue-600">{questionType}</h3>
+      <h3 className="text-lg font-semibold ">{questionType}</h3>
 
       <div
         className="grid space-x-5"
@@ -31,7 +31,7 @@ export default function MatrixBlock({
             <div key={level} className="mt-2 flex flex-col">
               <label
                 htmlFor={`${lessonId}-${questionType}-${level}`}
-                className="text-blue-500 font-semibold"
+                className=""
               >
                 {level}
               </label>

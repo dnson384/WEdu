@@ -19,6 +19,7 @@ export default function useMatrixDetails() {
 
   const DraftInitial = (): DraftEntity => ({
     id: "",
+    examName: "",
     questionsCount: 0,
     questionTypes: [],
     chapters: [],
@@ -71,7 +72,12 @@ export default function useMatrixDetails() {
     try {
       const response = await GenerateExamService(draftId);
       if (response) {
-        router.replace(`/exam/${response}`);
+        if (response.errors.length > 0) {
+          const params = `errors=${response.errors.join("_||_")}`;
+          router.replace(`/exam/${response.examId}?${params}`);
+        } else {
+          router.replace(`/exam/${response.examId}`);
+        }
       }
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {

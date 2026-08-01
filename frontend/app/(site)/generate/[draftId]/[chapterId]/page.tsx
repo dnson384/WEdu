@@ -8,14 +8,13 @@ import useChapter from "@/presentation/hooks/Generate/Exam/Child/useChapter";
 export default function GenerateExam() {
   const {
     currentChapter,
-    draft,
     isLoading,
-    isError,
     errorMessage,
     selectedLessons,
     setSelectedLessons,
     handleLessonSelect,
     handleAddLesson,
+    handleBackClick,
     handleContinueClick,
   } = useChapter();
   const { user, isLoadingUser } = useAuth();
@@ -46,9 +45,7 @@ export default function GenerateExam() {
   };
 
   return (
-    <>
-      <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-
+    <div className="bg-blue-50/50 h-screen pt-20">
       {/* Thông báo lỗi */}
       {errorMessage && (
         <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center">
@@ -64,52 +61,66 @@ export default function GenerateExam() {
           <div className="loader"></div>
         </div>
       ) : (
-        <>
-          {isLoading ? (
-            <div className="mt-32 h-screen mx-auto px-4 flex justify-center items-center">
-              <div className="loader"></div>
-            </div>
-          ) : (
-            <main className="mt-32 w-6xl mx-auto px-4">
-              <h1 className="text-4xl font-bold text-center">
+        <div className="bg-blue-50/50 h-screen pt-20">
+          <NavBar avatarUrl={user.avatarUrl} username={user.username} />
+          <main className="ml-60">
+            <section className="bg-white rounded-2xl shadow-lg w-4xl mx-auto py-10 px-15">
+              <h1 className="text-4xl font-bold">
                 Nội dung / Đơn vị kiến thức
               </h1>
-              <h2 className="mt-5 text-3xl font-bold text-center text-blue-600">
+              <h2 className="mt-10 text-3xl font-bold text-blue-600">
                 {currentChapter?.chapter}
               </h2>
-              <section className="mt-10">
-                {selectedLessons.map((currentLesson, index) => {
-                  return (
-                    <LessonExamBlock
-                      key={index}
-                      currentLesson={currentLesson}
-                      lessonsCount={lessons.length}
-                      selectedLessons={selectedLessons}
-                      index={index}
-                      lessonsData={lessonsData}
-                      setSelectedLessons={setSelectedLessons}
-                      handleLessonSelect={handleLessonSelect}
-                      handleAddLesson={handleAddLesson}
-                    />
-                  );
-                })}
 
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
-                  <div className="max-w-6xl mx-auto flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleContinueClick}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
-                    >
-                      Tiếp tục
-                    </button>
-                  </div>
+              <article className="mt-5">
+                <div className="flex flex-col gap-3">
+                  {selectedLessons.map((currentLesson, index) => {
+                    return (
+                      <LessonExamBlock
+                        key={index}
+                        currentLesson={currentLesson}
+                        index={index}
+                        lessonsData={lessonsData}
+                        setSelectedLessons={setSelectedLessons}
+                        handleLessonSelect={handleLessonSelect}
+                      />
+                    );
+                  })}
                 </div>
-              </section>
-            </main>
-          )}
-        </>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleBackClick}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
+                  >
+                    Quay lại
+                  </button>
+
+                  <div className="flex justify-center">
+                    {selectedLessons.length < lessons.length && (
+                      <button
+                        className="px-4 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium cursor-pointer hover:bg-blue-600  hover:text-white transition-all"
+                        onClick={handleAddLesson}
+                      >
+                        Thêm nội dung / đơn vị kiến thức
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleContinueClick}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
+                  >
+                    Tiếp tục
+                  </button>
+                </div>
+              </article>
+            </section>
+          </main>
+        </div>
       )}
-    </>
+    </div>
   );
 }

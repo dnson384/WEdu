@@ -6,14 +6,30 @@ import {
   exportWordFileService,
   GetExamService,
 } from "@/presentation/services/exam.service";
-import { TransformedExamUI } from "@/presentation/utils/transformExamResToUI";
 import { useQuery } from "@tanstack/react-query";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function useExam() {
   const pathname = usePathname();
   const pathnameSplitted = pathname.split("/");
   const examId = pathnameSplitted[pathnameSplitted.length - 1];
+
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get("errors");
+  const [errorsList, setErrorsList] = useState<string[]>(() =>
+    errorParam ? errorParam.split("_||_") : [],
+  );
+
+  useEffect(() => {
+    if (errorsList.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setErrorsList([]);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const initialResponse = (): ExamDetailReponseEntity => ({
     id: "",
@@ -39,7 +55,10 @@ export default function useExam() {
     };
 
     try {
-      const blob = await exportWordFileService(payload);
+      const rawData = await exportWordFileService(payload);
+      const blob = new Blob([new Uint8Array(rawData)], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -53,5 +72,5 @@ export default function useExam() {
       console.error("Lỗi khi tải file UI:", err);
     }
   };
-  return { details, isLoading, handleExportDocx };
+  return { details, isLoading, errorsList, handleExportDocx };
 }

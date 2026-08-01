@@ -21,20 +21,21 @@ export default function MatrixDetails() {
 
   return (
     <>
-      <NavBar avatarUrl={user.avatarUrl} />
       {isLoadingUser ? (
         <div className="mt-32 h-screen mx-auto px-4 flex justify-center items-center">
           <div className="loader"></div>
         </div>
       ) : (
-        <>
+        <div className="pt-20 flex justify-center">
+          <NavBar avatarUrl={user.avatarUrl} username={user.username} />
+
           {isLoading ? (
             <div className="mt-32 h-screen mx-auto px-4 flex justify-center items-center">
               <div className="loader"></div>
             </div>
           ) : (
-            <main className="mt-32 w-6xl mx-auto px-4">
-              <h1 className="text-4xl font-bold text-center text-blue-600">
+            <main className="ml-60 w-6xl">
+              <h1 className="text-4xl font-bold text-center text-blue-500">
                 Đặc tả ma trận
               </h1>
 
@@ -70,7 +71,7 @@ export default function MatrixDetails() {
                     <article key={lesson.id} className="mt-10">
                       {lesson.matrixDetails.length > 0 && (
                         <>
-                          <h2 className="text-3xl text-center font-semibold text-blue-600">
+                          <h2 className="text-2xl font-semibold text-center text-blue-500">
                             {lesson.name}
                           </h2>
 
@@ -101,7 +102,7 @@ export default function MatrixDetails() {
               />
             </main>
           )}
-        </>
+        </div>
       )}
     </>
   );
