@@ -14,7 +14,7 @@ import { AxiosError } from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function useChapter() {
+export default function useSelectLessonPage() {
   const router = useRouter();
 
   const pathname = usePathname();

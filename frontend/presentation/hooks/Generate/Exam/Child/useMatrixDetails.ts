@@ -25,17 +25,16 @@ export default function useMatrixDetails() {
     chapters: [],
   });
 
-  const { data, isError, error, isLoading } = useQuery<
-    DraftEntity,
-    AxiosError<any>
-  >({
-    queryKey: ["draft-details", draftId],
-    queryFn: () => GetDraft(draftId),
-    staleTime: 1000 * 60 * 5,
-    retry: false,
-    refetchOnWindowFocus: false,
-    enabled: !!draftId,
-  });
+  const { data, error, isLoading } = useQuery<DraftEntity, AxiosError<unknown>>(
+    {
+      queryKey: ["draft-details", draftId],
+      queryFn: () => GetDraft(draftId),
+      staleTime: 1000 * 60 * 5,
+      retry: false,
+      refetchOnWindowFocus: false,
+      enabled: !!draftId,
+    },
+  );
 
   const draft = data ?? DraftInitial();
 
@@ -68,7 +67,17 @@ export default function useMatrixDetails() {
     }
   };
 
+  // Handle BTN
+  const handleBackClick = () => {
+    const url = pathname.replace("/details", "");
+    router.push(url);
+  };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleContinueClick = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const response = await GenerateExamService(draftId);
       if (response) {
@@ -82,6 +91,8 @@ export default function useMatrixDetails() {
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,6 +108,7 @@ export default function useMatrixDetails() {
     curChapter,
     isLoading,
     handleChangeChapter,
+    handleBackClick,
     handleContinueClick,
   };
 }

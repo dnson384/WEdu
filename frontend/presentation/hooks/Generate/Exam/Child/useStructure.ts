@@ -1,6 +1,6 @@
 import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
 import { CreateDraftService } from "@/presentation/services/draft.service";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useState } from "react";
 
 export default function useStructure() {
@@ -60,7 +60,7 @@ export default function useStructure() {
     const draftId = await CreateDraftService(payload);
 
     if (draftId) {
-      router.push(`/generate/${draftId}`);
+      router.push(`/generate/${draftId}/chapter`);
     }
   };
 
