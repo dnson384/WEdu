@@ -1,5 +1,7 @@
 "use client";
 
+import Error from "@/presentation/components/layout/Error";
+import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useAlreadyStructure from "@/presentation/hooks/Generate/Exam/Child/useAlreadyStructure";
@@ -10,49 +12,29 @@ export default function GenerateExam() {
     examName,
     questionsCount,
     questionTypes,
-    error,
+    errorMessage,
     handleExamNameChange,
     handleQuestionsCountChange,
     handleQuestionTypesChange,
+    handleDeleteClick,
     handleContinueClick,
   } = useAlreadyStructure();
 
   const { user, isLoadingUser } = useAuth();
 
-  const icons = {
-    error: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-      >
-        <path
-          fill="#fb2c36"
-          d="M12 4c-4.419 0-8 3.582-8 8s3.581 8 8 8s8-3.582 8-8s-3.581-8-8-8m3.707 10.293a.999.999 0 1 1-1.414 1.414L12 13.414l-2.293 2.293a.997.997 0 0 1-1.414 0a1 1 0 0 1 0-1.414L10.586 12L8.293 9.707a.999.999 0 1 1 1.414-1.414L12 10.586l2.293-2.293a.999.999 0 1 1 1.414 1.414L13.414 12z"
-        />
-      </svg>
-    ),
-  };
-
   return (
     <>
       {/* Thông báo lỗi */}
-      {error && (
+      {errorMessage && (
         <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center">
-          <div className="bg-red-100 px-3 py-1 rounded-md flex items-center gap-2">
-            {icons.error}
-            <p className="text-red-500">{error}</p>
-          </div>
+          <Error message={errorMessage} />
         </div>
       )}
 
-      {isLoadingUser && isLoading ? (
-        <div className="h-screen mx-auto px-4 flex justify-center items-center">
-          <div className="loader"></div>
-        </div>
+      {isLoadingUser || isLoading ? (
+        <Loader />
       ) : (
-        <div className="bg-blue-50/50 h-screen pt-20">
+        <div className="bg-blue-50/10 h-screen pt-20">
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
 
           <main className="ml-60">
@@ -121,13 +103,23 @@ export default function GenerateExam() {
               </article>
 
               <div className="mt-10 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleContinueClick}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-semibold shadow-md transition-colors cursor-pointer"
-                >
-                  Tiếp tục
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    className="border border-red-500 hover:bg-red-100 text-red-500 px-8 py-2 rounded-lg shadow-md transition-colors cursor-pointer"
+                  >
+                    Xóa bản nháp
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleContinueClick}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-semibold shadow-md transition-colors cursor-pointer"
+                  >
+                    Tiếp tục
+                  </button>
+                </div>{" "}
               </div>
             </section>
           </main>

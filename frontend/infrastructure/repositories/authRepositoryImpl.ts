@@ -7,12 +7,6 @@ import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
 import { cookies } from "next/headers";
 
-interface RawResponse {
-  id: string;
-  email: string;
-  role: string;
-}
-
 export class authRepositoryImpl implements IAuthRepository {
   private readonly baseUrl: string;
 

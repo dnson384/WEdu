@@ -212,4 +212,25 @@ export class DraftRepositoryImpl implements IDraftRepository {
 
     return data;
   }
+
+  async deleteDraft(draftId: string, accessToken: string, refreshToken: string): Promise<boolean> {
+    const cookieHeaderParts: string[] = [];
+
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
+
+    const { data } = await axios.delete<boolean>(
+      `${this.baseUrl}/draft/delete/${draftId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Cookie: customCookieHeader,
+        },
+      },
+    );
+
+    return data;
+  }
 }
