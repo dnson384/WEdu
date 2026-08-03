@@ -30,10 +30,8 @@ public class ExporterUsecase {
         WordPayloadRequestDTO wordPayloadRequestDTO = new WordPayloadRequestDTO();
         wordPayloadRequestDTO.setTitle(exam.getName());
 
-        List<QuestionsSortedData> questionsSorted = new ArrayList<>();
         Set<String> questionImageUrls = new HashSet<>();
         Set<String> optionImageUrls = new HashSet<>();
-
 
         exam.getGroups().forEach(group -> {
             group.getQuestions().forEach(question -> {

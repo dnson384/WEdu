@@ -1,15 +1,18 @@
 package com.fckedu.exam_creation.exam.infrastructure.repository;
 
+import com.fckedu.exam_creation.common.exception.InternalServerException;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.exam.domain.entity.ExamEntity;
 import com.fckedu.exam_creation.exam.domain.repository.IExamRepository;
 import com.fckedu.exam_creation.exam.infrastructure.document.ExamDocument;
 import com.fckedu.exam_creation.exam.infrastructure.mapper.ExamMapper;
+import com.mongodb.client.result.DeleteResult;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -63,4 +66,21 @@ public class ExamRepositoryImpl implements IExamRepository {
 
     }
 
+    @Override
+    @Transactional
+    public boolean deleteExam(String userId, String examId) {
+        Criteria criteria = new Criteria().andOperator(
+                Criteria.where("userId").is(userId),
+                Criteria.where("_id").is(examId)
+        );
+
+        Query query = new Query(criteria);
+        DeleteResult result = mongoTemplate.remove(query, ExamDocument.class);
+
+        if (result.getDeletedCount() > 1) {
+            throw new InternalServerException("Xóa quá giới hạn. Yêu cầu Rollback!");
+        }
+
+        return result.getDeletedCount() == 1;
+    }
 }

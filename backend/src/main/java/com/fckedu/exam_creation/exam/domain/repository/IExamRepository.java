@@ -12,4 +12,6 @@ public interface IExamRepository {
     List<ExamEntity> getAllUserExams(String userId);
 
     List<ExamEntity> getRecentExams(String userId);
+
+    boolean deleteExam(String userId, String examId);
 }
