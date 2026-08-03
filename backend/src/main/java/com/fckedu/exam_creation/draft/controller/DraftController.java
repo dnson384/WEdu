@@ -113,4 +113,16 @@ public class DraftController {
 
         return ResponseEntity.ok(draftUsecase.getAllUserDrafts(user.getId()));
     }
+
+    @DeleteMapping("/delete/{draftId}")
+    public ResponseEntity<Boolean> deleteExam(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @PathVariable String draftId
+    ) {
+        String accessToken = authorization.substring(7);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+
+        return ResponseEntity.ok(draftUsecase.deleteDraft(user.getId(), draftId));
+    }
 }

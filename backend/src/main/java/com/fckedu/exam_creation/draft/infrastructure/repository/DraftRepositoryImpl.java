@@ -1,5 +1,6 @@
 package com.fckedu.exam_creation.draft.infrastructure.repository;
 
+import com.fckedu.exam_creation.common.exception.InternalServerException;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.draft.domain.entity.ChapterDraftEntity;
 import com.fckedu.exam_creation.draft.domain.entity.DraftEntity;
@@ -218,7 +219,7 @@ public class DraftRepositoryImpl implements IDraftRepository {
     }
 
     @Override
-    public void deleteDraft(String draftId, String userId) {
+    public boolean deleteDraft(String userId, String draftId) {
         Criteria criteria = new Criteria();
         criteria.andOperator(
                 Criteria.where("_id").is(new ObjectId(draftId)),
@@ -226,9 +227,13 @@ public class DraftRepositoryImpl implements IDraftRepository {
         );
 
         Query query = new Query(criteria);
-
         DeleteResult result = mongoTemplate.remove(query, DraftDocument.class);
-        result.getDeletedCount();
+
+        if (result.getDeletedCount() > 1) {
+            throw new InternalServerException("Xóa quá giới hạn. Yêu cầu Rollback!");
+        }
+
+        return result.getDeletedCount() == 1;
     }
 
     @Override

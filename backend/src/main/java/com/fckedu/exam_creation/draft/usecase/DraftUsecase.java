@@ -5,6 +5,7 @@ import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO
 import com.fckedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
+import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.draft.domain.entity.DraftEntity;
 import com.fckedu.exam_creation.draft.domain.entity.MatrixItemEntity;
 import com.fckedu.exam_creation.draft.domain.payload.*;
@@ -180,5 +181,14 @@ public class DraftUsecase {
     public List<DraftDTO> getAllUserDrafts(String userId) {
         List<DraftEntity> draftEntities = repo.getAllUserDrafts(userId);
         return draftEntities.stream().map(mapper::toDTO).toList();
+    }
+
+    public boolean deleteDraft(String userId, String draftId) {
+        boolean deleteResult = repo.deleteDraft(userId, draftId);
+
+        if (!deleteResult) {
+            throw new NotFoundException("Không tìm thấy đề kiểm tra để xóa");
+        }
+        return true;
     }
 }
