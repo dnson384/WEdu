@@ -7,28 +7,30 @@ import Error from "@/presentation/components/layout/Error";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useExam from "@/presentation/hooks/Exam/useExam";
 import { transformExamResToUI } from "@/presentation/utils/transformExamResToUI";
+import Loader from "@/presentation/components/layout/Loader";
 
 export default function Exam() {
-  const { details, isLoading, errorsList, handleExportDocx } = useExam();
+  const {
+    details,
+    isLoading,
+    errorsList,
+    handleExportDocx,
+    handleDeleteClick,
+  } = useExam();
   const { user, isLoadingUser } = useAuth();
 
   const groupedQuestions = transformExamResToUI(details);
 
   return (
     <>
-      {isLoadingUser ? (
-        <div className="h-screen mx-auto px-4 flex justify-center items-center">
-          <div className="loader"></div>
-        </div>
+      {isLoadingUser || isLoading ? (
+        <Loader />
       ) : (
-        <div>
+        <div className="bg-blue-50/10">
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          {isLoading ? (
-            <div className="h-screen mx-auto px-4 flex justify-center items-center">
-              <div className="loader"></div>
-            </div>
-          ) : (
-            <main className="w-6xl mx-auto mt-15">
+
+          <main className="ml-60 flex justify-center">
+            <div className="w-6xl mt-15 relative ">
               <AnimatePresence>
                 {errorsList.length > 0 && (
                   <motion.div
@@ -55,17 +57,6 @@ export default function Exam() {
                 )}
               </AnimatePresence>
 
-              <div className="relative px-4 mx-auto w-6xl bg-white ">
-                <div className="absolute right-4 flex justify-end print:hidden">
-                  <button
-                    onClick={() => handleExportDocx()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer print:hidden shadow-md"
-                  >
-                    Xuất file Word
-                  </button>
-                </div>
-              </div>
-
               <div className="w-4xl px-4 mb-20">
                 <h1 className="text-3xl font-bold mb-5">{details.name}</h1>
 
@@ -82,8 +73,25 @@ export default function Exam() {
                   },
                 )}
               </div>
-            </main>
-          )}
+
+              <div className="absolute top-0 right-0 flex justify-end print:hidden">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleExportDocx()}
+                    className="border border-blue-500 bg-blue-500 hover:border-blue-700 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer print:hidden shadow-md"
+                  >
+                    Xuất file Word
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="border border-red-500 hover:bg-red-100 text-red-500 py-2 px-4 rounded-lg cursor-pointer shadow-md"
+                  >
+                    Xóa đề kiểm tra
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
       )}
     </>

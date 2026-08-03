@@ -3,14 +3,18 @@
 import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
 import { ExportPayload } from "@/presentation/schemas/export.schema";
 import {
+  deleteExamService,
   exportWordFileService,
   GetExamService,
 } from "@/presentation/services/exam.service";
-import { useQuery } from "@tanstack/react-query";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function useExam() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const pathname = usePathname();
   const pathnameSplitted = pathname.split("/");
   const examId = pathnameSplitted[pathnameSplitted.length - 1];
@@ -48,7 +52,13 @@ export default function useExam() {
 
   const details = data || initialResponse();
 
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+
   const handleExportDocx = async () => {
+    if (isSubmitted) return;
+
+    setIsSubmitted(true);
+
     const payload: ExportPayload = {
       examId: details.id,
       examName: details.name,
@@ -70,7 +80,35 @@ export default function useExam() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Lỗi khi tải file UI:", err);
+    } finally {
+      setIsSubmitted(false);
     }
   };
-  return { details, isLoading, errorsList, handleExportDocx };
+
+  const handleDeleteClick = async () => {
+    if (isSubmitted) return;
+
+    setIsSubmitted(true);
+
+    try {
+      const response = await deleteExamService(examId);
+
+      if (response) {
+        await queryClient.invalidateQueries({ queryKey: ["all-exam"] })
+        router.replace("/exam/all");
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa đề", error);
+    } finally {
+      setIsSubmitted(false);
+    }
+  };
+
+  return {
+    details,
+    isLoading,
+    errorsList,
+    handleExportDocx,
+    handleDeleteClick,
+  };
 }

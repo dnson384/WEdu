@@ -50,3 +50,8 @@ export async function getRecentExamService(): Promise<ExamResponseEntity[]> {
   const { data } = await axios.get<ExamResponseEntity[]>(`/api/exam/recent`);
   return data;
 }
+
+export async function deleteExamService(examId: string): Promise<boolean> {
+  const { data } = await axios.delete<boolean>(`/api/exam/delete/${examId}`);
+  return data;
+}

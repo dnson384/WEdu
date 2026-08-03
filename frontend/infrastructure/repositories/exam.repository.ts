@@ -141,4 +141,29 @@ export class ExamsRepositoryImpl implements IExamsRepository {
 
     return data;
   }
+
+  async deleteExam(
+    examId: string,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    const cookieHeaderParts: string[] = [];
+
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
+
+    const { data } = await axios.delete<boolean>(
+      `${this.baseUrl}/exam/delete/${examId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Cookie: customCookieHeader,
+        },
+      },
+    );
+
+    return data;
+  }
 }

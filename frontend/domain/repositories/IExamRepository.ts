@@ -25,6 +25,11 @@ export interface IExamsRepository {
     accessToken: string,
     refreshToken: string,
   ): Promise<Buffer>;
+  deleteExam(
+    examId: string,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean>;
   getRecentExam(
     accessToken: string,
     refreshToken: string,
