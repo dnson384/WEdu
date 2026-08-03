@@ -63,4 +63,16 @@ public class ExamController {
 
         return ResponseEntity.ok(examUsecase.getRecentExams(user.getId()));
     }
+
+    @DeleteMapping("/delete/{examId}")
+    public ResponseEntity<Boolean> deleteExam(
+            @RequestHeader("Authorization") String authorization,
+            @CookieValue(value = "refreshToken") String refreshToken,
+            @PathVariable String examId
+    ) {
+        String accessToken = authorization.substring(7);
+        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
+
+        return ResponseEntity.ok(examUsecase.deleteExam(user.getId(), examId));
+    }
 }

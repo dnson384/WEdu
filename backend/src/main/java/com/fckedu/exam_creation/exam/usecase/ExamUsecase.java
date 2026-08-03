@@ -9,6 +9,7 @@ import com.fckedu.exam_creation.common.dto.draft.response.MatrixDetailItemDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.fckedu.exam_creation.common.exception.InternalServerException;
+import com.fckedu.exam_creation.common.exception.NotFoundException;
 import com.fckedu.exam_creation.draft.usecase.DraftService;
 import com.fckedu.exam_creation.exam.domain.entity.ChapterExamEntity;
 import com.fckedu.exam_creation.exam.domain.entity.ExamEntity;
@@ -119,5 +120,14 @@ public class ExamUsecase {
     public List<ExamDTO> getRecentExams(String userId) {
         List<ExamEntity> examEntities = repo.getRecentExams(userId);
         return examEntities.stream().map(mapper::convertToExamResponse).toList();
+    }
+
+    public boolean deleteExam(String userId, String examId) {
+        boolean deleteResult = repo.deleteExam(userId, examId);
+
+        if (!deleteResult) {
+            throw new NotFoundException("Không tìm thấy đề kiểm tra để xóa");
+        }
+        return true;
     }
 }
