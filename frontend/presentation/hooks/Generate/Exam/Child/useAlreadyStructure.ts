@@ -1,15 +1,16 @@
 import { DraftEntity } from "@/domain/entities/draft.entity";
-import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
 import {
-  CreateDraftService,
+  deleteDraftService,
   GetDraft,
 } from "@/presentation/services/draft.service";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useState } from "react";
 
 export default function useAlreadyStructure() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const draftId = pathname.split("/")[pathname.split("/").length - 1];
 
@@ -21,15 +22,17 @@ export default function useAlreadyStructure() {
     chapters: [],
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["draft", draftId],
-    queryFn: () => GetDraft(draftId),
-    staleTime: 1000 * 60 * 5,
-    retry: false,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    enabled: !!draftId,
-  });
+  const { data, error, isLoading } = useQuery<DraftEntity, AxiosError<unknown>>(
+    {
+      queryKey: ["draft", draftId],
+      queryFn: () => GetDraft(draftId),
+      staleTime: 1000 * 60 * 5,
+      retry: false,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+      enabled: !!draftId,
+    },
+  );
 
   const draft = data ?? initialDraftEntity;
 
@@ -48,7 +51,13 @@ export default function useAlreadyStructure() {
     }
   }, [draft]);
 
-  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (error && error.status === 404) {
+      router.replace("/generate");
+    }
+  }, [error]);
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleExamNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -67,12 +76,12 @@ export default function useAlreadyStructure() {
 
   const handleContinueClick = async () => {
     if (examName.trim().length === 0) {
-      setError("Phải có tên bài kiểm tra");
+      setErrorMessage("Phải có tên bài kiểm tra");
       return;
     }
 
     if (!questionsCount) {
-      setError("Phải có ít nhất 1 câu hỏi");
+      setErrorMessage("Phải có ít nhất 1 câu hỏi");
       return;
     }
 
@@ -81,7 +90,7 @@ export default function useAlreadyStructure() {
       .map(([key]) => key);
 
     if (questionTypesArr.length == 0) {
-      setError("Phải có ít nhất 1 loại câu hỏi");
+      setErrorMessage("Phải có ít nhất 1 loại câu hỏi");
       return;
     }
 
@@ -90,10 +99,31 @@ export default function useAlreadyStructure() {
     }
   };
 
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+
+  const handleDeleteClick = async () => {
+    if (isSubmitted) return;
+
+    setIsSubmitted(true);
+
+    try {
+      const response = await deleteDraftService(draftId);
+
+      if (response) {
+        await queryClient.invalidateQueries({ queryKey: ["all-draft"] });
+        router.replace("/generate");
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa bản nháp", error);
+    } finally {
+      setIsSubmitted(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (error !== null) {
-        setError(null);
+        setErrorMessage(null);
       }
     }, 3000);
 
@@ -105,10 +135,11 @@ export default function useAlreadyStructure() {
     examName,
     questionsCount,
     questionTypes,
-    error,
+    errorMessage,
     handleExamNameChange,
     handleQuestionsCountChange,
     handleQuestionTypesChange,
+    handleDeleteClick,
     handleContinueClick,
   };
 }

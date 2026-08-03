@@ -44,4 +44,9 @@ export interface IDraftRepository {
     accessToken: string,
     refreshToken: string,
   ): Promise<DraftEntity[]>;
+  deleteDraft(
+    draftId: string,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean>;
 }

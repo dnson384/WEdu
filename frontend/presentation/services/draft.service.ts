@@ -74,3 +74,8 @@ export async function getAllDraftService() {
   const { data } = await axios.get<DraftEntity[]>(`/api/draft/all`);
   return data;
 }
+
+export async function deleteDraftService(draftId: string): Promise<boolean> {
+  const { data } = await axios.delete<boolean>(`/api/draft/delete/${draftId}`);
+  return data;
+}
