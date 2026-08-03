@@ -13,7 +13,7 @@ import { AxiosError } from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function useDraft() {
+export default function useSelectChapterPage() {
   const router = useRouter();
   const pathname = usePathname();
   const draftId = pathname.split("/")[pathname.split("/").length - 2];
@@ -125,14 +125,16 @@ export default function useDraft() {
       }
     });
 
+    const url = pathname.replace("chapter", selectedChaptersId[0]);
+
     if (payload.add.length === 0 && payload.del.length === 0) {
-      router.push(`${pathname.slice(0, -7)}/${selectedChaptersId[0]}`);
+      router.push(url);
     }
 
     const response = await UpdateChapters(payload);
 
     if (response) {
-      router.push(`/${pathname.slice(0, -7)}/${selectedChaptersId[0]}`);
+      router.push(url);
     }
   };
 

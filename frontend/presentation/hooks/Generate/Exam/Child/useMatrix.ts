@@ -20,22 +20,22 @@ export default function useMatrix() {
 
   const DraftInitial = (): DraftEntity => ({
     id: "",
+    examName: "",
     questionsCount: 0,
     questionTypes: [],
     chapters: [],
   });
 
-  const { data, isError, error, isLoading } = useQuery<
-    DraftEntity,
-    AxiosError<any>
-  >({
-    queryKey: ["draft-matrix", draftId],
-    queryFn: () => GetDraft(draftId),
-    staleTime: 1000 * 60 * 5,
-    retry: false,
-    refetchOnWindowFocus: false,
-    enabled: !!draftId,
-  });
+  const { data, error, isLoading } = useQuery<DraftEntity, AxiosError<unknown>>(
+    {
+      queryKey: ["draft-matrix", draftId],
+      queryFn: () => GetDraft(draftId),
+      staleTime: 1000 * 60 * 5,
+      retry: false,
+      refetchOnWindowFocus: false,
+      enabled: !!draftId,
+    },
+  );
 
   const draft = data ?? DraftInitial();
 
@@ -47,6 +47,7 @@ export default function useMatrix() {
     }
   }, [draft]);
 
+  // Dùng để chuyển giữa các chương (các tab chương)
   const [curChapter, setCurChapter] = useState<ChapterDraft>({
     id: "",
     name: "",
@@ -68,6 +69,7 @@ export default function useMatrix() {
     }
   };
 
+  // Dùng để chỉnh số lượng câu hỏi cho từng phần (chưa áp dụng)
   const handleMatrixInputChange = (
     lessonId: string,
     questionType: string,
@@ -105,6 +107,18 @@ export default function useMatrix() {
     );
   };
 
+  // Handle BTN
+  const handleBackClick = () => {
+    const lastestChapterId = draft.chapters[draft.chapters.length - 1].id;
+
+    if (lastestChapterId) {
+      const url = pathname.replace("matrix", lastestChapterId);
+      router.push(url);
+    } else {
+      router.push("/generate");
+    }
+  };
+
   const handleContinueClick = async () => {
     try {
       const response = await GenerateMatrixDetails(draftId);
@@ -119,7 +133,7 @@ export default function useMatrix() {
 
   useEffect(() => {
     if (error && error.status === 404) {
-      router.replace("/generate/exam");
+      router.replace("/generate");
     }
   }, [error]);
 
@@ -129,6 +143,7 @@ export default function useMatrix() {
     isLoading,
     handleChangeChapter,
     handleMatrixInputChange,
+    handleBackClick,
     handleContinueClick,
   };
 }
