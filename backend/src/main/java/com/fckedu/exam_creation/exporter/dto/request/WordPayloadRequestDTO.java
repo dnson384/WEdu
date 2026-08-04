@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WordPayloadRequestDTO {
-    private String title;
+    private String examName;
     private ImageCacheData imageCache;
     private List<QuestionsSortedData> questionsSorted;
 }

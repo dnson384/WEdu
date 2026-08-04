@@ -28,7 +28,7 @@ public class ExporterUsecase {
         ExamDetailDTO exam = examService.getExamById(examId);
 
         WordPayloadRequestDTO wordPayloadRequestDTO = new WordPayloadRequestDTO();
-        wordPayloadRequestDTO.setTitle(exam.getName());
+        wordPayloadRequestDTO.setExamName(exam.getName());
 
         Set<String> questionImageUrls = new HashSet<>();
         Set<String> optionImageUrls = new HashSet<>();
