@@ -1,10 +1,13 @@
 "use client";
 
+import { icons } from "@/presentation/common/icons";
+// COMPONENT
 import LessonExamBlock from "@/presentation/components/Generate/LessonExamBlock";
 import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
+// HOOK
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useSelectLessonPage from "@/presentation/hooks/Generate/Exam/Child/useSelectLessonPage";
 
@@ -19,7 +22,7 @@ export default function SelectLesson() {
     handleBackClick,
     handleContinueClick,
   } = useSelectLessonPage();
-  
+
   const { user, isLoadingUser } = useAuth();
 
   const lessons = currentChapter?.lessons ?? [];
@@ -74,9 +77,9 @@ export default function SelectLesson() {
 
                       <button
                         onClick={() => handleRemoveLesson(lesson.id)}
-                        className="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-4 py-1 rounded-md text-sm transition-colors"
+                        className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                       >
-                        Xóa
+                        {icons.bin_18px}
                       </button>
                     </li>
                   ))}
