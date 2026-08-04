@@ -1,6 +1,7 @@
 "use client";
 
 import LessonExamBlock from "@/presentation/components/Generate/LessonExamBlock";
+import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
@@ -13,21 +14,18 @@ export default function SelectLesson() {
     isLoading,
     errorMessage,
     selectedLessons,
-    setSelectedLessons,
-    handleLessonSelect,
     handleAddLesson,
+    handleRemoveLesson,
     handleBackClick,
     handleContinueClick,
   } = useSelectLessonPage();
+  
   const { user, isLoadingUser } = useAuth();
 
   const lessons = currentChapter?.lessons ?? [];
 
-  const lessonsData = lessons.filter(
-    (lesson) =>
-      !Object.values(selectedLessons)
-        .map((l) => l.id)
-        .includes(lesson.id),
+  const unSelectedLessons = lessons.filter(
+    (lesson) => !selectedLessons.map((l) => l.id).includes(lesson.id),
   );
 
   return (
@@ -54,48 +52,42 @@ export default function SelectLesson() {
               </h2>
 
               <article className="mt-5">
-                <div className="flex flex-col gap-3">
-                  {selectedLessons.map((currentLesson, index) => {
-                    return (
-                      <LessonExamBlock
-                        key={index}
-                        currentLesson={currentLesson}
-                        index={index}
-                        lessonsData={lessonsData}
-                        setSelectedLessons={setSelectedLessons}
-                        handleLessonSelect={handleLessonSelect}
-                      />
-                    );
-                  })}
-                </div>
+                {/* Ô input thêm bài theo chương */}
+                <LessonExamBlock
+                  unSelectedLessons={unSelectedLessons}
+                  handleAddLesson={handleAddLesson}
+                />
 
-                <div className="mt-5 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={handleBackClick}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
-                  >
-                    Quay lại
-                  </button>
+                {/* Danh sách bài đã chọn */}
+                <ul className="space-y-3 mt-5">
+                  {selectedLessons.map((lesson, index) => (
+                    <li
+                      key={lesson.id}
+                      className="flex justify-between items-center px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 text-sm text-white font-bold bg-blue-500 flex items-center justify-center rounded-xl">
+                          {index + 1}
+                        </div>
+                        <span>{lesson.name}</span>
+                      </div>
 
-                  <div className="flex justify-center">
-                    {selectedLessons.length < lessons.length && (
                       <button
-                        className="px-4 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium cursor-pointer hover:bg-blue-600  hover:text-white transition-all"
-                        onClick={handleAddLesson}
+                        onClick={() => handleRemoveLesson(lesson.id)}
+                        className="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-4 py-1 rounded-md text-sm transition-colors"
                       >
-                        Thêm nội dung / đơn vị kiến thức
+                        Xóa
                       </button>
-                    )}
-                  </div>
+                    </li>
+                  ))}
+                </ul>
 
-                  <button
-                    type="button"
-                    onClick={handleContinueClick}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
-                  >
-                    Tiếp tục
-                  </button>
+                <div className="mt-10 w-full flex justify-end">
+                  <NavigationBTN
+                    enableToContinue={selectedLessons.length > 0}
+                    handleContinueClick={handleContinueClick}
+                    handleBackClick={handleBackClick}
+                  />
                 </div>
               </article>
             </section>

@@ -1,65 +1,62 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { useState } from "react";
 import ExamChapterSelect from "./ExamChapterSelect";
 
 interface ChapterBlockProps {
-  currentChapter: { id: string; name: string };
-  selectedChapters: { id: string; name: string }[];
-  index: number;
-  chaptersData: { id: string; name: string }[];
-  handleChapterSelect: (
-    curId: string,
-    id: string,
-    name: string,
-    index: number,
-  ) => void;
-  setSelectedChapters: Dispatch<SetStateAction<{ id: string; name: string }[]>>;
-  handleAddChapter: () => void;
+  unSelectedChaptersData: { id: string; name: string }[];
+  handleAddChapter: (chapter: { id: string; name: string }) => void;
 }
 
 export default function ChapterExamBlock({
-  currentChapter,
-  selectedChapters,
-  index,
-  chaptersData,
-  handleChapterSelect,
-  setSelectedChapters,
+  unSelectedChaptersData,
   handleAddChapter,
 }: ChapterBlockProps) {
   const [search, setSearch] = useState<string>("");
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [stagedChapter, setStagedChapter] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
-  const filteredChapters = chaptersData.filter((chapter) =>
+  const filteredChapters = unSelectedChaptersData.filter((chapter) =>
     chapter.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const handleAddClick = () => {
+    if (stagedChapter) {
+      handleAddChapter(stagedChapter);
+      setSearch("");
+      setStagedChapter(null);
+    }
+  };
+
   return (
-    <div>
+    <div className="flex items-center gap-3">
       <ExamChapterSelect
         filteredChapters={filteredChapters}
         search={search}
-        curValue={currentChapter.name}
-        index={index}
         isOpen={isOpen}
         onSearchChange={(value) => {
           setSearch(value);
+          setStagedChapter(null);
           setIsOpen(true);
-          if (value.trim().length === 0) {
-            if (selectedChapters.length > 1) {
-              setSelectedChapters((prev) => prev.filter((_, i) => i !== index));
-              setIsOpen(false);
-            } else {
-              setSelectedChapters([{ id: "", name: "" }]);
-            }
-          }
         }}
-        onSelect={(id: string, name: string, index: number) => {
-          handleChapterSelect(currentChapter.id, id, name, index);
-          setSearch(chaptersData.find((chapter) => chapter.id === id)?.name!);
+        onSelect={(id: string, name: string) => {
+          setSearch(name);
+          setStagedChapter({ id, name });
           setIsOpen(false);
         }}
         onOpen={() => setIsOpen(true)}
         onClose={() => setIsOpen(false)}
       />
+
+      <button
+        type="button"
+        disabled={!stagedChapter}
+        onClick={handleAddClick}
+        className="bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-colors whitespace-nowrap"
+      >
+        Thêm
+      </button>
     </div>
   );
 }
