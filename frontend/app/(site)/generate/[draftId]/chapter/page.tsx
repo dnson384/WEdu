@@ -1,7 +1,9 @@
 "use client";
 
+import { icons } from "@/presentation/common/icons";
 // Component
 import ChapterExamBlock from "@/presentation/components/Generate/ChapterExamBlock";
+import ContinueBtn from "@/presentation/components/layout/ContinueBtn";
 import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
@@ -17,8 +19,8 @@ export default function SelectChapter() {
     errorMessage,
     selectedChapters,
     setSelectedChapters,
-    handleChapterSelect,
     handleAddChapter,
+    handleRemoveChapter,
     handleBackClick,
     handleContinueClick,
   } = useSelectChapterPage();
@@ -29,12 +31,15 @@ export default function SelectChapter() {
     name: category.chapter,
   }));
 
-  const chaptersData = chapters.filter(
-    (chapter) =>
-      !Object.values(selectedChapters)
-        .map((chapter) => chapter.id)
-        .includes(chapter.id),
-  );
+  // Chương chưa được chọn
+  const unSelectedChaptersData = categories
+    .map((category) => ({
+      id: category.id,
+      name: category.chapter,
+    }))
+    .filter(
+      (chapter) => !selectedChapters.map((sc) => sc.id).includes(chapter.id),
+    );
 
   return (
     <>
@@ -54,56 +59,48 @@ export default function SelectChapter() {
           <main className="ml-60">
             <section className="bg-white rounded-2xl shadow-lg w-4xl mx-auto py-10 px-15">
               <h1 className="text-4xl font-bold">Chương / chủ đề</h1>
+
               <article className="mt-10">
-                {selectedChapters.map((currentChapter, index) => {
-                  return (
-                    <ChapterExamBlock
-                      currentChapter={{
-                        id: currentChapter?.id || "",
-                        name: currentChapter?.name || "",
-                      }}
-                      key={index}
-                      selectedChapters={selectedChapters}
-                      index={index}
-                      chaptersData={chaptersData}
-                      handleChapterSelect={handleChapterSelect}
-                      setSelectedChapters={setSelectedChapters}
-                      handleAddChapter={handleAddChapter}
-                    />
-                  );
-                })}
-
-                <div className="mt-5 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={handleBackClick}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer"
-                  >
-                    Quay lại
-                  </button>
-
-                  <div className="flex justify-center ">
-                    {selectedChapters.length === chapters.length - 1 &&
-                      chaptersData.length !== 0 && (
-                        <button
-                          className="w-50 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium cursor-pointer hover:bg-blue-600  hover:text-white transition-all"
-                          onClick={handleAddChapter}
-                        >
-                          Thêm chương / chủ đề
-                        </button>
-                      )}
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={!selectedChapters[0]?.id}
-                    onClick={handleContinueClick}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-medium shadow-md transition-colors cursor-pointer disabled:bg-gray-400 disabled:text-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    Tiếp tục
-                  </button>
+                {/* Ô input thêm chương */}
+                <div>
+                  <ChapterExamBlock
+                    unSelectedChaptersData={unSelectedChaptersData}
+                    handleAddChapter={handleAddChapter}
+                  />
                 </div>
+
+                {/* Danh sách chương đã chọn */}
+                <ul className="mt-5">
+                  {selectedChapters.map((chapter, index) => (
+                    <li
+                      key={chapter.id}
+                      className="flex justify-between items-center px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-7 h-7 text-sm text-white font-bold bg-blue-500 flex items-center justify-center rounded-xl">
+                          {index}
+                        </div>
+                        <span className="font-medium">{chapter.name}</span>
+                      </div>
+
+                      <button
+                        onClick={() => handleRemoveChapter(chapter.id)}
+                        className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                      >
+                        {icons.bin_18px}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </article>
+
+              <div className="mt-10 w-full flex justify-end">
+                <ContinueBtn
+                  enableToContinue={selectedChapters.length > 0}
+                  handleContinueClick={handleContinueClick}
+                  handleBackClick={handleBackClick}
+                />
+              </div>
             </section>
           </main>
         </div>
