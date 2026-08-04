@@ -65,10 +65,7 @@ export default function useExam() {
     };
 
     try {
-      const rawData = await exportWordFileService(payload);
-      const blob = new Blob([new Uint8Array(rawData)], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
+      const blob = await exportWordFileService(payload);
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -94,7 +91,7 @@ export default function useExam() {
       const response = await deleteExamService(examId);
 
       if (response) {
-        await queryClient.invalidateQueries({ queryKey: ["all-exam"] })
+        await queryClient.invalidateQueries({ queryKey: ["all_exam"] })
         router.replace("/exam/all");
       }
     } catch (error) {
