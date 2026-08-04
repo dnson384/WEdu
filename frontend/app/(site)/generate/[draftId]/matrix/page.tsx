@@ -1,7 +1,7 @@
 "use client";
 
 import MatrixBlock from "@/presentation/components/Generate/MatrixBlock";
-import ContinueBtn from "@/presentation/components/layout/ContinueBtn";
+import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
@@ -96,7 +96,8 @@ export default function Matrix() {
             </section>
 
             <div className="my-10 w-full flex justify-end">
-              <ContinueBtn
+              <NavigationBTN
+                enableToContinue={true}
                 handleContinueClick={handleContinueClick}
                 handleBackClick={handleBackClick}
               />

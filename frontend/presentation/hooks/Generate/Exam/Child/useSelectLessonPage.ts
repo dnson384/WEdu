@@ -73,15 +73,9 @@ export default function useSelectLessonPage() {
     }
   }, [axiosError]);
 
-  // Handlers
-  const newSelectedLesson = (): UpdateDraftParam => ({
-    id: "",
-    name: "",
-  });
-
-  const [selectedLessons, setSelectedLessons] = useState<UpdateDraftParam[]>([
-    newSelectedLesson(),
-  ]);
+  const [selectedLessons, setSelectedLessons] = useState<UpdateDraftParam[]>(
+    [],
+  );
 
   useEffect(() => {
     const draftLessons = draft.chapters.find(
@@ -97,31 +91,22 @@ export default function useSelectLessonPage() {
     }
   }, [draft, chapterId]);
 
-  const handleLessonSelect = (
-    currentId: string,
-    id: string,
-    name: string,
-    index: number,
-  ) => {
-    setSelectedLessons((prev) => {
-      const newSelectedLessons = [...prev];
-      if (currentId !== id) {
-        newSelectedLessons[index] = { id: id, name: name };
-      }
-      return newSelectedLessons;
-    });
+  const handleAddLesson = (lesson: UpdateDraftParam) => {
+    if (!selectedLessons.find((l) => l.id === lesson.id)) {
+      setSelectedLessons((prev) => [...prev, lesson]);
+    }
   };
 
-  const handleAddLesson = () => {
-    setSelectedLessons((prev) => [...prev, newSelectedLesson()]);
+  const handleRemoveLesson = (lessonId: string) => {
+    setSelectedLessons((prev) => prev.filter((l) => l.id !== lessonId));
   };
 
   const handleBackClick = () => {
-    router.push(`${pathname.replace(chapterId, "chapter")}`)
+    router.push(`${pathname.replace(chapterId, "chapter")}`);
   };
 
   const handleContinueClick = async () => {
-    if (!selectedLessons[0].id) {
+    if (selectedLessons.length === 0) {
       return setErrorMessage("Vui lòng chọn nội dung");
     }
 
@@ -173,6 +158,15 @@ export default function useSelectLessonPage() {
       }
     });
 
+    if (payload.add.length === 0 && payload.del.length === 0) {
+      if (curChapterIndex === draft.chapters.length - 1) {
+        router.push(`${pathname.replace(chapterId, "matrix")}`);
+      } else {
+        router.push(`${pathname.replace(chapterId, newChapterId)}`);
+      }
+      return;
+    }
+
     let response;
     let isGenerated = false;
 
@@ -214,9 +208,8 @@ export default function useSelectLessonPage() {
     errorMessage,
     // Handlers
     selectedLessons,
-    setSelectedLessons,
-    handleLessonSelect,
     handleAddLesson,
+    handleRemoveLesson,
     handleBackClick,
     handleContinueClick,
   };

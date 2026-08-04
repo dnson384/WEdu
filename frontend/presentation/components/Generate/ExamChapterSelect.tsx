@@ -3,11 +3,9 @@ import { useRef, useEffect } from "react";
 interface ExamChapterSelectProps {
   filteredChapters: { id: string; name: string }[];
   search: string;
-  curValue: string;
-  index: number;
   isOpen: boolean;
   onSearchChange: (value: string) => void;
-  onSelect: (id: string, name: string, index: number) => void;
+  onSelect: (id: string, name: string) => void;
   onOpen: () => void;
   onClose: () => void;
 }
@@ -15,8 +13,6 @@ interface ExamChapterSelectProps {
 export default function ExamChapterSelect({
   filteredChapters,
   search,
-  curValue,
-  index,
   isOpen,
   onSearchChange,
   onSelect,
@@ -43,21 +39,21 @@ export default function ExamChapterSelect({
       <div className="relative w-full" ref={dropdownRef}>
         <input
           type="text"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-          placeholder="Tên chương / chủ đề"
-          value={curValue || search}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-shadow"
+          placeholder="Nhập tên chương để tìm kiếm..."
+          value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           onClick={onOpen}
         />
 
         {isOpen && (
-          <ul className="absolute z-10 w-full mt-1 border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          <ul className="absolute z-10 w-full mt-1 border border-gray-200 rounded-xl shadow-xl bg-white max-h-60 overflow-y-auto">
             {filteredChapters.length > 0 ? (
               filteredChapters.map(({ id, name }) => (
                 <li
                   key={id}
-                  onClick={() => onSelect(id, name, index)}
-                  className="p-3 bg-white text-gray-700 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                  onClick={() => onSelect(id, name)}
+                  className="p-3 bg-white text-gray-700 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors border-b last:border-b-0 border-gray-100"
                 >
                   {name}
                 </li>

@@ -3,7 +3,7 @@
 import { icons } from "@/presentation/common/icons";
 // Component
 import ChapterExamBlock from "@/presentation/components/Generate/ChapterExamBlock";
-import ContinueBtn from "@/presentation/components/layout/ContinueBtn";
+import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
@@ -18,18 +18,13 @@ export default function SelectChapter() {
     isLoadingDraft,
     errorMessage,
     selectedChapters,
-    setSelectedChapters,
     handleAddChapter,
     handleRemoveChapter,
     handleBackClick,
     handleContinueClick,
   } = useSelectChapterPage();
+  
   const { user, isLoadingUser } = useAuth();
-
-  const chapters = categories.map((category) => ({
-    id: category.id,
-    name: category.chapter,
-  }));
 
   // Chương chưa được chọn
   const unSelectedChaptersData = categories
@@ -62,15 +57,13 @@ export default function SelectChapter() {
 
               <article className="mt-10">
                 {/* Ô input thêm chương */}
-                <div>
-                  <ChapterExamBlock
-                    unSelectedChaptersData={unSelectedChaptersData}
-                    handleAddChapter={handleAddChapter}
-                  />
-                </div>
+                <ChapterExamBlock
+                  unSelectedChaptersData={unSelectedChaptersData}
+                  handleAddChapter={handleAddChapter}
+                />
 
                 {/* Danh sách chương đã chọn */}
-                <ul className="mt-5">
+                <ul className="mt-5 space-y-3">
                   {selectedChapters.map((chapter, index) => (
                     <li
                       key={chapter.id}
@@ -78,9 +71,9 @@ export default function SelectChapter() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-7 h-7 text-sm text-white font-bold bg-blue-500 flex items-center justify-center rounded-xl">
-                          {index}
+                          {index + 1}
                         </div>
-                        <span className="font-medium">{chapter.name}</span>
+                        <span>{chapter.name}</span>
                       </div>
 
                       <button
@@ -95,7 +88,7 @@ export default function SelectChapter() {
               </article>
 
               <div className="mt-10 w-full flex justify-end">
-                <ContinueBtn
+                <NavigationBTN
                   enableToContinue={selectedChapters.length > 0}
                   handleContinueClick={handleContinueClick}
                   handleBackClick={handleBackClick}

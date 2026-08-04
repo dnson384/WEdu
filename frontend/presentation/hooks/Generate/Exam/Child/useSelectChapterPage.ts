@@ -62,9 +62,9 @@ export default function useSelectChapterPage() {
   }, [axiosError]);
 
   // Handler
-  const [selectedChapters, setSelectedChapters] = useState<UpdateDraftParam[]>([
-    { id: "", name: "" },
-  ]);
+  const [selectedChapters, setSelectedChapters] = useState<UpdateDraftParam[]>(
+    [],
+  );
 
   useEffect(() => {
     if (draft !== initalDraftEntity && draft.chapters.length > 0) {
@@ -77,28 +77,19 @@ export default function useSelectChapterPage() {
     }
   }, [draft]);
 
-  const handleChapterSelect = (
-    curId: string,
-    id: string,
-    name: string,
-    index: number,
-  ) => {
-    setSelectedChapters((prev) => {
-      const newSelectedChapters = [...prev];
-      if (curId !== id) {
-        newSelectedChapters[index] = { id: id, name: name };
-      }
-      return newSelectedChapters;
-    });
+  const handleAddChapter = (chapter: UpdateDraftParam) => {
+    if (!selectedChapters.find((c) => c.id === chapter.id)) {
+      setSelectedChapters((prev) => [...prev, chapter]);
+    }
   };
 
-  const handleAddChapter = () => {
-    setSelectedChapters((prev) => [...prev, { id: "", name: "" }]);
+  const handleRemoveChapter = (chapterId: string) => {
+    setSelectedChapters((prev) => prev.filter((c) => c.id !== chapterId));
   };
 
   const handleContinueClick = async () => {
-    if (!selectedChapters[0].id) {
-      setErrorMessage("Chưa chọn chương nào");
+    if (selectedChapters.length === 0) {
+      setErrorMessage("Vui lòng chọn chương");
       return;
     }
 
@@ -163,9 +154,8 @@ export default function useSelectChapterPage() {
     isError,
     errorMessage,
     selectedChapters,
-    setSelectedChapters,
-    handleChapterSelect,
     handleAddChapter,
+    handleRemoveChapter,
     handleBackClick,
     handleContinueClick,
   };
