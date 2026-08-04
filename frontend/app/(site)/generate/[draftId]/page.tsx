@@ -119,7 +119,7 @@ export default function GenerateExam() {
                   >
                     Tiếp tục
                   </button>
-                </div>{" "}
+                </div>
               </div>
             </section>
           </main>
