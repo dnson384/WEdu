@@ -38,7 +38,7 @@ export async function getAllExamsService() {
 
 export async function exportWordFileService(
   payload: ExportPayload,
-): Promise<Buffer> {
+): Promise<Blob> {
   const response = await axios.post("/api/exam/export", payload, {
     responseType: "blob",
   });
