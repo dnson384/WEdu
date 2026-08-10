@@ -44,7 +44,7 @@ public class ExamUsecase {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ExamGeneratedResponseDTO generateExam(String draftId, String userId) {
+    public ExamGeneratedResponseDTO generateExam(String draftId, String userId, String accountType) {
         DraftDTO draft = draftService.getDraft(draftId, userId);
 
         List<ChapterExamEntity> chaptersExam = new ArrayList<>();
@@ -78,7 +78,7 @@ public class ExamUsecase {
         List<String> chapterIds = draft.getChapters().stream().map(ChapterDraftDTO::getId).toList();
         List<CategoryResponseDTO> categories = categoryService.getByIds(chapterIds);
 
-        ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(categories, examMatrixDetailDTOS);
+        ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(accountType, categories, examMatrixDetailDTOS);
 
         if (examGeneratedResult == null) {
             throw new InternalServerException("Lỗi trong quá trình sinh đề");

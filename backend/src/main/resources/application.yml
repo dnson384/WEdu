@@ -41,3 +41,10 @@ aws:
   secretKey: "${AWS_SECRET_ACCESS_KEY}"
   region: "ap-southeast-2"
   bucketName: "fckedu-backend-storage-static"
+
+ai:
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY}
+    base-url: https://api.deepseek.com
+    model: deepseek-chat
+    timeout-seconds: 30

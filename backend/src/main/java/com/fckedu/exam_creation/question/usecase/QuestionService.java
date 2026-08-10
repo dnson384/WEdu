@@ -1,5 +1,6 @@
 package com.fckedu.exam_creation.question.usecase;
 
+import com.fckedu.exam_creation.ai.service.AIQuestionGenerationService;
 import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
 import com.fckedu.exam_creation.common.dto.category.response.LessonDataResponseDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
@@ -10,6 +11,7 @@ import com.fckedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.fckedu.exam_creation.question.domain.repository.IQuestionRepository;
 import com.fckedu.exam_creation.question.dto.mapper.QuestionDTOMapper;
 import com.fckedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
+import com.fckedu.exam_creation.question.dto.request.GenerateQuestionRequestDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,10 +20,12 @@ import java.util.*;
 public class QuestionService {
     private final IQuestionRepository repo;
     private final QuestionDTOMapper mapper;
+    private final AIQuestionGenerationService aiQuestionGenerationService;
 
-    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper) {
+    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService) {
         this.repo = repo;
         this.mapper = mapper;
+        this.aiQuestionGenerationService = aiQuestionGenerationService;
     }
 
     public void insert(List<NewQuestionDTO> questions) {
@@ -36,8 +40,10 @@ public class QuestionService {
                 .toList();
     }
 
-    public ExamGeneratedDTO generateExamQuestions(List<CategoryResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) {
+    public ExamGeneratedDTO generateExamQuestions(String accountType, List<CategoryResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) {
         List<String> errors = new ArrayList<>();
+
+        List<GenerateQuestionRequestDTO> aiRequests = new ArrayList<>();
 
         // Tạo mảng lessonId không trùng id
         List<String> uniqueLessonIds = matrixDetails.stream()
@@ -100,9 +106,9 @@ public class QuestionService {
                 continue;
             }
 
+            // Thiếu cầu hỏi
             int missingCount = detail.getLimit() - takeCount;
             if (missingCount > 0) {
-                // Sử dụng định dạng có cấu trúc (hoặc format thành chuỗi JSON nếu muốn AI dễ đọc hơn)
                 String errorMsg = String.format(
                         "Thiếu %d câu hỏi | Chương: %s | Bài: %s | Loại: %s | Mức độ: %s | YCCĐ: %s",
                         missingCount,
@@ -113,7 +119,20 @@ public class QuestionService {
                         detail.getLearningOutcome()
                 );
                 errors.add(errorMsg);
+
+                GenerateQuestionRequestDTO requestDTO = new GenerateQuestionRequestDTO(
+                        missingCount,
+                        curChapter.getChapter(),
+                        curLesson.getName(),
+                        detail.getExerciseType(),
+                        detail.getQuestionType(),
+                        detail.getDifficultyLevel(),
+                        detail.getLearningOutcome()
+                );
+
+                aiRequests.add(requestDTO);
             }
+
 
             if (!selectedQuestions.isEmpty()) {
                 // QUAN TRỌNG: Xóa các câu đã chọn khỏi pool để không bị bốc trùng ở vòng lặp sau
@@ -134,9 +153,15 @@ public class QuestionService {
 
                 group.getQuestionIds().addAll(selectedIds);
             }
+        }
 
+        // Gọi AI Generate câu hỏi nếu là tài khoản plus
+        if (!aiRequests.isEmpty()) {
+            aiQuestionGenerationService.generateQuestions(aiRequests);
         }
 
         return new ExamGeneratedDTO(new ArrayList<>(groupedResult.values()), errors);
     }
+
+
 }

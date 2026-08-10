@@ -34,7 +34,7 @@ public class ExamController {
         String accessToken = authorization.substring(7);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 
-        return ResponseEntity.ok(examUsecase.generateExam(payload.getDraftId(), user.getId()));
+        return ResponseEntity.ok(examUsecase.generateExam(payload.getDraftId(), user.getId(), user.getAccountType()));
     }
 
     @GetMapping("/{examId}")
