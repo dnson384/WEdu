@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class QuestionEntity {
     private String id;
-    private String categoryId;
+    private String chapterId;
     private String lessonId;
     private String exerciseType;
     private String difficultyLevel;
@@ -22,8 +22,8 @@ public class QuestionEntity {
     private String questionType;
 
     @Builder.Default
-    private QuestionContentEntity question = new QuestionContentEntity();
+    private ContentEntity question = new ContentEntity();
 
     @Builder.Default
-    private List<OptionDataEntity> options = new ArrayList<>();
+    private List<ContentEntity> options = new ArrayList<>();
 }

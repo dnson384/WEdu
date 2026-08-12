@@ -1,17 +1,20 @@
 package com.fckedu.exam_creation.question.usecase;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fckedu.exam_creation.ai.service.AIQuestionGenerationService;
-import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
-import com.fckedu.exam_creation.common.dto.category.response.LessonDataResponseDTO;
+import com.fckedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
+import com.fckedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.LessonDataResponseDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.fckedu.exam_creation.common.dto.question.NewQuestionDTO;
 import com.fckedu.exam_creation.common.dto.question.response.QuestionDTO;
+import com.fckedu.exam_creation.notification.service.TelegramNotificationService;
 import com.fckedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.fckedu.exam_creation.question.domain.repository.IQuestionRepository;
 import com.fckedu.exam_creation.question.dto.mapper.QuestionDTOMapper;
 import com.fckedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
-import com.fckedu.exam_creation.question.dto.request.GenerateQuestionRequestDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -21,16 +24,18 @@ public class QuestionService {
     private final IQuestionRepository repo;
     private final QuestionDTOMapper mapper;
     private final AIQuestionGenerationService aiQuestionGenerationService;
+    private final TelegramNotificationService telegramNotificationService;
 
-    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService) {
+    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService, TelegramNotificationService telegramNotificationService) {
         this.repo = repo;
         this.mapper = mapper;
         this.aiQuestionGenerationService = aiQuestionGenerationService;
+        this.telegramNotificationService = telegramNotificationService;
     }
 
-    public void insert(List<NewQuestionDTO> questions) {
+    public List<String> insert(List<NewQuestionDTO> questions) {
         List<QuestionEntity> newQuestionsEntity = questions.stream().map(mapper::newQuestionDTOToEntity).toList();
-        repo.saveQuestions(newQuestionsEntity);
+        return repo.saveQuestions(newQuestionsEntity);
     }
 
     public List<QuestionDTO> findByIds(List<String> ids) {
@@ -40,7 +45,7 @@ public class QuestionService {
                 .toList();
     }
 
-    public ExamGeneratedDTO generateExamQuestions(String accountType, List<CategoryResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) {
+    public ExamGeneratedDTO generateExamQuestions(String accountType, List<ChapterResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) throws JsonProcessingException {
         List<String> errors = new ArrayList<>();
 
         List<GenerateQuestionRequestDTO> aiRequests = new ArrayList<>();
@@ -62,8 +67,6 @@ public class QuestionService {
         List<QuestionEntity> availablePool = new ArrayList<>(allQuestionsInLessons);
 
         Map<String, ExamQuestionGeneratedDTO> groupedResult = new LinkedHashMap<>();
-
-        Map<String, Integer> missingCountByPair = new LinkedHashMap<>();
 
         for (ExamMatrixDetailDTO detail : matrixDetails) {
             if (detail.getLimit() <= 0) {
@@ -88,7 +91,7 @@ public class QuestionService {
             List<QuestionEntity> selectedQuestions = shuffledMatches.subList(0, takeCount);
 
             // Tính toán và ghi nhận số lượng thiếu cho cặp này
-            CategoryResponseDTO curChapter = categories.stream()
+            ChapterResponseDTO curChapter = categories.stream()
                     .filter(cate -> cate.getId().equals(detail.getChapterId()))
                     .findFirst()
                     .orElse(null);
@@ -112,7 +115,7 @@ public class QuestionService {
                 String errorMsg = String.format(
                         "Thiếu %d câu hỏi | Chương: %s | Bài: %s | Loại: %s | Mức độ: %s | YCCĐ: %s",
                         missingCount,
-                        curChapter.getChapter(),
+                        curChapter.getName(),
                         curLesson.getName(),
                         detail.getQuestionType(),
                         detail.getDifficultyLevel(),
@@ -122,7 +125,9 @@ public class QuestionService {
 
                 GenerateQuestionRequestDTO requestDTO = new GenerateQuestionRequestDTO(
                         missingCount,
-                        curChapter.getChapter(),
+                        curChapter.getId(),
+                        curChapter.getName(),
+                        curLesson.getId(),
                         curLesson.getName(),
                         detail.getExerciseType(),
                         detail.getQuestionType(),
@@ -156,12 +161,52 @@ public class QuestionService {
         }
 
         // Gọi AI Generate câu hỏi nếu là tài khoản plus
-        if (!aiRequests.isEmpty()) {
-            aiQuestionGenerationService.generateQuestions(aiRequests);
+        if (accountType.equals("PLUS") && !aiRequests.isEmpty()) {
+            List<AIQuestionResponseDTO> generatedQuestions = aiQuestionGenerationService.generateQuestions(aiRequests);
+
+            List<NewQuestionDTO> aiQuestions = toNewQuestionDTO(generatedQuestions);
+            List<String> newQuestionIds = this.insert(aiQuestions);
+
+            telegramNotificationService.notifyPendingReview(newQuestionIds);
+
+            int cursor = 0;
+            for (GenerateQuestionRequestDTO request : aiRequests) {
+                int count = request.getNumberOfQuestions();
+                List<String> idsForThisRequest = newQuestionIds.subList(cursor, cursor + count);
+                cursor += count;
+
+                String groupKey = request.getQuestionType() + "_" + request.getDifficultyLevel();
+                ExamQuestionGeneratedDTO group = groupedResult.computeIfAbsent(groupKey, k -> new ExamQuestionGeneratedDTO(
+                        request.getQuestionType(),
+                        request.getDifficultyLevel(),
+                        new ArrayList<>()
+                ));
+                group.getQuestionIds().addAll(idsForThisRequest);
+            }
         }
 
         return new ExamGeneratedDTO(new ArrayList<>(groupedResult.values()), errors);
     }
 
+    private List<NewQuestionDTO> toNewQuestionDTO(List<AIQuestionResponseDTO> aiQuestions) {
+        List<NewQuestionDTO> newQuestionDTOS = new ArrayList<>();
 
+        for (AIQuestionResponseDTO ai : aiQuestions) {
+            NewQuestionDTO dto = new NewQuestionDTO(
+                    null,
+                    ai.getChapterId(),
+                    ai.getLessonId(),
+                    ai.getExerciseType(),
+                    ai.getDifficultyLevel(),
+                    List.of(ai.getLearningOutcome()),
+                    ai.getQuestionType(),
+                    ai.getQuestion(),
+                    ai.getOptions()
+            );
+
+            newQuestionDTOS.add(dto);
+        }
+
+        return newQuestionDTOS;
+    }
 }

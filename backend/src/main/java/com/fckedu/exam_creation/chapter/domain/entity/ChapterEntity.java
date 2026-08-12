@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.category.domain.entity;
+package com.fckedu.exam_creation.chapter.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.common.dto.question;
+package com.fckedu.exam_creation.question.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewOptionDataDTO {
+public class ContentEntity {
     private String template;
 
     @Builder.Default
-    private NewVariablesDTO variables = new NewVariablesDTO();
+    private VariablesEntity variables = new VariablesEntity();
 }

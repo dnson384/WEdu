@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.question.domain.entity;
+package com.fckedu.exam_creation.question.infrastructure.document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuestionContentEntity {
+public class ContentDocument {
     private String template;
 
     @Builder.Default
-    private VariablesEntity variables = new VariablesEntity();
+    private VariablesDocument variables = new VariablesDocument();
 }
