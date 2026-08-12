@@ -1,5 +1,6 @@
 package com.fckedu.exam_creation.exam.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fckedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
 import com.fckedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.fckedu.exam_creation.exam.dto.request.GenerateExamPayload;
@@ -30,7 +31,7 @@ public class ExamController {
     public ResponseEntity<ExamGeneratedResponseDTO> generateExam(
             @RequestHeader("Authorization") String authorization,
             @CookieValue(value = "refreshToken") String refreshToken,
-            @RequestBody GenerateExamPayload payload) {
+            @RequestBody GenerateExamPayload payload) throws JsonProcessingException {
         String accessToken = authorization.substring(7);
         CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
 

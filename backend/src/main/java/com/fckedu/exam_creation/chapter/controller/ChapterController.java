@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("category")
-public class CategoryController {
+@RequestMapping("chapter")
+public class ChapterController {
     private final ChapterUsecase chapterUsecase;
 
-    public CategoryController(ChapterUsecase chapterUsecase) {
+    public ChapterController(ChapterUsecase chapterUsecase) {
         this.chapterUsecase = chapterUsecase;
     }
 

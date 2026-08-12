@@ -1,7 +1,8 @@
 package com.fckedu.exam_creation.exam.usecase;
 
-import com.fckedu.exam_creation.category.usecase.CategoryService;
-import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fckedu.exam_creation.chapter.usecase.ChapterService;
+import com.fckedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
@@ -33,9 +34,9 @@ public class ExamUsecase {
     private final QuestionService questionService;
     private final DraftService draftService;
     private final ExamDTOMapper mapper;
-    private final CategoryService categoryService;
+    private final ChapterService categoryService;
 
-    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamDTOMapper mapper, CategoryService categoryService) {
+    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamDTOMapper mapper, ChapterService categoryService) {
         this.repo = repo;
         this.questionService = questionService;
         this.draftService = draftService;
@@ -44,7 +45,7 @@ public class ExamUsecase {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ExamGeneratedResponseDTO generateExam(String draftId, String userId, String accountType) {
+    public ExamGeneratedResponseDTO generateExam(String draftId, String userId, String accountType) throws JsonProcessingException {
         DraftDTO draft = draftService.getDraft(draftId, userId);
 
         List<ChapterExamEntity> chaptersExam = new ArrayList<>();
@@ -76,7 +77,7 @@ public class ExamUsecase {
         }
 
         List<String> chapterIds = draft.getChapters().stream().map(ChapterDraftDTO::getId).toList();
-        List<CategoryResponseDTO> categories = categoryService.getByIds(chapterIds);
+        List<ChapterResponseDTO> categories = categoryService.getByIds(chapterIds);
 
         ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(accountType, categories, examMatrixDetailDTOS);
 

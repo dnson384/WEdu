@@ -18,10 +18,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "Chapters")
-public class CategoryDocument {
+public class ChapterDocument {
     @Id
     private String id;
 
+    private String subject;
     private String name;
 
     @Builder.Default

@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.common.dto.category;
+package com.fckedu.exam_creation.common.dto.chapter;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,8 +9,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewCategoryDTO {
+public class NewChapterDTO {
     private String subject;
-    private String chapter;
+    private String name;
     private List<NewLessonDataDTO> lessons;
 }

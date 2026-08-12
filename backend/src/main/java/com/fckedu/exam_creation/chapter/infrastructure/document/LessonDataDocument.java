@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.category.infrastructure.document;
+package com.fckedu.exam_creation.chapter.infrastructure.document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

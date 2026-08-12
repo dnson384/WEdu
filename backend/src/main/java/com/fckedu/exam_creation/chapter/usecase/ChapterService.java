@@ -11,35 +11,35 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class CategoryService {
+public class ChapterService {
     private final IChapterRepository repo;
     private final ChapterDTOMapper mapper;
 
-    public CategoryService(IChapterRepository repo, ChapterDTOMapper mapper) {
+    public ChapterService(IChapterRepository repo, ChapterDTOMapper mapper) {
         this.repo = repo;
         this.mapper = mapper;
     }
 
-    public SavedChapterResponse insert(NewChapterDTO category) {
-        ChapterEntity newCategoryEntity = new ChapterEntity(
+    public SavedChapterResponse insert(NewChapterDTO chapter) {
+        ChapterEntity newChapterEntity = new ChapterEntity(
                 null,
-                category.getSubject(),
-                category.getName(),
-                category.getLessons().stream().map(mapper::newLessonDTOToEntity).toList()
+                chapter.getSubject(),
+                chapter.getName(),
+                chapter.getLessons().stream().map(mapper::newLessonDTOToEntity).toList()
         );
 
-        return repo.saveCategory(newCategoryEntity);
+        return repo.saveChapter(newChapterEntity);
     }
 
     public List<ChapterResponseDTO> getByIds(List<String> chapterIds) {
-        List<ChapterEntity> categories = repo.getByIds(chapterIds);
+        List<ChapterEntity> chapterEntities = repo.getByIds(chapterIds);
 
-        return categories.stream()
-                .map(category -> new ChapterResponseDTO(
-                        category.getId(),
-                        category.getSubject(),
-                        category.getChapter(),
-                        category.getLessons().stream()
+        return chapterEntities.stream()
+                .map(chapter -> new ChapterResponseDTO(
+                        chapter.getId(),
+                        chapter.getSubject(),
+                        chapter.getName(),
+                        chapter.getLessons().stream()
                                 .map(mapper::lessonEntityToDTO)
                                 .toList())
                 )

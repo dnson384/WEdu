@@ -1,26 +1,27 @@
-package com.fckedu.exam_creation.category.usecase;
+package com.fckedu.exam_creation.chapter.usecase;
 
-import com.fckedu.exam_creation.category.domain.entity.CategoryEntity;
-import com.fckedu.exam_creation.category.domain.repository.ICategoryRepository;
-import com.fckedu.exam_creation.category.dto.mapper.CategoryDTOMapper;
-import com.fckedu.exam_creation.common.dto.category.response.ChapterResponseDTO;
+import com.fckedu.exam_creation.chapter.domain.entity.ChapterEntity;
+import com.fckedu.exam_creation.chapter.domain.repository.IChapterRepository;
+import com.fckedu.exam_creation.chapter.dto.mapper.ChapterDTOMapper;
+import com.fckedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 @Service
 public class ChapterUsecase {
-    private final ICategoryRepository repo;
-    private final CategoryDTOMapper mapper;
+    private final IChapterRepository repo;
+    private final ChapterDTOMapper mapper;
 
-    public ChapterUsecase(ICategoryRepository repo, CategoryDTOMapper mapper) {
+    public ChapterUsecase(IChapterRepository repo, ChapterDTOMapper mapper) {
         this.repo = repo;
         this.mapper = mapper;
     }
 
     public List<ChapterResponseDTO> getAll() {
-        List<CategoryEntity> categoryEntities = repo.getAll();
-        return categoryEntities.stream()
+        List<ChapterEntity> chapterEntitys = repo.getAll();
+        return chapterEntitys.stream()
                 .map(mapper::entityToDTO)
                 .toList();
     }

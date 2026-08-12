@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewCategoryImporterDTO {
-    private String chapter;
+public class NewChapterImporterDTO {
+    private String name;
     private List<LessonDataImporterDTO> lessons;
 }

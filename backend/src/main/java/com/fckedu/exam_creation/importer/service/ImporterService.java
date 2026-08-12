@@ -1,14 +1,13 @@
 package com.fckedu.exam_creation.importer.service;
 
-import com.fckedu.exam_creation.category.usecase.CategoryService;
-import com.fckedu.exam_creation.common.dto.category.NewBankStatDTO;
-import com.fckedu.exam_creation.common.dto.category.NewCategoryDTO;
-import com.fckedu.exam_creation.common.dto.category.NewLessonDataDTO;
-import com.fckedu.exam_creation.common.dto.category.response.SavedCategoryResponse;
-import com.fckedu.exam_creation.common.dto.question.NewOptionDataDTO;
-import com.fckedu.exam_creation.common.dto.question.NewQuestionContentDTO;
+import com.fckedu.exam_creation.chapter.usecase.ChapterService;
+import com.fckedu.exam_creation.common.dto.chapter.NewBankStatDTO;
+import com.fckedu.exam_creation.common.dto.chapter.NewChapterDTO;
+import com.fckedu.exam_creation.common.dto.chapter.NewLessonDataDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.SavedChapterResponse;
 import com.fckedu.exam_creation.common.dto.question.NewQuestionDTO;
-import com.fckedu.exam_creation.common.dto.question.NewVariablesDTO;
+import com.fckedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.fckedu.exam_creation.common.dto.question.response.VariablesDTO;
 import com.fckedu.exam_creation.importer.dto.parsed.NewQuestionImporterDTO;
 import com.fckedu.exam_creation.importer.dto.parsed.ParsedDataOutput;
 import com.fckedu.exam_creation.importer.infrastructure.pandoc.PandocConverter;
@@ -21,11 +20,11 @@ import java.util.List;
 @Service
 public class ImporterService {
     private final PandocConverter fileParser;
-    private final CategoryService categoryService;
+    private final ChapterService chapterService;
     private final QuestionService questionService;
 
-    public ImporterService(CategoryService categoryService, QuestionService questionService, PandocConverter fileParser) {
-        this.categoryService = categoryService;
+    public ImporterService(ChapterService chapterService, QuestionService questionService, PandocConverter fileParser) {
+        this.chapterService = chapterService;
         this.questionService = questionService;
         this.fileParser = fileParser;
     }
@@ -41,10 +40,10 @@ public class ImporterService {
 
         ParsedDataOutput parsedData = fileParser.parse(fileBuffer);
 
-        NewCategoryDTO newCategoryDTO = new NewCategoryDTO(
+        NewChapterDTO newChapterDTO = new NewChapterDTO(
                 subject,
-                parsedData.getCategory().getChapter(),
-                parsedData.getCategory().getLessons().stream()
+                parsedData.getChapter().getName(),
+                parsedData.getChapter().getLessons().stream()
                         .map(lesson -> {
                             NewLessonDataDTO dto = new NewLessonDataDTO();
                             dto.setName(lesson.getName());
@@ -62,7 +61,7 @@ public class ImporterService {
                         })
                         .toList());
 
-        SavedCategoryResponse categoryResponse = categoryService.insert(newCategoryDTO);
+        SavedChapterResponse categoryResponse = chapterService.insert(newChapterDTO);
 
         List<NewQuestionDTO> newQuestionDTOS = parsedData.getQuestions().stream()
                 .map(question -> mapQuestionToDTO(question, subject, categoryResponse)).toList();
@@ -72,29 +71,29 @@ public class ImporterService {
         return true;
     }
 
-    private NewQuestionDTO mapQuestionToDTO(NewQuestionImporterDTO question, String subject, SavedCategoryResponse categoryResponse) {
+    private NewQuestionDTO mapQuestionToDTO(NewQuestionImporterDTO question, String subject, SavedChapterResponse categoryResponse) {
         NewQuestionDTO newQuestionDTO = new NewQuestionDTO();
-        newQuestionDTO.setCategoryId(categoryResponse.getChapterId());
+        newQuestionDTO.setChapterId(categoryResponse.getChapterId());
         newQuestionDTO.setLessonId(categoryResponse.getLessonId());
         newQuestionDTO.setExerciseType(question.getExerciseType());
         newQuestionDTO.setDifficultyLevel(question.getDifficultyLevel());
         newQuestionDTO.setLearningOutcomes(question.getLearningOutcomes());
         newQuestionDTO.setQuestionType(question.getQuestionType());
 
-        NewQuestionContentDTO questionContentDTO = new NewQuestionContentDTO();
+        ContentDTO questionContentDTO = new ContentDTO();
         questionContentDTO.setTemplate(question.getQuestion().getTemplate());
-        questionContentDTO.setVariables(new NewVariablesDTO(
+        questionContentDTO.setVariables(new VariablesDTO(
                 question.getQuestion().getVariables().getMath(),
                 question.getQuestion().getVariables().getImage()));
 
         newQuestionDTO.setQuestion(questionContentDTO);
 
-        List<NewOptionDataDTO> newOptionDataDTOS = question.getOptions().stream()
+        List<ContentDTO> newOptionDataDTOS = question.getOptions().stream()
                 .map(option -> {
-                    NewOptionDataDTO newOptionDataDTO = new NewOptionDataDTO();
+                    ContentDTO newOptionDataDTO = new ContentDTO();
 
                     newOptionDataDTO.setTemplate(option.getTemplate());
-                    newOptionDataDTO.setVariables(new NewVariablesDTO(
+                    newOptionDataDTO.setVariables(new VariablesDTO(
                             option.getVariables().getMath(),
                             option.getVariables().getImage()));
 

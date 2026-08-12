@@ -1,6 +1,6 @@
 package com.fckedu.exam_creation.draft.usecase.util.dto;
 
-import com.fckedu.exam_creation.common.dto.category.response.BankStatResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.BankStatResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
