@@ -9,7 +9,7 @@ import { ChapterDraft, DraftEntity } from "@/domain/entities/draft.entity";
 import { GetDraft } from "@/presentation/services/draft.service";
 import { GenerateExamService } from "@/presentation/services/exam.service";
 
-export default function useMatrixDetails() {
+export default function useMatrixDetails(accountType: string) {
   const router = useRouter();
 
   const pathname = usePathname();
@@ -82,7 +82,7 @@ export default function useMatrixDetails() {
       const response = await GenerateExamService(draftId);
       if (response) {
         if (response.errors.length > 0) {
-          const params = `errors=${response.errors.join("_||_")}`;
+          const params = accountType === "PLUS" ? "noti=Các câu hỏi thiếu đã được tạo bằng AI" : `errors=${response.errors.join("_||_")}`;
           router.replace(`/exam/${response.examId}?${params}`);
         } else {
           router.replace(`/exam/${response.examId}`);

@@ -30,7 +30,20 @@ export default function useExam() {
 
     const timer = setTimeout(() => {
       setErrorsList([]);
-    }, 5000);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  let notiParam = searchParams.get("noti");
+  const [noti, setNoti] = useState<string | null>(notiParam);
+
+  useEffect(() => {
+    if (noti === null || noti.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setNoti(null);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -91,7 +104,7 @@ export default function useExam() {
       const response = await deleteExamService(examId);
 
       if (response) {
-        await queryClient.invalidateQueries({ queryKey: ["all_exam"] })
+        await queryClient.invalidateQueries({ queryKey: ["all_exam"] });
         router.replace("/exam/all");
       }
     } catch (error) {
@@ -105,6 +118,7 @@ export default function useExam() {
     details,
     isLoading,
     errorsList,
+    noti,
     handleExportDocx,
     handleDeleteClick,
   };

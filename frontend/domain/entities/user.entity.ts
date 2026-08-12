@@ -4,6 +4,7 @@ export interface UserEntity {
   username: string;
   role: string;
   avatarUrl: string;
+  accountType: string
 }
 
 export interface UserResponseEntity {

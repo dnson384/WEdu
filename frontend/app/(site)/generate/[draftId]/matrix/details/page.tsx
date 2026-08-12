@@ -8,6 +8,7 @@ import useMatrixDetails from "@/presentation/hooks/Generate/Exam/Child/useMatrix
 import { transformMatrixDetailsToUI } from "@/presentation/utils/transformMatrixDetailsToUI";
 
 export default function MatrixDetails() {
+  const { user, isLoadingUser } = useAuth();
   const {
     isLoading,
     changesChapters,
@@ -15,9 +16,8 @@ export default function MatrixDetails() {
     handleChangeChapter,
     handleBackClick,
     handleContinueClick,
-  } = useMatrixDetails();
+  } = useMatrixDetails(user.accountType || "");
 
-  const { user, isLoadingUser } = useAuth();
 
   const chaptersCount = changesChapters.length;
 

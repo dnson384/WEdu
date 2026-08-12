@@ -11,6 +11,7 @@ export const useAuth = () => {
     username: "",
     role: "",
     avatarUrl: "",
+    accountType: ""
   });
 
   const { data, isLoading } = useQuery({

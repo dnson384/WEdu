@@ -8,12 +8,14 @@ import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useExam from "@/presentation/hooks/Exam/useExam";
 import { transformExamResToUI } from "@/presentation/utils/transformExamResToUI";
 import Loader from "@/presentation/components/layout/Loader";
+import Noti from "@/presentation/components/layout/Noti";
 
 export default function Exam() {
   const {
     details,
     isLoading,
     errorsList,
+    noti,
     handleExportDocx,
     handleDeleteClick,
   } = useExam();
@@ -54,6 +56,20 @@ export default function Exam() {
                       ))}
                     </div>
                   </motion.div>
+                )}
+
+                {noti && (
+                  <div className="absolute w-6xl z-20">
+                    <div className="flex items-center justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, x: 0 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="w-xl"
+                      >
+                        <Noti message={noti} />
+                      </motion.div>
+                    </div>
+                  </div>
                 )}
               </AnimatePresence>
 
