@@ -24,7 +24,7 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
     }
 
     @Override
-    public void saveQuestions(List<QuestionEntity> questions) {
+    public List<String> saveQuestions(List<QuestionEntity> questions) {
         List<QuestionDocument> questionsDoc = questions.stream()
                 .map(question -> {
                     QuestionDocument newDoc = questionMapper.toDocument(question);
@@ -34,7 +34,14 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
                 })
                 .toList();
 
-        mongoTemplate.insertAll(questionsDoc);
+        List<QuestionDocument> inserted = mongoTemplate.insertAll(questionsDoc)
+                .stream()
+                .toList();
+
+        return inserted.stream()
+                .map(QuestionDocument::getId)
+                .toList();
+
     }
 
     @Override

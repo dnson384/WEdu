@@ -28,7 +28,7 @@ public class QuestionDocument {
     private String id;
 
     @Field(targetType = FieldType.OBJECT_ID)
-    private String categoryId;
+    private String chapterId;
 
     @Field(targetType = FieldType.OBJECT_ID)
     private String lessonId;
@@ -45,10 +45,10 @@ public class QuestionDocument {
     @Indexed
     private String questionType;
 
-    private QuestionContentDocument question;
+    private ContentDocument question;
 
     @Builder.Default
-    private List<OptionDataDocument> options = new ArrayList<>();
+    private List<ContentDocument> options = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;

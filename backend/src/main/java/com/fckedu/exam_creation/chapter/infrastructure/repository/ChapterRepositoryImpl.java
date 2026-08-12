@@ -1,12 +1,12 @@
-package com.fckedu.exam_creation.category.infrastructure.repository;
+package com.fckedu.exam_creation.chapter.infrastructure.repository;
 
-import com.fckedu.exam_creation.category.domain.entity.CategoryEntity;
-import com.fckedu.exam_creation.category.domain.repository.ICategoryRepository;
-import com.fckedu.exam_creation.category.infrastructure.document.BankStatDocument;
-import com.fckedu.exam_creation.category.infrastructure.document.CategoryDocument;
-import com.fckedu.exam_creation.category.infrastructure.document.LessonDataDocument;
-import com.fckedu.exam_creation.category.infrastructure.mapper.CategoryMapper;
-import com.fckedu.exam_creation.common.dto.category.response.SavedCategoryResponse;
+import com.fckedu.exam_creation.chapter.domain.entity.ChapterEntity;
+import com.fckedu.exam_creation.chapter.domain.repository.IChapterRepository;
+import com.fckedu.exam_creation.chapter.infrastructure.document.BankStatDocument;
+import com.fckedu.exam_creation.chapter.infrastructure.document.CategoryDocument;
+import com.fckedu.exam_creation.chapter.infrastructure.document.LessonDataDocument;
+import com.fckedu.exam_creation.chapter.infrastructure.mapper.ChapterMapper;
+import com.fckedu.exam_creation.common.dto.chapter.response.SavedCategoryResponse;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class CategoryRepositoryImpl implements ICategoryRepository {
+public class ChapterRepositoryImpl implements IChapterRepository {
     private final MongoTemplate mongoTemplate;
-    private final CategoryMapper categoryMapper;
+    private final ChapterMapper chapterMapper;
 
-    public CategoryRepositoryImpl(MongoTemplate mongoTemplate, CategoryMapper categoryMapper) {
+    public ChapterRepositoryImpl(MongoTemplate mongoTemplate, ChapterMapper chapterMapper) {
         this.mongoTemplate = mongoTemplate;
-        this.categoryMapper = categoryMapper;
+        this.chapterMapper = chapterMapper;
     }
 
     @Override
-    public SavedCategoryResponse saveCategory(CategoryEntity category) {
-        CategoryDocument categoryDocument = categoryMapper.toDocument(category);
+    public SavedCategoryResponse saveCategory(ChapterEntity category) {
+        CategoryDocument categoryDocument = chapterMapper.toDocument(category);
 
         // Tìm kiếm chương đã tồn tại
         Query query = new Query(Criteria.where("chapter").is(category.getChapter()));
@@ -98,25 +98,25 @@ public class CategoryRepositoryImpl implements ICategoryRepository {
     }
 
     @Override
-    public List<CategoryEntity> getAll() {
+    public List<ChapterEntity> getAll() {
         List<CategoryDocument> categories = mongoTemplate.findAll(CategoryDocument.class);
         return categories.stream()
-                .map(categoryMapper::toEntity)
+                .map(chapterMapper::toEntity)
                 .toList();
     }
 
     @Override
-    public CategoryEntity getById(String chapterId) {
+    public ChapterEntity getById(String chapterId) {
         CategoryDocument category = mongoTemplate.findById(chapterId, CategoryDocument.class);
         if (category == null) {
             throw new NotFoundException("Không tồn tại chương này");
         }
 
-        return categoryMapper.toEntity(category);
+        return chapterMapper.toEntity(category);
     }
 
     @Override
-    public List<CategoryEntity> getByIds(List<String> chapterIds) {
+    public List<ChapterEntity> getByIds(List<String> chapterIds) {
         Query query = new Query(Criteria.where("_id").in(chapterIds));
         List<CategoryDocument> categories = mongoTemplate.find(query, CategoryDocument.class);
 
@@ -125,7 +125,7 @@ public class CategoryRepositoryImpl implements ICategoryRepository {
         }
 
         return categories.stream()
-                .map(categoryMapper::toEntity)
+                .map(chapterMapper::toEntity)
                 .toList();
     }
 

@@ -1,10 +1,13 @@
 package com.fckedu.exam_creation.ai.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fckedu.exam_creation.ai.properties.DeepSeekProperties;
+import com.fckedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
+import com.fckedu.exam_creation.common.dto.ai.response.AIListQuestionsResponseDTO;
+import com.fckedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.fckedu.exam_creation.common.exception.AIGenerationException;
-import com.fckedu.exam_creation.question.dto.request.GenerateQuestionRequestDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -30,17 +33,12 @@ public class AIQuestionGenerationService {
                 .build();
     }
 
-    public String generateQuestions(List<GenerateQuestionRequestDTO> requests) {
+    public List<AIQuestionResponseDTO> generateQuestions(List<GenerateQuestionRequestDTO> requests) throws JsonProcessingException {
         if (requests == null || requests.isEmpty()) {
             return null;
         }
 
         String prompt = buildPrompt(requests);
-        String endpoint = String.format(
-                "/models/%s:generateContent?key=%s",
-                properties.getModel(),
-                properties.getApiKey()
-        );
 
         Map<String, Object> requestBody = Map.of(
                 "model", properties.getModel(),
@@ -63,7 +61,10 @@ public class AIQuestionGenerationService {
             throw new AIGenerationException("Không thể gọi DeepSeek API: " + e.getMessage());
         }
 
-        return extractGeneratedText(rawResponse);
+        String json = extractGeneratedText(rawResponse);
+        AIListQuestionsResponseDTO aiListQuestionsResponseDTO = objectMapper.readValue(json, AIListQuestionsResponseDTO.class);
+
+        return aiListQuestionsResponseDTO.getQuestions();
     }
 
     private String extractGeneratedText(String rawResponse) {
@@ -91,8 +92,8 @@ public class AIQuestionGenerationService {
             specsBuilder.append(String.format("""
                             Yêu cầu %d:
                             - Số lượng câu hỏi cần tạo: %d câu
-                            - Chương: "%s"
-                            - Bài: "%s"
+                            - Chương: "%s" với id: "%s"
+                            - Bài: "%s" với id: "%s"
                             - Dạng bài: "%s"
                             - Mức độ: "%s"
                             - Yêu cầu cần đạt: "%s"
@@ -101,7 +102,9 @@ public class AIQuestionGenerationService {
                     i + 1,
                     req.getNumberOfQuestions(),
                     req.getChapter(),
+                    req.getChapterId(),
                     req.getLesson(),
+                    req.getLessonId(),
                     req.getExerciseType(),
                     req.getDifficultyLevel(),
                     req.getLearningOutcome(),
@@ -143,13 +146,13 @@ public class AIQuestionGenerationService {
                 {
                   "questions": [
                     {
-                        "chapter": "Tên chương tương ứng",
-                        "lesson": "Tên bài tương ứng",
+                        "chapterId": "Id chương tương ứng",
+                        "lessonId": "Id bài tương ứng",
                         "exerciseType": "Dạng bài tương ứng",
                         "difficultyLevel": "Mức độ tương ứng",
                         "learningOutcome": "Yêu cầu cần đạt tương ứng",
                         "questionType": "Loại câu hỏi tương ứng",
-                       "question": {
+                        "question": {
                             "template": "Đây là với text thường. Đây là với hình ảnh <img_0>. Đây là với công thức toán học <math_0>, <math_1>",
                             "variables": {
                                 "math": {
@@ -182,5 +185,4 @@ public class AIQuestionGenerationService {
                 """.formatted(specsBuilder.toString(), totalQuestions
         );
     }
-
 }

@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryResponseDTO {
+public class ChapterResponseDTO {
     private String id;
     private String subject;
     private String chapter;

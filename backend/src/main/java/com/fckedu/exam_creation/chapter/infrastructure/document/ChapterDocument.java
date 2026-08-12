@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.category.infrastructure.document;
+package com.fckedu.exam_creation.chapter.infrastructure.document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,13 +17,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "Categories")
+@Document(collection = "Chapters")
 public class CategoryDocument {
     @Id
     private String id;
 
-    private String subject;
-    private String chapter;
+    private String name;
 
     @Builder.Default
     private List<LessonDataDocument> lessons = new ArrayList<>();
