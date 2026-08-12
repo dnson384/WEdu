@@ -4,7 +4,7 @@ import ExamCard from "@/presentation/components/Exam/ExamCard";
 import FilterBar from "@/presentation/components/Exam/Filter/FilterBar";
 
 import useAllExam from "@/presentation/hooks/Exam/useAllExam";
-import useCategory from "@/presentation/hooks/Generate/useCategory";
+import useChapter from "@/presentation/hooks/Generate/useChapter";
 import useExamFilter from "@/presentation/hooks/Exam/useExamFilter";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 
@@ -12,7 +12,7 @@ export default function AllExam() {
   const { user, isLoadingUser } = useAuth();
 
   const { exams, isLoading, handleCardClick } = useAllExam();
-  const { categories } = useCategory();
+  const { chapters, isLoadingChapters } = useChapter();
   const {
     selectedChapterIds,
     selectedLessonIds,
@@ -29,7 +29,7 @@ export default function AllExam() {
     // Filtered
     examFiltered,
     handleFilterClick,
-  } = useExamFilter({ categories, exams });
+  } = useExamFilter({ chapters, exams });
 
   return (
     <>

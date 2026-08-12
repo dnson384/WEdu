@@ -3,7 +3,7 @@ import {
   UpdateDraftParam,
   UpdateChaptersDraftPayload,
 } from "@/presentation/schemas/draft.schema";
-import { getAllCategoriesService } from "@/presentation/services/category.service";
+import { getAllChaptersService } from "@/presentation/services/chapter.service";
 import {
   GetDraft,
   UpdateChapters,
@@ -38,20 +38,20 @@ export default function useSelectChapterPage() {
         enabled: !!draftId,
       },
       {
-        queryKey: ["categories"],
-        queryFn: () => getAllCategoriesService(),
+        queryKey: ["all-chapters"],
+        queryFn: () => getAllChaptersService(),
         staleTime: 1000 * 60 * 5,
       },
     ],
   });
 
-  const [draftQuery, categoriesQuery] = results;
+  const [draftQuery, chapterQuery] = results;
   const draft = draftQuery.data ?? initalDraftEntity;
-  const categories = categoriesQuery.data ?? [];
-  const isLoading = draftQuery.isLoading || categoriesQuery.isLoading;
+  const chapters = chapterQuery.data ?? [];
+  const isLoading = draftQuery.isLoading || chapterQuery.isLoading;
 
   const isError = draftQuery.isError;
-  const error = draftQuery.error || categoriesQuery.error;
+  const error = draftQuery.error || chapterQuery.error;
   const axiosError = error as AxiosError<any>;
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -149,7 +149,7 @@ export default function useSelectChapterPage() {
 
   return {
     draft,
-    categories,
+    chapters,
     isLoadingDraft: isLoading,
     isError,
     errorMessage,

@@ -14,7 +14,7 @@ import useSelectChapterPage from "@/presentation/hooks/Generate/Exam/Child/useSe
 
 export default function SelectChapter() {
   const {
-    categories,
+    chapters,
     isLoadingDraft,
     errorMessage,
     selectedChapters,
@@ -23,14 +23,14 @@ export default function SelectChapter() {
     handleBackClick,
     handleContinueClick,
   } = useSelectChapterPage();
-  
+
   const { user, isLoadingUser } = useAuth();
 
   // Chương chưa được chọn
-  const unSelectedChaptersData = categories
-    .map((category) => ({
-      id: category.id,
-      name: category.chapter,
+  const unSelectedChaptersData = chapters
+    .map((chapter) => ({
+      id: chapter.id,
+      name: chapter.name,
     }))
     .filter(
       (chapter) => !selectedChapters.map((sc) => sc.id).includes(chapter.id),

@@ -1,17 +1,14 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import type { CategoryEntity } from "@/domain/entities/category.entity";
-import {
-  ExamChapterReposneEntity,
-  ExamResponseEntity,
-} from "@/domain/entities/exam.entity";
+import type { ChapterEntity } from "@/domain/entities/chapter.entity";
+import { ExamResponseEntity } from "@/domain/entities/exam.entity";
 
 interface UseFilterProps {
-  categories: CategoryEntity[];
+  chapters: ChapterEntity[];
   exams: ExamResponseEntity[];
 }
 
-export default function useExamFilter({ categories, exams }: UseFilterProps) {
+export default function useExamFilter({ chapters, exams }: UseFilterProps) {
   // -------------------- Filter - Chapter --------------------
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [chapterSearch, setChapterSearch] = useState("");
@@ -25,10 +22,10 @@ export default function useExamFilter({ categories, exams }: UseFilterProps) {
 
   // Danh sách Chương sau khi tìm kiếm
   const filteredChapters = useMemo(() => {
-    return categories.filter((c) =>
+    return chapters.filter((c) =>
       c.chapter.toLowerCase().includes(chapterSearch.toLowerCase()),
     );
-  }, [categories, chapterSearch]);
+  }, [chapters, chapterSearch]);
 
   // -------------------- Filter - Lesson --------------------
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
@@ -45,12 +42,12 @@ export default function useExamFilter({ categories, exams }: UseFilterProps) {
   // Danh sách Bài học hiển thị dựa theo Chương được chọn (nếu không chọn chương nào -> hiển thị tất cả)
   const availableLessons = useMemo(() => {
     if (selectedChapterIds.length === 0) {
-      return categories.flatMap((c) => c.lessons);
+      return chapters.flatMap((c) => c.lessons);
     }
-    return categories
+    return chapters
       .filter((c) => selectedChapterIds.includes(c.id))
       .flatMap((c) => c.lessons);
-  }, [categories, selectedChapterIds]);
+  }, [chapters, selectedChapterIds]);
 
   // Danh sách Bài học sau khi tìm kiếm
   const filteredLessons = useMemo(() => {

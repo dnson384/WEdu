@@ -7,8 +7,8 @@ export interface LessonData {
   questionTypes: string[];
 }
 
-export interface CategoryEntity {
+export interface ChapterEntity {
   id: string;
-  chapter: string;
+  name: string;
   lessons: LessonData[];
 }

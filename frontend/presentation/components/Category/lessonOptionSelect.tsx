@@ -1,4 +1,4 @@
-import { LessonData } from "@/domain/entities/category.entity";
+import { LessonData } from "@/domain/entities/chapter.entity";
 import { ChangeEvent } from "react";
 
 interface LessonOptionProps {

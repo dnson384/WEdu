@@ -1,4 +1,4 @@
-import { LessonData } from "@/domain/entities/category.entity";
+import { LessonData } from "@/domain/entities/chapter.entity";
 import { useEffect, useState } from "react";
 import ExamLessonSelect from "./ExamLessonSelect";
 
