@@ -90,10 +90,6 @@ public class DraftUsecase {
     public boolean generateMatrix(String draftId, String userId) {
         DraftDTO draft = getDraft(draftId, userId);
 
-        if (util.hasMatrix(draft.getChapters(), draft.getQuestionsCount())) {
-            return true;
-        }
-
         List<ChapterDraftDTO> newDraftChapters = new ArrayList<>(draft.getChapters());
         util.generateMatrix(
                 newDraftChapters,
@@ -125,10 +121,6 @@ public class DraftUsecase {
 
     public boolean generateMatrixDetails(String draftId, String userId) {
         DraftDTO draft = getDraft(draftId, userId);
-
-        if (util.hasMatrixDetail(draft.getChapters(), draft.getQuestionsCount())) {
-            return true;
-        }
 
         List<String> chapterIds = draft.getChapters().stream()
                 .map(ChapterDraftDTO::getId).toList();
