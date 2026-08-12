@@ -3,7 +3,7 @@ import {
   UpdateDraftParam,
   UpdateLessonssDraftPayload,
 } from "@/presentation/schemas/draft.schema";
-import { getAllCategoriesService } from "@/presentation/services/category.service";
+import { getAllChaptersService } from "@/presentation/services/chapter.service";
 import {
   GenerateMatrix,
   GetDraft,
@@ -43,27 +43,25 @@ export default function useSelectLessonPage() {
         enabled: !!draftId,
       },
       {
-        queryKey: ["categories"],
-        queryFn: () => getAllCategoriesService(),
+        queryKey: ["all-chapters"],
+        queryFn: () => getAllChaptersService(),
         staleTime: 1000 * 60 * 5,
       },
     ],
   });
 
   // Data
-  const [draftQuery, categoriesQuery] = results;
+  const [draftQuery, chapterQuery] = results;
   const draft = draftQuery.data ?? initalDraftEntity;
 
-  const categories = categoriesQuery.data ?? [];
-  const currentChapter = categories.find(
-    (category) => category.id === chapterId,
-  );
+  const chapters = chapterQuery.data ?? [];
+  const currentChapter = chapters.find((chapters) => chapters.id === chapterId);
 
   // Error & UI
-  const isLoading = draftQuery.isLoading || categoriesQuery.isLoading;
+  const isLoading = draftQuery.isLoading || chapterQuery.isLoading;
 
   const isError = draftQuery.isError;
-  const error = draftQuery.error || categoriesQuery.error;
+  const error = draftQuery.error || chapterQuery.error;
   const axiosError = error as AxiosError<any>;
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

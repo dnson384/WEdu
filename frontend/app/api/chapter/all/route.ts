@@ -1,5 +1,5 @@
-import { GetAllCategoriesUsecase } from "@/application/usecases/category/getAll";
-import { CategoryRepositoryImpl } from "@/infrastructure/repositories/categoryRepositoryImpl";
+import { GetAllChaptersUsecase } from "@/application/usecases/chapter/GetAllChaptersUsecase";
+import { ChapterRepositoryImpl } from "@/infrastructure/repositories/ChapterRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     const accessToken = req.cookies.get("accessToken")?.value;
     const refreshToken = req.cookies.get("refreshToken")?.value;
 
-    const repo = new CategoryRepositoryImpl();
-    const usecase = new GetAllCategoriesUsecase(repo);
+    const repo = new ChapterRepositoryImpl();
+    const usecase = new GetAllChaptersUsecase(repo);
     const response = await usecase.execute(accessToken!, refreshToken!);
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

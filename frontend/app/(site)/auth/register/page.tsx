@@ -75,9 +75,11 @@ export default function Register() {
       </section>
 
       <section className="m-auto select-none">
-        <div className="absolute top-20">
-          <Error message={error} />
-        </div>
+        {error && (
+          <div className="absolute top-20">
+            <Error message={error} />
+          </div>
+        )}
 
         <div>
           <div className="mb-8">

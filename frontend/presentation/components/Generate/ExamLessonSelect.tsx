@@ -1,6 +1,6 @@
 "use client";
 
-import { LessonData } from "@/domain/entities/category.entity";
+import { LessonData } from "@/domain/entities/chapter.entity";
 import { useEffect, useRef } from "react";
 
 interface ChapterSelectProps {

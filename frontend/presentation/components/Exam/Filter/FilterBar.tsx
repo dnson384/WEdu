@@ -1,6 +1,3 @@
-// src/presentation/components/FilterBar.tsx
-import React from "react";
-import { CategoryEntity } from "@/domain/entities/category.entity";
 import { DropdownFilter } from "./DropDownFilter";
 import { icons } from "@/presentation/common/icons";
 

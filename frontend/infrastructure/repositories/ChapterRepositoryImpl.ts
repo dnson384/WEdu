@@ -1,8 +1,8 @@
 import axios from "axios";
-import { ICategoryRepository } from "@/domain/repositories/ICategoryRepository";
-import { CategoryEntity } from "@/domain/entities/category.entity";
+import { IChapterRepository } from "@/domain/repositories/IChapterRepository";
+import { ChapterEntity } from "@/domain/entities/chapter.entity";
 
-export class CategoryRepositoryImpl implements ICategoryRepository {
+export class ChapterRepositoryImpl implements IChapterRepository {
   private readonly baseUrl: string;
 
   constructor() {
@@ -15,7 +15,7 @@ export class CategoryRepositoryImpl implements ICategoryRepository {
   async getAll(
     accessToken: string,
     refreshToken: string,
-  ): Promise<CategoryEntity[]> {
+  ): Promise<ChapterEntity[]> {
     const cookieHeaderParts: string[] = [];
 
     cookieHeaderParts.push(`accessToken=${accessToken}`);
@@ -23,8 +23,8 @@ export class CategoryRepositoryImpl implements ICategoryRepository {
 
     const customCookieHeader = cookieHeaderParts.join("; ");
 
-    const { data } = await axios.get<CategoryEntity[]>(
-      `${this.baseUrl}/category/all`,
+    const { data } = await axios.get<ChapterEntity[]>(
+      `${this.baseUrl}/chapter/all`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
