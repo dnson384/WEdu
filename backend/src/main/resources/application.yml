@@ -13,7 +13,7 @@ spring:
 
   mongodb:
     uri: "mongodb+srv://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@cluster0.96svcb8.mongodb.net/?appName=Cluster0"
-    database: "test"
+    database: "test001"
 
   security:
     oauth2:
@@ -48,3 +48,9 @@ ai:
     base-url: https://api.deepseek.com
     model: deepseek-chat
     timeout-seconds: 30
+
+telegram:
+  bot:
+    token: ${TELEGRAM_BOT_TOKEN}
+  chat:
+    id: ${TELEGRAM_CHAT_ID}

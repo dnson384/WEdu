@@ -1,8 +1,8 @@
 package com.fckedu.exam_creation.draft.usecase.util;
 
-import com.fckedu.exam_creation.common.dto.category.response.BankStatResponseDTO;
-import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
-import com.fckedu.exam_creation.common.dto.category.response.LessonDataResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.BankStatResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
+import com.fckedu.exam_creation.common.dto.chapter.response.LessonDataResponseDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.MatrixDetailItemDTO;
@@ -122,12 +122,12 @@ public class DraftUtil {
     }
 
     public void generateMatrixDetails(
-            List<CategoryResponseDTO> categories,
+            List<ChapterResponseDTO> categories,
             List<LessonDraftDTO> allDraftLessons
     ) {
         Map<String, LessonDataResponseDTO> cateMap = new HashMap<>();
         if (categories != null) {
-            for (CategoryResponseDTO cate : categories) {
+            for (ChapterResponseDTO cate : categories) {
                 if (cate.getLessons() != null) {
                     for (LessonDataResponseDTO lesson : cate.getLessons()) {
                         cateMap.put(lesson.getId(), lesson);

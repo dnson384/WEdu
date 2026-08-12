@@ -3,10 +3,10 @@ package com.fckedu.exam_creation.chapter.infrastructure.repository;
 import com.fckedu.exam_creation.chapter.domain.entity.ChapterEntity;
 import com.fckedu.exam_creation.chapter.domain.repository.IChapterRepository;
 import com.fckedu.exam_creation.chapter.infrastructure.document.BankStatDocument;
-import com.fckedu.exam_creation.chapter.infrastructure.document.CategoryDocument;
+import com.fckedu.exam_creation.chapter.infrastructure.document.ChapterDocument;
 import com.fckedu.exam_creation.chapter.infrastructure.document.LessonDataDocument;
 import com.fckedu.exam_creation.chapter.infrastructure.mapper.ChapterMapper;
-import com.fckedu.exam_creation.common.dto.chapter.response.SavedCategoryResponse;
+import com.fckedu.exam_creation.common.dto.chapter.response.SavedChapterResponse;
 import com.fckedu.exam_creation.common.exception.NotFoundException;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -29,28 +29,28 @@ public class ChapterRepositoryImpl implements IChapterRepository {
     }
 
     @Override
-    public SavedCategoryResponse saveCategory(ChapterEntity category) {
-        CategoryDocument categoryDocument = chapterMapper.toDocument(category);
+    public SavedChapterResponse saveChapter(ChapterEntity chapter) {
+        ChapterDocument chapterDocument = chapterMapper.toDocument(chapter);
 
         // Tìm kiếm chương đã tồn tại
-        Query query = new Query(Criteria.where("chapter").is(category.getChapter()));
-        CategoryDocument existedChapter = mongoTemplate.findOne(query, CategoryDocument.class);
+        Query query = new Query(Criteria.where("name").is(chapter.getName()));
+        ChapterDocument existedChapter = mongoTemplate.findOne(query, ChapterDocument.class);
 
         if (existedChapter == null) {
-            categoryDocument.setCreateAt(LocalDateTime.now());
-            categoryDocument.setUpdatedAt(LocalDateTime.now());
-            categoryDocument.getLessons().get(0).setId(new ObjectId().toString());
-            CategoryDocument created = mongoTemplate.save(categoryDocument);
+            chapterDocument.setCreateAt(LocalDateTime.now());
+            chapterDocument.setUpdatedAt(LocalDateTime.now());
+            chapterDocument.getLessons().get(0).setId(new ObjectId().toString());
+            ChapterDocument created = mongoTemplate.save(chapterDocument);
 
-            return new SavedCategoryResponse(created.getId(), created.getLessons().get(0).getId());
+            return new SavedChapterResponse(created.getId(), created.getLessons().get(0).getId());
         }
 
         // Tìm bài học trong chương đã tồn tại
-        LessonDataDocument newLesson = categoryDocument.getLessons().get(0);
+        LessonDataDocument newLesson = chapterDocument.getLessons().get(0);
         int existingLessonIndex = -1;
 
         for (int index = 0; index < existedChapter.getLessons().size(); index++) {
-            if (existedChapter.getLessons().get(index).getName().equals(category.getLessons().get(0).getName())) {
+            if (existedChapter.getLessons().get(index).getName().equals(chapter.getLessons().get(0).getName())) {
                 existingLessonIndex = index;
                 break;
             }
@@ -94,12 +94,12 @@ public class ChapterRepositoryImpl implements IChapterRepository {
             targetLessonId = existingLesson.getId();
         }
 
-        return new SavedCategoryResponse(existedChapter.getId(), targetLessonId);
+        return new SavedChapterResponse(existedChapter.getId(), targetLessonId);
     }
 
     @Override
     public List<ChapterEntity> getAll() {
-        List<CategoryDocument> categories = mongoTemplate.findAll(CategoryDocument.class);
+        List<ChapterDocument> categories = mongoTemplate.findAll(ChapterDocument.class);
         return categories.stream()
                 .map(chapterMapper::toEntity)
                 .toList();
@@ -107,24 +107,24 @@ public class ChapterRepositoryImpl implements IChapterRepository {
 
     @Override
     public ChapterEntity getById(String chapterId) {
-        CategoryDocument category = mongoTemplate.findById(chapterId, CategoryDocument.class);
-        if (category == null) {
+        ChapterDocument chapter = mongoTemplate.findById(chapterId, ChapterDocument.class);
+        if (chapter == null) {
             throw new NotFoundException("Không tồn tại chương này");
         }
 
-        return chapterMapper.toEntity(category);
+        return chapterMapper.toEntity(chapter);
     }
 
     @Override
     public List<ChapterEntity> getByIds(List<String> chapterIds) {
         Query query = new Query(Criteria.where("_id").in(chapterIds));
-        List<CategoryDocument> categories = mongoTemplate.find(query, CategoryDocument.class);
+        List<ChapterDocument> chapters = mongoTemplate.find(query, ChapterDocument.class);
 
-        if (categories.isEmpty()) {
+        if (chapters.isEmpty()) {
             throw new NotFoundException("Không tồn tại chương này");
         }
 
-        return categories.stream()
+        return chapters.stream()
                 .map(chapterMapper::toEntity)
                 .toList();
     }

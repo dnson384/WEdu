@@ -11,9 +11,9 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CategoryEntity {
+public class ChapterEntity {
     private String id;
     private String subject;
-    private String chapter;
+    private String name;
     private List<LessonDataEntity> lessons;
 }

@@ -1,7 +1,7 @@
 package com.fckedu.exam_creation.draft.usecase;
 
-import com.fckedu.exam_creation.category.usecase.CategoryService;
-import com.fckedu.exam_creation.common.dto.category.response.CategoryResponseDTO;
+import com.fckedu.exam_creation.chapter.usecase.ChapterService;
+import com.fckedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.fckedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
@@ -24,13 +24,13 @@ import java.util.List;
 @Service
 public class DraftUsecase {
     private final IDraftRepository repo;
-    private final CategoryService categoryService;
+    private final ChapterService chapterService;
     private final DraftDTOMapper mapper;
     private final DraftUtil util;
 
-    public DraftUsecase(IDraftRepository repo, CategoryService categoryService, DraftDTOMapper mapper, DraftUtil util) {
+    public DraftUsecase(IDraftRepository repo, ChapterService chapterService, DraftDTOMapper mapper, DraftUtil util) {
         this.repo = repo;
-        this.categoryService = categoryService;
+        this.chapterService = chapterService;
         this.mapper = mapper;
         this.util = util;
     }
@@ -132,7 +132,7 @@ public class DraftUsecase {
 
         List<String> chapterIds = draft.getChapters().stream()
                 .map(ChapterDraftDTO::getId).toList();
-        List<CategoryResponseDTO> categories = categoryService.getByIds(chapterIds);
+        List<ChapterResponseDTO> categories = chapterService.getByIds(chapterIds);
 
         List<LessonDraftDTO> allDraftLessons = new ArrayList<>();
         for (ChapterDraftDTO chapter : draft.getChapters()) {

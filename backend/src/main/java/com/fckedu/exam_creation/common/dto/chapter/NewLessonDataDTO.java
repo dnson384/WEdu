@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.common.dto.category;
+package com.fckedu.exam_creation.common.dto.chapter;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.common.dto.category.response;
+package com.fckedu.exam_creation.common.dto.chapter.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +14,6 @@ import java.util.List;
 public class ChapterResponseDTO {
     private String id;
     private String subject;
-    private String chapter;
+    private String name;
     private List<LessonDataResponseDTO> lessons;
 }

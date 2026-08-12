@@ -1,4 +1,4 @@
-package com.fckedu.exam_creation.question.dto.request;
+package com.fckedu.exam_creation.common.dto.ai.request;
 
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -14,8 +14,14 @@ public class GenerateQuestionRequestDTO {
     @Max(50)
     private Integer numberOfQuestions;
 
+    @NotBlank(message = "Id chương không được để trống")
+    private String chapterId;
+
     @NotBlank(message = "Chương không được để trống")
     private String chapter;
+
+    @NotBlank(message = "Id bài không được để trống")
+    private String lessonId;
 
     @NotBlank(message = "Bài không được để trống")
     private String lesson;

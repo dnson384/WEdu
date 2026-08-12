@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class QuestionDTO {
     private String id;
-    private String categoryId;
+    private String chapterId;
     private String lessonId;
     private String exerciseType;
     private String difficultyLevel;

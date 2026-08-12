@@ -87,8 +87,8 @@ public class PandocConverter {
             JsonNode blocks = ast.get("blocks");
 
             List<NewQuestionImporterDTO> questionsRes = new ArrayList<>();
-            NewCategoryImporterDTO categoryRes = new NewCategoryImporterDTO();
-            categoryRes.setLessons(new ArrayList<>());
+            NewChapterImporterDTO chapterRes = new NewChapterImporterDTO();
+            chapterRes.setLessons(new ArrayList<>());
 
             String chapter = "";
             String lesson = "";
@@ -120,9 +120,9 @@ public class PandocConverter {
             }
 
             // Tạo category cho chương và bài
-            categoryRes.setChapter(chapter);
+            chapterRes.setName(chapter);
             LessonDataImporterDTO lessonData = new LessonDataImporterDTO(lesson, new ArrayList<BankStatDTO>());
-            categoryRes.getLessons().add(lessonData);
+            chapterRes.getLessons().add(lessonData);
 
             BankStatDTO tempBankStat = new BankStatDTO();
 
@@ -175,7 +175,7 @@ public class PandocConverter {
                         if (isFillTemp) {
                             int curStatIndex = -1;
 
-                            List<BankStatDTO> bankStats = categoryRes.getLessons().get(0).getBankStats();
+                            List<BankStatDTO> bankStats = chapterRes.getLessons().get(0).getBankStats();
 
                             for (int i = 0; i < bankStats.size(); i++) {
                                 BankStatDTO stat = bankStats.get(i);
@@ -192,7 +192,7 @@ public class PandocConverter {
                             }
 
                             if (curStatIndex < 0) {
-                                categoryRes.getLessons().get(0).getBankStats().add(tempBankStat);
+                                chapterRes.getLessons().get(0).getBankStats().add(tempBankStat);
                             } else {
                                 BankStatDTO foundStat = bankStats.get(curStatIndex);
                                 foundStat.setCount(foundStat.getCount() + 1);
@@ -220,7 +220,7 @@ public class PandocConverter {
             }
 
             if (!questionsRes.isEmpty()) {
-                return new ParsedDataOutput(questionsRes, categoryRes);
+                return new ParsedDataOutput(questionsRes, chapterRes);
 
             } else {
                 throw new Exception("File rỗng");

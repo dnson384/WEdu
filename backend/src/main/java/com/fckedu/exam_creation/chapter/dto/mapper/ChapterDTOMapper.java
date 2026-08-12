@@ -8,7 +8,7 @@ import com.fckedu.exam_creation.common.dto.chapter.response.LessonDataResponseDT
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
-public interface chapterDTOMapper {
+public interface ChapterDTOMapper {
     ChapterResponseDTO entityToDTO(ChapterEntity entity);
 
     ChapterEntity dtoToEntity(ChapterResponseDTO dto);
