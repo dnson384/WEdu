@@ -1,0 +1,17 @@
+package com.wedu.exam_creation.question.domain.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ContentEntity {
+    private String template;
+
+    @Builder.Default
+    private VariablesEntity variables = new VariablesEntity();
+}

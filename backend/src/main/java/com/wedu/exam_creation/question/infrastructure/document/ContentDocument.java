@@ -1,0 +1,17 @@
+package com.wedu.exam_creation.question.infrastructure.document;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ContentDocument {
+    private String template;
+
+    @Builder.Default
+    private VariablesDocument variables = new VariablesDocument();
+}
