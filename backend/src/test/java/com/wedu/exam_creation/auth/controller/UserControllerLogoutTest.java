@@ -1,11 +1,12 @@
-package com.wedu.exam_creation.user.controller;
+package com.wedu.exam_creation.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wedu.exam_creation.auth.usecase.AuthUsecase;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
+import com.wedu.exam_creation.user.controller.UserController;
 import com.wedu.exam_creation.user.usecase.UserService;
-import com.wedu.exam_creation.user.usecase.UserUsecase;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ public class UserControllerLogoutTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserUsecase userUsecase;
+    private AuthUsecase authUsecase;
 
     @MockitoBean
     private UserService userService;
@@ -46,7 +47,7 @@ public class UserControllerLogoutTest {
     @Test
     @DisplayName("Case 1: Đăng xuất thành công với RT hợp lệ")
     void validRT() throws Exception {
-        when(userUsecase.logout(VALID_AT, VALID_RT))
+        when(authUsecase.logout(VALID_AT, VALID_RT))
                 .thenReturn(true);
 
         mockMvc.perform(post("/user/logout")
@@ -56,7 +57,7 @@ public class UserControllerLogoutTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(userUsecase, times(1)).logout(VALID_AT, VALID_RT);
+        verify(authUsecase, times(1)).logout(VALID_AT, VALID_RT);
     }
 
     @Test
@@ -64,7 +65,7 @@ public class UserControllerLogoutTest {
     void malformedRT() throws Exception {
         String malformedRT = "chuoi-token-bay-ba";
 
-        when(userUsecase.logout(VALID_AT, malformedRT))
+        when(authUsecase.logout(VALID_AT, malformedRT))
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
@@ -73,13 +74,13 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
-        verify(userUsecase, times(1)).logout(VALID_AT, malformedRT);
+        verify(authUsecase, times(1)).logout(VALID_AT, malformedRT);
     }
 
     @Test
     @DisplayName("Case 3: RT không hợp lệ")
     void invalidRT() throws Exception {
-        when(userUsecase.logout(VALID_AT, INVALID_RT))
+        when(authUsecase.logout(VALID_AT, INVALID_RT))
                 .thenThrow(new UnAuthorizedException("RT không hợp lệ"));
 
         mockMvc.perform(post("/user/logout")
@@ -88,7 +89,7 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
-        verify(userUsecase, times(1)).logout(VALID_AT, INVALID_RT);
+        verify(authUsecase, times(1)).logout(VALID_AT, INVALID_RT);
     }
 
 
@@ -97,7 +98,7 @@ public class UserControllerLogoutTest {
     void nonExistedRT() throws Exception {
         String nonExistedRT = "non-existed-rt";
 
-        when(userUsecase.logout(VALID_AT, nonExistedRT))
+        when(authUsecase.logout(VALID_AT, nonExistedRT))
                 .thenThrow(new InternalServerException("Xóa Refresh Token thất bại do không tìm thấy hoặc xóa dư. Đang thực hiện Rollback!"));
 
         mockMvc.perform(post("/user/logout")
@@ -106,7 +107,7 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
 
-        verify(userUsecase, times(1)).logout(VALID_AT, nonExistedRT);
+        verify(authUsecase, times(1)).logout(VALID_AT, nonExistedRT);
     }
 
     @Test
@@ -117,7 +118,7 @@ public class UserControllerLogoutTest {
                         .cookie(new Cookie("refreshToken", VALID_RT)))
                 .andExpect(status().isMethodNotAllowed()); // Trả về 405 Method Not Allowed
 
-        verifyNoInteractions(userUsecase);
+        verifyNoInteractions(authUsecase);
     }
 
     @Test
@@ -127,6 +128,6 @@ public class UserControllerLogoutTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(userUsecase);
+        verifyNoInteractions(authUsecase);
     }
 }

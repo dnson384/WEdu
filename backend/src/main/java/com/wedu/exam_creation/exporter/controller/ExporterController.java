@@ -24,7 +24,7 @@ public class ExporterController {
         this.exporterUsecase = exporterUsecase;
     }
 
-    @PostMapping("/word")
+    @PostMapping("/exam")
     public ResponseEntity<Resource> exportWord(@RequestBody ExportRequestDTO payload) {
         byte[] buffer = exporterUsecase.exportAsWord(payload.getExamId());
 

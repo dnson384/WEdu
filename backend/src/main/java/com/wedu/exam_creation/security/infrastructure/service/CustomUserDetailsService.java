@@ -1,6 +1,5 @@
 package com.wedu.exam_creation.security.infrastructure.service;
 
-import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import com.wedu.exam_creation.user.usecase.UserService;
 import org.jspecify.annotations.NonNull;
@@ -19,8 +18,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
-        CommonUserResponseAllDTO user = userService.findByEmail(email);
-
-        return new CustomUserDetails(user);
+        return userService.findByEmail(email)
+                .map(CustomUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("Tài khoản chưa tồn tại"));
     }
 }

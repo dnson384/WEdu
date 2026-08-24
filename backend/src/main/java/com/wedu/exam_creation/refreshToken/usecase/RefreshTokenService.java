@@ -2,6 +2,7 @@ package com.wedu.exam_creation.refreshToken.usecase;
 
 import com.wedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.wedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
+import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
 import com.wedu.exam_creation.refreshToken.dto.mapper.RefreshTokenDTOMapper;
 import com.wedu.exam_creation.refreshToken.infrastructure.repository.RefreshTokenRepositoryImpl;
@@ -47,5 +48,15 @@ public class RefreshTokenService {
 
     public boolean deleteMany(List<String> jtis) {
         return repo.deleteMany(jtis);
+    }
+
+    public RefreshTokenEntity getRefreshToken(String jti, String userId) {
+        RefreshTokenEntity entity = repo.getRefreshTokenByJti(jti, userId);
+
+        if (entity == null) {
+            throw new NotFoundException("RT không tồn tại");
+        }
+
+        return entity;
     }
 }

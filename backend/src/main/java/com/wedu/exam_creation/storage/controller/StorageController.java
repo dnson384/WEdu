@@ -18,7 +18,7 @@ public class StorageController {
         this.s3Service = s3Service;
     }
 
-    @PostMapping("/avatar")
+    @PostMapping("/upload-avatar")
     public ResponseEntity<String> uploadAvatar(
             @RequestParam("file") MultipartFile file,
             @RequestHeader("Authorization") String authorization

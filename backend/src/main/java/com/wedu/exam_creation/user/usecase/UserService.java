@@ -1,6 +1,7 @@
 package com.wedu.exam_creation.user.usecase;
 
 import com.wedu.exam_creation.common.dto.token.RTPayload;
+import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
@@ -13,6 +14,9 @@ import com.wedu.exam_creation.user.domain.entity.UserEntity;
 import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
 import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -31,10 +35,36 @@ public class UserService {
         this.s3Service = s3Service;
     }
 
-    public CommonUserResponseAllDTO findByEmail(String email) {
-        return repo.findByEmail(email)
-                .map(mapper::toCommonAllDTO)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy tài khoản"));
+    public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
+        UserEntity newUserEntity = new UserEntity(
+                null,
+                newUser.getEmail(),
+                hashedPassword,
+                newUser.getUsername(),
+                "ROLE_TEACHER",
+                newUser.getLoginMethod(),
+                "avatars/default-avatar-user.png",
+                true,
+                "Free",
+                LocalDateTime.now(),
+                LocalDateTime.now()
+        );
+
+        UserEntity createdUser = repo.save(newUserEntity);
+
+        return mapper.toCommonAllDTO(createdUser);
+    }
+
+    public CommonUserResponseAllDTO updateUser(CommonUserResponseAllDTO user) {
+        UserEntity userEntity = mapper.commonAllToEntity(user);
+
+        UserEntity savedUser = repo.save(userEntity);
+        
+        return mapper.toCommonAllDTO(savedUser);
+    }
+
+    public Optional<CommonUserResponseAllDTO> findByEmail(String email) {
+        return repo.findByEmail(email).map(mapper::toCommonAllDTO);
     }
 
     public CommonUserResponseAllDTO findById(String userId) {

@@ -16,4 +16,5 @@ public class CommonUserResponseAllDTO {
     private String loginMethod;
     private String avatarUrl;
     private Boolean isActive;
+    private String accountType;
 }

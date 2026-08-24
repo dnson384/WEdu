@@ -1,13 +1,14 @@
-package com.wedu.exam_creation.user.controller;
+package com.wedu.exam_creation.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wedu.exam_creation.auth.dto.response.AuthorizedResponseDTO;
+import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
+import com.wedu.exam_creation.auth.usecase.AuthUsecase;
+import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
-import com.wedu.exam_creation.user.dto.request.NewUserRequestDTO;
-import com.wedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
-import com.wedu.exam_creation.user.dto.response.UserResponseDTO;
+import com.wedu.exam_creation.user.controller.UserController;
 import com.wedu.exam_creation.user.usecase.UserService;
-import com.wedu.exam_creation.user.usecase.UserUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,7 +44,7 @@ public class UserControllerRegisterTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserUsecase userUsecase;
+    private AuthUsecase authUsecase;
 
     @MockitoBean
     private UserService userService;
@@ -86,7 +87,7 @@ public class UserControllerRegisterTest {
         @Test
         @DisplayName("Đăng ký thành công - Email chưa tồn tại, Email đúng định dạng")
         void happyCase() throws Exception {
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -98,7 +99,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -111,7 +112,7 @@ public class UserControllerRegisterTest {
                     "Nguyen Van A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(newUserRequestDTO.getClass())))
+            when(authUsecase.register(any(newUserRequestDTO.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -123,7 +124,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -142,7 +143,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(invalidRequest)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -156,7 +157,7 @@ public class UserControllerRegisterTest {
                     "LOCAL"
             );
 
-            when(userUsecase.register(any(validDotReq.getClass())))
+            when(authUsecase.register(any(validDotReq.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -168,7 +169,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -187,7 +188,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(invalidDotRequest)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -201,7 +202,7 @@ public class UserControllerRegisterTest {
                     "LOCAL"
             );
 
-            when(userUsecase.register(any(upperRequest.getClass())))
+            when(authUsecase.register(any(upperRequest.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -213,7 +214,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -232,7 +233,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(unicodeRequest)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -251,7 +252,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(spaceRequest)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -270,7 +271,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(more254Request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -289,7 +290,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(localPartRequest)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -308,13 +309,13 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(empty)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
         @DisplayName("Đăng ký thất bại - Email đã tồn tại")
         void emailAlreadyExists() throws Exception {
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenThrow(new BadRequestException("Tài khoản đã tồn tại"));
 
             mockMvc.perform(post("/user/register")
@@ -322,7 +323,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
     }
 
@@ -339,7 +340,7 @@ public class UserControllerRegisterTest {
                     "Nguyen Van A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -351,7 +352,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -365,7 +366,7 @@ public class UserControllerRegisterTest {
                     "Nguyen Van A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -377,7 +378,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -390,7 +391,7 @@ public class UserControllerRegisterTest {
                     "Nguyen Van A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -402,7 +403,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -415,7 +416,7 @@ public class UserControllerRegisterTest {
                     "Nguyen Van A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -427,7 +428,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -446,7 +447,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -465,7 +466,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -485,7 +486,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -504,7 +505,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
     }
 
@@ -527,7 +528,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -541,7 +542,7 @@ public class UserControllerRegisterTest {
                     "LOCAL"
             );
 
-            when(userUsecase.register(any(request.getClass())))
+            when(authUsecase.register(any(request.getClass())))
                     .thenThrow(new BadRequestException("Mật khẩu xác nhận không trùng khớp"));
 
             mockMvc.perform(post("/user/register")
@@ -549,7 +550,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
     }
 
@@ -572,7 +573,7 @@ public class UserControllerRegisterTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
 
@@ -586,7 +587,7 @@ public class UserControllerRegisterTest {
                     "Nguyễn Văn A",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -599,7 +600,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
 
         @Test
@@ -612,7 +613,7 @@ public class UserControllerRegisterTest {
                     "anv@123",
                     "LOCAL"
             );
-            when(userUsecase.register(any(NewUserRequestDTO.class)))
+            when(authUsecase.register(any(NewUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/register")
@@ -625,7 +626,7 @@ public class UserControllerRegisterTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-rt"));
 
-            verify(userUsecase, times(1)).register(any(NewUserRequestDTO.class));
+            verify(authUsecase, times(1)).register(any(NewUserRequestDTO.class));
         }
     }
 }

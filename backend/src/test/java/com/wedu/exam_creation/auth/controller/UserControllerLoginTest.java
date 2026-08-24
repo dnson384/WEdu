@@ -1,14 +1,15 @@
-package com.wedu.exam_creation.user.controller;
+package com.wedu.exam_creation.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wedu.exam_creation.auth.dto.response.AuthorizedResponseDTO;
+import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
+import com.wedu.exam_creation.auth.usecase.AuthUsecase;
 import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
+import com.wedu.exam_creation.user.controller.UserController;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
-import com.wedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
-import com.wedu.exam_creation.user.dto.response.UserResponseDTO;
 import com.wedu.exam_creation.user.usecase.UserService;
-import com.wedu.exam_creation.user.usecase.UserUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,7 +36,7 @@ public class UserControllerLoginTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private UserUsecase userUsecase;
+    private AuthUsecase authUsecase;
 
     @MockitoBean
     private UserService userService;
@@ -75,7 +76,7 @@ public class UserControllerLoginTest {
         @Test
         @DisplayName("Đăng nhập thành công - Happy case")
         void happyCase() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
+            when(authUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -87,7 +88,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -98,7 +99,7 @@ public class UserControllerLoginTest {
                     "Password123@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -110,7 +111,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -121,7 +122,7 @@ public class UserControllerLoginTest {
                     "Password123@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -133,7 +134,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -149,7 +150,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).login(any());
+            verify(authUsecase, times(0)).login(any());
         }
 
         @Test
@@ -160,7 +161,7 @@ public class UserControllerLoginTest {
                     "Password123@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -172,7 +173,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -188,7 +189,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).login(any());
+            verify(authUsecase, times(0)).login(any());
         }
 
         @Test
@@ -204,7 +205,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).login(any());
+            verify(authUsecase, times(0)).login(any());
         }
 
         @Test
@@ -220,7 +221,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).login(any());
+            verify(authUsecase, times(0)).login(any());
         }
 
         @Test
@@ -236,7 +237,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -252,7 +253,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -268,13 +269,13 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
         @DisplayName("Đăng nhập thất bại - Email chưa tồn tại")
         void login_EmailNotFound_ReturnsNotFound() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
+            when(authUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new NotFoundException("Tài khoản chưa tồn tại"));
 
             mockMvc.perform(post("/user/login")
@@ -282,7 +283,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isNotFound());
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
     }
 
@@ -292,7 +293,7 @@ public class UserControllerLoginTest {
         @Test
         @DisplayName("Đăng nhập thất bại - Email đăng nhập bằng Google, thử đăng nhập Local")
         void login_GoogleAccount_ReturnsUnauthorized() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
+            when(authUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new UnAuthorizedException("Sai phương thức đăng nhập"));
 
             mockMvc.perform(post("/user/login")
@@ -313,7 +314,7 @@ public class UserControllerLoginTest {
                     "Password123@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -325,7 +326,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -336,7 +337,7 @@ public class UserControllerLoginTest {
                     "Password123"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenThrow(new UnAuthorizedException("Mật khẩu không chính xác"));
 
             mockMvc.perform(post("/user/login")
@@ -355,7 +356,7 @@ public class UserControllerLoginTest {
                     "Passwo1@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -367,7 +368,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -379,7 +380,7 @@ public class UserControllerLoginTest {
                     pw32
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -391,7 +392,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -402,7 +403,7 @@ public class UserControllerLoginTest {
                     "Password123@"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -414,7 +415,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -425,7 +426,7 @@ public class UserControllerLoginTest {
                     "password"
             );
 
-            when(userUsecase.login(any(req.getClass())))
+            when(authUsecase.login(any(req.getClass())))
                     .thenReturn(mockAuthorizedResponse);
 
             mockMvc.perform(post("/user/login")
@@ -437,7 +438,7 @@ public class UserControllerLoginTest {
                     .andExpect(cookie().exists("refreshToken"))
                     .andExpect(cookie().value("refreshToken", "mock-refresh-token"));
 
-            verify(userUsecase, times(1)).login(any(LoginUserRequestDTO.class));
+            verify(authUsecase, times(1)).login(any(LoginUserRequestDTO.class));
         }
 
         @Test
@@ -453,7 +454,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).login(any());
+            verify(authUsecase, times(0)).login(any());
         }
 
         @Test
@@ -469,7 +470,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -486,7 +487,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
 
         @Test
@@ -502,7 +503,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isBadRequest());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
     }
 
@@ -512,7 +513,7 @@ public class UserControllerLoginTest {
         @Test
         @DisplayName("Đăng nhập thất bại - Tài khoản đã bị khóa")
         void lockedAccount() throws Exception {
-            when(userUsecase.login(any(LoginUserRequestDTO.class)))
+            when(authUsecase.login(any(LoginUserRequestDTO.class)))
                     .thenThrow(new UnAuthorizedException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa"));
 
             mockMvc.perform(post("/user/login")
@@ -520,7 +521,7 @@ public class UserControllerLoginTest {
                             .content(objectMapper.writeValueAsString(validRequest())))
                     .andExpect(status().isUnauthorized());
 
-            verify(userUsecase, times(0)).register(any());
+            verify(authUsecase, times(0)).register(any());
         }
     }
 }

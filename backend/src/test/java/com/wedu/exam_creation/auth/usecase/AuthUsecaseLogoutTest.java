@@ -1,5 +1,6 @@
-package com.wedu.exam_creation.user.usecase;
+package com.wedu.exam_creation.auth.usecase;
 
+import com.wedu.exam_creation.auth.dto.mapper.AuthDTOMapper;
 import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.token.RTPayload;
 import com.wedu.exam_creation.common.exception.InternalServerException;
@@ -7,9 +8,7 @@ import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.security.service.SecurityService;
-import com.wedu.exam_creation.storage.service.S3Service;
-import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
-import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
+import com.wedu.exam_creation.user.usecase.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserUsecaseLogoutTest {
+public class AuthUsecaseLogoutTest {
     private static final String EMAIL = "user@gmail.com";
     private final String VALID_AT = "valid-access-token";
     private final String INVALID_AT = "invalid-access-token";
@@ -34,21 +33,19 @@ public class UserUsecaseLogoutTest {
     private ATPayload mockATPayload;
 
     @Mock
-    private UserRepositoryImpl repo;
-    @Mock
-    private UserDTOMapper mapperDTO;
+    private AuthDTOMapper mapperDTO;
     @Mock
     private SecurityService securityService;
     @Mock
     private RefreshTokenService refreshTokenService;
     @Mock
-    private S3Service s3Service;
+    private UserService userService;
 
-    private UserUsecase userUsecase;
+    private AuthUsecase authUsecase;
 
     @BeforeEach
     void setUp() {
-        userUsecase = new UserUsecase(repo, mapperDTO, securityService, refreshTokenService, s3Service);
+        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, mapperDTO);
 
         mockRTPayload = new RTPayload(VALID_JTI, VALID_USER_ID, EMAIL, "ROLE_TEACHER");
         mockATPayload = new ATPayload(VALID_JTI, VALID_USER_ID, EMAIL, "ROLE_TEACHER");
@@ -72,7 +69,7 @@ public class UserUsecaseLogoutTest {
                 .thenReturn(true);
 
         // When
-        boolean result = userUsecase.logout(VALID_AT, VALID_RT);
+        boolean result = authUsecase.logout(VALID_AT, VALID_RT);
 
         // Then
         assertThat(result).isTrue();
@@ -92,7 +89,7 @@ public class UserUsecaseLogoutTest {
         when(securityService.validateAccessToken(INVALID_AT)).thenReturn(false);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(INVALID_AT, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(INVALID_AT, VALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("AT không hợp lệ");
 
@@ -109,7 +106,7 @@ public class UserUsecaseLogoutTest {
         when(securityService.validateRefreshToken(VALID_RT)).thenReturn(true);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(null, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(null, VALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("AT không hợp lệ");
 
@@ -129,7 +126,7 @@ public class UserUsecaseLogoutTest {
         when(securityService.validateRefreshToken(INVALID_RT)).thenReturn(false);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, INVALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, INVALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("RT không hợp lệ");
 
@@ -145,7 +142,7 @@ public class UserUsecaseLogoutTest {
     @DisplayName("RT null")
     void nullRT() {
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, null))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, null))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("RT không hợp lệ");
 
@@ -179,7 +176,7 @@ public class UserUsecaseLogoutTest {
                 .thenReturn(misMatchUserId);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("userId không trùng khớp");
 
@@ -213,7 +210,7 @@ public class UserUsecaseLogoutTest {
                 .thenReturn(misMatchSession);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("Phiên không trùng khớp");
 
@@ -242,7 +239,7 @@ public class UserUsecaseLogoutTest {
                 .thenReturn(false);
 
         // When
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("RT không tồn tại");
 
@@ -269,7 +266,7 @@ public class UserUsecaseLogoutTest {
                 .when(refreshTokenService).delete(VALID_JTI);
 
         // When & Then
-        assertThatThrownBy(() -> userUsecase.logout(VALID_AT, VALID_RT))
+        assertThatThrownBy(() -> authUsecase.logout(VALID_AT, VALID_RT))
                 .isInstanceOf(InternalServerException.class)
                 .hasMessage("Dữ liệu không nhất quán, xóa dư!");
     }

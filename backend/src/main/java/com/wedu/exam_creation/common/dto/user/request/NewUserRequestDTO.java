@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.user.dto.request;
+package com.wedu.exam_creation.common.dto.user.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

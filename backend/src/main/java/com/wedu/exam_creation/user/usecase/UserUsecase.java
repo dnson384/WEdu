@@ -1,184 +1,28 @@
 package com.wedu.exam_creation.user.usecase;
 
-import com.wedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.wedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
-import com.wedu.exam_creation.common.dto.token.ATPayload;
-import com.wedu.exam_creation.common.dto.token.RTPayload;
-import com.wedu.exam_creation.common.exception.*;
+import com.wedu.exam_creation.common.exception.BadRequestException;
+import com.wedu.exam_creation.common.exception.ForbiddenException;
+import com.wedu.exam_creation.common.exception.InternalServerException;
+import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
-import com.wedu.exam_creation.security.service.SecurityService;
 import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
-import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
-import com.wedu.exam_creation.user.dto.request.ChangePasswordPayloadRequestDTO;
-import com.wedu.exam_creation.user.dto.request.ChangePasswordRequestDTO;
-import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
-import com.wedu.exam_creation.user.dto.request.NewUserRequestDTO;
-import com.wedu.exam_creation.user.dto.response.AuthorizedResponseDTO;
-import com.wedu.exam_creation.user.dto.response.UserResponseDTO;
 import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
-import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class UserUsecase {
     private final UserRepositoryImpl repo;
-    private final UserDTOMapper mapperDTO;
-    private final SecurityService securityService;
     private final RefreshTokenService refreshTokenService;
     private final S3Service s3Service;
 
-    public UserUsecase(UserRepositoryImpl repo, UserDTOMapper mapperDTO, SecurityService securityService, RefreshTokenService refreshTokenService, S3Service s3Service) {
+    public UserUsecase(UserRepositoryImpl repo, RefreshTokenService refreshTokenService, S3Service s3Service) {
         this.repo = repo;
-        this.mapperDTO = mapperDTO;
-        this.securityService = securityService;
         this.refreshTokenService = refreshTokenService;
         this.s3Service = s3Service;
-    }
-
-    public AuthorizedResponseDTO register(NewUserRequestDTO newUser) {
-        if (!newUser.getPlainPassword().equals(newUser.getConfirmPassword())) {
-            throw new BadRequestException("Mật khẩu xác nhận không trùng khớp");
-        }
-
-        Optional<UserEntity> userEntityOptional = repo.findByEmail(newUser.getEmail());
-        if (userEntityOptional.isPresent()) {
-            throw new BadRequestException("Tài khoản đã tồn tại");
-        }
-
-        String hashedPassword = securityService.hashPassword(newUser.getPlainPassword());
-        UserEntity newUserEntity = new UserEntity(
-                null,
-                newUser.getEmail(),
-                hashedPassword,
-                newUser.getUsername(),
-                "ROLE_TEACHER",
-                newUser.getLoginMethod(),
-                "avatars/default-avatar-user.png",
-                true,
-                "Free",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
-
-        UserEntity createdUser = repo.save(newUserEntity);
-
-        UserResponseDTO user = mapperDTO.toUserResponseDTO(createdUser);
-
-        if (user == null) {
-            throw new InternalServerException("Lỗi trong quá trình chuyển đổi entity -> dto");
-        }
-
-        String jti = UUID.randomUUID().toString();
-
-        // AT
-        ATPayload accessTokenPayload = new ATPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String accessToken = securityService.generateAccessToken(accessTokenPayload);
-
-        // RT
-        RTPayload refreshTokenPayload = new RTPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
-
-
-        // Luu RT
-        NewRTRequestDTO newRTRequestDTO = securityService.parseNewRefreshToken(refreshToken);
-        boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
-
-        if (!saveNewRT) {
-            throw new InternalServerException("Lỗi trong quá trình lưu RT!");
-        }
-
-        return new AuthorizedResponseDTO(
-                user, accessToken, refreshToken
-        );
-    }
-
-    public AuthorizedResponseDTO login(LoginUserRequestDTO payload) {
-        UserEntity user = repo.findByEmail(payload.getEmail())
-                .orElseThrow(() -> new NotFoundException("Tài khoản chưa tồn tại"));
-
-        if (user.getLoginMethod().equals("GOOGLE")) {
-            throw new UnAuthorizedException("Sai phương thức đăng nhập");
-        }
-
-        if (!user.getIsActive()) {
-            throw new ForbiddenException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
-        }
-
-        // Validate password
-        if (!securityService.validatePassword(payload.getPlainPassword(), user.getHashedPassword())) {
-            throw new UnAuthorizedException("Mật khẩu không chính xác");
-        }
-
-        UserResponseDTO userDto = mapperDTO.toUserResponseDTO(user);
-
-        String jti = UUID.randomUUID().toString();
-
-        // AT
-        ATPayload accessTokenPayload = new ATPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String accessToken = securityService.generateAccessToken(accessTokenPayload);
-
-        // RT
-        RTPayload refreshTokenPayload = new RTPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
-
-        // Luu RT
-        NewRTRequestDTO newRTRequestDTO = securityService.parseNewRefreshToken(refreshToken);
-        boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
-
-        if (!saveNewRT) {
-            throw new InternalServerException("Lỗi trong quá trình lưu RT!");
-        }
-
-        return new AuthorizedResponseDTO(
-                userDto, accessToken, refreshToken
-        );
-    }
-
-    public boolean logout(String accessToken, String refreshToken) {
-        if (refreshToken == null || !securityService.validateRefreshToken(refreshToken)) {
-            throw new UnAuthorizedException("RT không hợp lệ");
-        }
-
-        if (accessToken == null || !securityService.validateAccessToken(accessToken)) {
-            throw new UnAuthorizedException("AT không hợp lệ");
-        }
-
-        try {
-            RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
-            ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
-
-            if (!rtPayload.getUserId().equals(atPayload.getUserId())) {
-                throw new UnAuthorizedException("userId không trùng khớp");
-            }
-
-            if (!rtPayload.getJti().equals(atPayload.getParentJti())) {
-                throw new UnAuthorizedException("Phiên không trùng khớp");
-            }
-
-            if (!refreshTokenService.exists(rtPayload.getJti(), rtPayload.getUserId())) {
-                throw new NotFoundException("RT không tồn tại");
-            }
-
-            return refreshTokenService.delete(rtPayload.getJti());
-        } catch (JwtException | IllegalArgumentException ex) {
-            throw new UnAuthorizedException("RT không hợp lệ");
-        }
     }
 
     public boolean updateAvatar(String userId, String s3Key) {
@@ -217,7 +61,7 @@ public class UserUsecase {
         }
         return true;
     }
-
+    
     public boolean updateUser(String userId, String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new BadRequestException("Tên người dùng rỗng");
@@ -245,46 +89,6 @@ public class UserUsecase {
         return true;
     }
 
-    @Transactional
-    public boolean changePassword(String userId, ChangePasswordRequestDTO reqPayload) {
-        ChangePasswordPayloadRequestDTO payload = reqPayload.getPayload();
-
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(reqPayload.getRefreshToken());
-
-        if (!payload.getNewPassword().equals(payload.getConfirmNewPassword())) {
-            throw new UnAuthorizedException("Mật khẩu xác nhận của mật khẩu mới không trùng khớp");
-        }
-
-        UserEntity user = repo.findById(userId);
-        if (user == null) {
-            throw new NotFoundException("Không tìm thấy tài khoản");
-        }
-
-        if (!securityService.validatePassword(payload.getOldPassword(), user.getHashedPassword())) {
-            throw new UnAuthorizedException("Mật khẩu cũ không chính xác");
-        }
-
-        String newHashedPassword = securityService.hashPassword(payload.getNewPassword());
-
-        user.setHashedPassword(newHashedPassword);
-        return saveUserAndRevokeRT(user, rtPayload.getJti());
-    }
-
-    @Transactional
-    public boolean lockAccount(String userId, String refreshToken) {
-        UserEntity user = repo.findById(userId);
-
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
-
-        if (user == null) {
-            throw new NotFoundException("Không tìm thấy tài khoản");
-        }
-
-        user.setIsActive(false);
-
-        return saveUserAndRevokeRT(user, rtPayload.getJti());
-    }
-
     public boolean deleteAccount(String userId) {
         boolean isDeleted = repo.delete(userId);
 
@@ -298,32 +102,6 @@ public class UserUsecase {
             }
 
             return refreshTokenService.deleteMany(tokenJtis);
-        }
-        return false;
-    }
-
-    @Transactional
-    protected boolean saveUserAndRevokeRT(UserEntity user, String jti) {
-        try {
-            UserEntity savedUser = repo.save(user);
-
-            if (savedUser != null) {
-                List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(savedUser.getId());
-
-                List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
-
-                List<String> jtisToDelete = tokenJtis.stream()
-                        .filter(token -> !token.equals(jti))
-                        .toList();
-
-                if (jtisToDelete.isEmpty()) {
-                    return true;
-                }
-
-                return refreshTokenService.deleteMany(jtisToDelete);
-            }
-        } catch (Exception e) {
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         return false;
     }
