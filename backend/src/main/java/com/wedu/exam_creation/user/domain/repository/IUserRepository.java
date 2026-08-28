@@ -2,6 +2,7 @@ package com.wedu.exam_creation.user.domain.repository;
 
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface IUserRepository {
@@ -12,4 +13,8 @@ public interface IUserRepository {
     UserEntity findById(String userId);
 
     boolean delete(String userId);
+
+    List<UserEntity> all();
+
+    List<UserEntity> findByKeyword(String keyword);
 }

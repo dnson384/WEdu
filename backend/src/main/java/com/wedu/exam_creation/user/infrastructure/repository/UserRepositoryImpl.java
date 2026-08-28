@@ -14,7 +14,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 
 @Repository
@@ -61,5 +64,33 @@ public class UserRepositoryImpl implements IUserRepository {
         }
 
         return result.getDeletedCount() == 1;
+    }
+
+    @Override
+    public List<UserEntity> all() {
+        List<UserDocument> docs = mongoTemplate.findAll(UserDocument.class);
+        return docs.stream().map(mapper::toEntity).toList();
+    }
+
+    @Override
+    public List<UserEntity> findByKeyword(String keyword) {
+        Query query = new Query();
+
+        Pattern pattern = Pattern.compile(Pattern.quote(keyword), Pattern.CASE_INSENSITIVE);
+
+        List<Criteria> orConditions = new ArrayList<>();
+        orConditions.add(Criteria.where("email").regex(pattern));
+        orConditions.add(Criteria.where("username").regex(pattern));
+
+        if (ObjectId.isValid(keyword.trim())) {
+            orConditions.add(Criteria.where("_id").is(new ObjectId(keyword.trim())));
+        }
+
+        Criteria criteria = new Criteria().orOperator(orConditions.toArray(new Criteria[0]));
+        query.addCriteria(criteria);
+
+        List<UserDocument> users = mongoTemplate.find(query, UserDocument.class);
+
+        return users.stream().map(mapper::toEntity).toList();
     }
 }

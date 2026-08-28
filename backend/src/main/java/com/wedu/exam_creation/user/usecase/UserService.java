@@ -4,6 +4,7 @@ import com.wedu.exam_creation.common.dto.token.RTPayload;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
+import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
 import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
@@ -16,6 +17,7 @@ import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,7 +47,7 @@ public class UserService {
                 newUser.getLoginMethod(),
                 "avatars/default-avatar-user.png",
                 true,
-                "Free",
+                "FREE",
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );
@@ -59,7 +61,7 @@ public class UserService {
         UserEntity userEntity = mapper.commonAllToEntity(user);
 
         UserEntity savedUser = repo.save(userEntity);
-        
+
         return mapper.toCommonAllDTO(savedUser);
     }
 
@@ -99,5 +101,30 @@ public class UserService {
         userResponse.setAvatarUrl(avatarUrl);
 
         return userResponse;
+    }
+
+    public List<CommonUserResponseDTO> getAllUsers() {
+        List<UserEntity> users = repo.all();
+
+        if (users.isEmpty()) {
+            throw new NotFoundException("Hệ thống chưa có người dùng nào");
+        }
+
+        return users.stream().map(mapper::toCommonDTO).toList();
+    }
+
+    public List<CommonUserResponseDTO> findUserByKeyword(String keyword) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String cleanKeyword = keyword.trim();
+
+            List<UserEntity> users = repo.findByKeyword(cleanKeyword);
+
+            if (users.isEmpty()) {
+                throw new NotFoundException("Không tồn tại người dùng");
+            }
+
+            return users.stream().map(mapper::toCommonDTO).toList();
+        }
+        throw new BadRequestException("Từ khóa không được rỗng");
     }
 }
