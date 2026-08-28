@@ -4,6 +4,7 @@ import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
 import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
+import com.wedu.exam_creation.security.constant.SecurityConstants;
 import com.wedu.exam_creation.security.dto.CookieDataDTO;
 import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import com.wedu.exam_creation.security.infrastructure.service.CustomUserDetailsService;
@@ -24,28 +25,14 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 
 @Slf4j
 @NullMarked
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final List<String> EXCLUDED_PATHS = List.of(
-            // User
-            "/user/login",
-            "/user/register",
-            "/user/logout",
-            // RT
-            "/refresh-token/generate-access-token",
-            // Static
-            "/static/**",
-            // Swagger
-            "/swagger-ui/**",
-            "/swagger-ui.html",
-            "/v3/api-docs/**",
-            "/v3/api-docs.yaml"
-    );
+    public static final String[] PUBLIC_PATHS = SecurityConstants.PUBLIC_PATHS;
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
 
@@ -59,8 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String currentPath = request.getServletPath();
-
-        return EXCLUDED_PATHS.stream()
+        return Arrays.stream(PUBLIC_PATHS)
                 .anyMatch(path -> pathMatcher.match(path, currentPath));
     }
 
@@ -111,8 +97,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (ForbiddenException ex) {
             sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, ex.getMessage());
             return;
-        } catch (Exception ex) {
-            log.error("Không thể xác thực người dùng trong Security Context", ex);
+        } catch (RuntimeException ex) {
+            log.error("Lỗi không xác định khi xác thực JWT", ex);
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi xác thực");
+            return;
         }
 
         filterChain.doFilter(request, response);
@@ -122,6 +110,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private CookieDataDTO getJwtFromRequest(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         CookieDataDTO res = new CookieDataDTO();
+
+        if (cookies == null) return res;
+
         for (Cookie cookie : cookies) {
             if ("accessToken".equals(cookie.getName())) {
                 res.setAccessToken(cookie.getValue());
