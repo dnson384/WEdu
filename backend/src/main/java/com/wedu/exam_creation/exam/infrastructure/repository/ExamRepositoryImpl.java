@@ -34,11 +34,20 @@ public class ExamRepositoryImpl implements IExamRepository {
     }
 
     @Override
-    public ExamEntity getExamById(String examId) {
-        ExamDocument exam = mongoTemplate.findById(examId, ExamDocument.class);
+    public ExamEntity getExamById(String userId, String examId) {
+        Criteria criteria = new Criteria().andOperator(
+                Criteria.where("_id").is(examId),
+                Criteria.where("userId").is(userId)
+        );
+
+        Query query = new Query(criteria);
+
+        ExamDocument exam = mongoTemplate.findOne(query, ExamDocument.class);
+
         if (exam == null) {
             throw new NotFoundException("Không tồn tại bài kiểm tra");
         }
+        
         return mapper.docToEntity(exam);
     }
 
