@@ -7,7 +7,7 @@ import com.wedu.exam_creation.exporter.dto.request.ImageCacheData;
 import com.wedu.exam_creation.exporter.dto.request.QuestionData;
 import com.wedu.exam_creation.exporter.dto.request.QuestionsSortedData;
 import com.wedu.exam_creation.exporter.dto.request.WordPayloadRequestDTO;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -19,13 +19,18 @@ import java.util.stream.IntStream;
 
 @Service
 public class ExporterUsecase {
-    private static final String EXPRESS_EXPORTER_URL = "http://localhost:8000/exporter/word";
     private final RestTemplate restTemplate = new RestTemplate();
-    @Autowired
-    private ExamService examService;
 
-    public byte[] exportAsWord(String examId) {
-        ExamDetailDTO exam = examService.getExamById(examId);
+    private final String EXPRESS_EXPORTER_URL;
+    private final ExamService examService;
+
+    public ExporterUsecase(@Value("${export.url}") String expressExporterUrl, ExamService examService) {
+        EXPRESS_EXPORTER_URL = expressExporterUrl;
+        this.examService = examService;
+    }
+
+    public byte[] exportExam(String userId, String examId) {
+        ExamDetailDTO exam = examService.getExamById(userId, examId);
 
         WordPayloadRequestDTO wordPayloadRequestDTO = new WordPayloadRequestDTO();
         wordPayloadRequestDTO.setExamName(exam.getName());
@@ -69,8 +74,10 @@ public class ExporterUsecase {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<WordPayloadRequestDTO> requestEntity = new HttpEntity<>(wordPayloadRequestDTO, headers);
 
+        String examExportUrl = EXPRESS_EXPORTER_URL + "exam";
+
         ResponseEntity<byte[]> response = restTemplate.exchange(
-                EXPRESS_EXPORTER_URL,
+                examExportUrl,
                 HttpMethod.POST,
                 requestEntity,
                 byte[].class
