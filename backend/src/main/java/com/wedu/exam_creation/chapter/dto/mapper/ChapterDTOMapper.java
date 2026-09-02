@@ -11,10 +11,7 @@ import org.mapstruct.Mapper;
 public interface ChapterDTOMapper {
     ChapterResponseDTO entityToDTO(ChapterEntity entity);
 
-    ChapterEntity dtoToEntity(ChapterResponseDTO dto);
-
     LessonDataEntity newLessonDTOToEntity(NewLessonDataDTO dto);
 
     LessonDataResponseDTO lessonEntityToDTO(LessonDataEntity dto);
-
 }
