@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -16,4 +17,6 @@ public class DraftDTO {
     private Integer questionsCount;
     private List<String> questionTypes;
     private List<ChapterDraftDTO> chapters;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

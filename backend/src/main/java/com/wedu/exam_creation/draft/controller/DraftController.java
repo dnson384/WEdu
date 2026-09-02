@@ -1,13 +1,13 @@
 package com.wedu.exam_creation.draft.controller;
 
 import com.wedu.exam_creation.common.dto.draft.response.DraftDTO;
-import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.draft.dto.request.CreateDraftDTO;
 import com.wedu.exam_creation.draft.dto.request.UpdateChaptersDraftDTO;
 import com.wedu.exam_creation.draft.dto.request.UpdateLessonsDraftDTO;
 import com.wedu.exam_creation.draft.usecase.DraftUsecase;
-import com.wedu.exam_creation.user.usecase.UserService;
+import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,113 +16,78 @@ import java.util.List;
 @RequestMapping("/draft")
 public class DraftController {
     private final DraftUsecase draftUsecase;
-    private final UserService userService;
 
-    public DraftController(DraftUsecase draftUsecase, UserService userService) {
+    public DraftController(DraftUsecase draftUsecase) {
         this.draftUsecase = draftUsecase;
-        this.userService = userService;
     }
 
     @PostMapping("/create")
     public ResponseEntity<String> createDraft(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestBody CreateDraftDTO payload
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.createDraft(payload, user.getId()));
+        return ResponseEntity.ok(draftUsecase.createDraft(payload, principal.getUser().getId()));
     }
 
     @GetMapping("/{draftId}")
     public ResponseEntity<DraftDTO> getDraft(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable String draftId
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.getDraft(draftId, user.getId()));
+        return ResponseEntity.ok(draftUsecase.getDraft(draftId, principal.getUser().getId()));
     }
 
     @PutMapping("/chapter")
     public ResponseEntity<Boolean> updateChapters(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestBody UpdateChaptersDraftDTO payload
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.updateChapters(payload, user.getId()));
+        return ResponseEntity.ok(draftUsecase.updateChapters(payload, principal.getUser().getId()));
     }
 
     @PutMapping("/lesson")
     public ResponseEntity<Boolean> updateLessons(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
-            @RequestBody UpdateLessonsDraftDTO payload) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.updateLessons(payload, user.getId()));
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestBody UpdateLessonsDraftDTO payload
+    ) {
+        return ResponseEntity.ok(draftUsecase.updateLessons(payload, principal.getUser().getId()));
     }
 
     @PutMapping("/generate-matrix")
     public ResponseEntity<Boolean> generateMatrix(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam String draftId) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.generateMatrix(draftId, user.getId()));
+        return ResponseEntity.ok(draftUsecase.generateMatrix(draftId, principal.getUser().getId()));
     }
 
     @PutMapping("/generate-matrix-details")
     public ResponseEntity<Boolean> generateMatrixDetails(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam String draftId) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.generateMatrixDetails(draftId, user.getId()));
+        return ResponseEntity.ok(draftUsecase.generateMatrixDetails(
+                draftId, principal.getUser().getId()
+        ));
     }
 
     @GetMapping("/recent")
     public ResponseEntity<List<DraftDTO>> getRecentDraft(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.getRecentDraft(user.getId()));
+        return ResponseEntity.ok(draftUsecase.getRecentDraft(principal.getUser().getId()));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<DraftDTO>> getAllUserDrafts(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.getAllUserDrafts(user.getId()));
+        return ResponseEntity.ok(draftUsecase.getAllUserDrafts(principal.getUser().getId()));
     }
 
     @DeleteMapping("/delete/{draftId}")
     public ResponseEntity<Boolean> deleteExam(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable String draftId
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(draftUsecase.deleteDraft(user.getId(), draftId));
+        return ResponseEntity.ok(draftUsecase.deleteDraft(principal.getUser().getId(), draftId));
     }
 }
