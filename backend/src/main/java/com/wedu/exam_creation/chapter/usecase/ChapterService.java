@@ -8,6 +8,7 @@ import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
 import com.wedu.exam_creation.common.dto.chapter.response.SavedChapterResponse;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,7 +26,9 @@ public class ChapterService {
                 null,
                 chapter.getSubject(),
                 chapter.getName(),
-                chapter.getLessons().stream().map(mapper::newLessonDTOToEntity).toList()
+                chapter.getLessons().stream().map(mapper::newLessonDTOToEntity).toList(),
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
 
         return repo.saveChapter(newChapterEntity);
