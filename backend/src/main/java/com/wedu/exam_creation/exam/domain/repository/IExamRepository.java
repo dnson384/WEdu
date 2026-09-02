@@ -7,7 +7,7 @@ import java.util.List;
 public interface IExamRepository {
     String saveExam(ExamEntity payload);
 
-    ExamEntity getExamById(String examId);
+    ExamEntity getExamById(String userId, String examId);
 
     List<ExamEntity> getAllUserExams(String userId);
 

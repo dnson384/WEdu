@@ -27,8 +27,8 @@ public class ExamService {
         this.s3Service = s3Service;
     }
 
-    public ExamDetailDTO getExamById(String examId) {
-        ExamEntity exam = repo.getExamById(examId);
+    public ExamDetailDTO getExamById(String userId, String examId) {
+        ExamEntity exam = repo.getExamById(userId, examId);
 
         List<String> questionIds = exam.getQuestions().stream()
                 .flatMap(questionExam -> questionExam.getQuestionIds().stream())

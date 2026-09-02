@@ -2,14 +2,14 @@ package com.wedu.exam_creation.exam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
-import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.exam.dto.request.GenerateExamPayload;
 import com.wedu.exam_creation.exam.dto.response.ExamDTO;
 import com.wedu.exam_creation.exam.dto.response.ExamGeneratedResponseDTO;
 import com.wedu.exam_creation.exam.usecase.ExamService;
 import com.wedu.exam_creation.exam.usecase.ExamUsecase;
-import com.wedu.exam_creation.user.usecase.UserService;
+import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,61 +19,50 @@ import java.util.List;
 public class ExamController {
     private final ExamUsecase examUsecase;
     private final ExamService examService;
-    private final UserService userService;
 
-    public ExamController(ExamUsecase examUsecase, ExamService examService, UserService userService) {
+    public ExamController(ExamUsecase examUsecase, ExamService examService) {
         this.examUsecase = examUsecase;
         this.examService = examService;
-        this.userService = userService;
     }
 
     @PostMapping("/generate")
     public ResponseEntity<ExamGeneratedResponseDTO> generateExam(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
-            @RequestBody GenerateExamPayload payload) throws JsonProcessingException {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(examUsecase.generateExam(payload.getDraftId(), user.getId(), user.getAccountType()));
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestBody GenerateExamPayload payload
+    ) throws JsonProcessingException {
+        return ResponseEntity.ok(examUsecase.generateExam(
+                payload.getDraftId(),
+                principal.getUser().getId(),
+                principal.getUser().getAccountType()
+        ));
     }
 
     @GetMapping("/{examId}")
-    public ResponseEntity<ExamDetailDTO> getExamById(@PathVariable String examId) {
-        return ResponseEntity.ok(examService.getExamById(examId));
+    public ResponseEntity<ExamDetailDTO> getExamById(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable String examId) {
+        return ResponseEntity.ok(examService.getExamById(principal.getUser().getId(), examId));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<ExamDTO>> getAllExams(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(examUsecase.getAllUserExams(user.getId()));
+        return ResponseEntity.ok(examUsecase.getAllUserExams(principal.getUser().getId()));
     }
 
     @GetMapping("/recent")
     public ResponseEntity<List<ExamDTO>> getRecentExam(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(examUsecase.getRecentExams(user.getId()));
+        return ResponseEntity.ok(examUsecase.getRecentExams(principal.getUser().getId()));
     }
 
     @DeleteMapping("/delete/{examId}")
     public ResponseEntity<Boolean> deleteExam(
-            @RequestHeader("Authorization") String authorization,
-            @CookieValue(value = "refreshToken") String refreshToken,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable String examId
     ) {
-        String accessToken = authorization.substring(7);
-        CommonUserResponseDTO user = userService.getMe(accessToken, refreshToken);
-
-        return ResponseEntity.ok(examUsecase.deleteExam(user.getId(), examId));
+        return ResponseEntity.ok(examUsecase.deleteExam(principal.getUser().getId(), examId));
     }
 }
