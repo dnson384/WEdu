@@ -1,5 +1,6 @@
 package com.wedu.exam_creation.admin.controller;
 
+import com.wedu.exam_creation.admin.dto.request.LockOrUnlockRequestDTO;
 import com.wedu.exam_creation.admin.dto.request.SetRoleRequestDTO;
 import com.wedu.exam_creation.admin.usecase.AdminUsecase;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
@@ -44,6 +45,15 @@ public class AdminController {
             @RequestBody SetRoleRequestDTO req
     ) {
         CommonUserResponseDTO result = adminUsecase.updateUserRole(principal.getUser(), req);
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/lock-unlock")
+    public ResponseEntity<CommonUserResponseDTO> lockUser(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestBody LockOrUnlockRequestDTO req
+    ) {
+        CommonUserResponseDTO result = adminUsecase.lockOrUnlockUser(principal.getUser(), req);
         return ResponseEntity.ok(result);
     }
 }

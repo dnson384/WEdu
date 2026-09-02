@@ -1,7 +1,9 @@
 package com.wedu.exam_creation.admin.usecase;
 
+import com.wedu.exam_creation.admin.dto.request.LockOrUnlockRequestDTO;
 import com.wedu.exam_creation.admin.dto.request.SetRoleRequestDTO;
 import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
+import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
@@ -50,6 +52,30 @@ public class AdminUsecase {
         curUser.setRole(req.getRole());
 
         CommonUserResponseAllDTO updatedUser = userService.updateUser(curUser);
+        return mapper.commonAllToCommonDTO(updatedUser);
+    }
+
+    public CommonUserResponseDTO lockOrUnlockUser(CommonUserResponseAllDTO user, LockOrUnlockRequestDTO req) {
+        if (req.getUserId().equals(user.getId())) {
+            throw new BadRequestException("Không được phép khóa/mở khóa bản thân");
+        }
+
+        CommonUserResponseAllDTO curUser = userService.findById(req.getUserId());
+        if (curUser == null) {
+            throw new NotFoundException("Không tìm thấy người dùng để khóa/mở khóa");
+        }
+        if (curUser.getRole().equals("ROLE_ADMIN")) {
+            throw new ForbiddenException("Không được phép khoá/mở khóa của admin khác");
+        }
+
+        if (req.isLock() == !curUser.getIsActive()) {
+            return mapper.commonAllToCommonDTO(curUser);
+        }
+
+        UserUpdateFields updateFields = new UserUpdateFields();
+        updateFields.setIsActive(!req.isLock());
+
+        CommonUserResponseAllDTO updatedUser = userService.updateField(curUser.getId(), updateFields);
 
         return mapper.commonAllToCommonDTO(updatedUser);
     }
