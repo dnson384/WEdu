@@ -7,8 +7,10 @@ import com.wedu.exam_creation.common.dto.draft.response.ChapterDraftDTO;
 import com.wedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.wedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
 import com.wedu.exam_creation.common.dto.draft.response.MatrixDetailItemDTO;
+import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
+import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.draft.usecase.DraftService;
@@ -21,6 +23,7 @@ import com.wedu.exam_creation.exam.dto.response.ExamDTO;
 import com.wedu.exam_creation.exam.dto.response.ExamGeneratedResponseDTO;
 import com.wedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
 import com.wedu.exam_creation.question.usecase.QuestionService;
+import com.wedu.exam_creation.storage.service.S3Service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,14 +37,16 @@ public class ExamUsecase {
     private final QuestionService questionService;
     private final DraftService draftService;
     private final ExamDTOMapper mapper;
-    private final ChapterService categoryService;
+    private final ChapterService chapterService;
+    private final S3Service s3Service;
 
-    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamDTOMapper mapper, ChapterService categoryService) {
+    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamDTOMapper mapper, ChapterService chapterService, S3Service s3Service) {
         this.repo = repo;
         this.questionService = questionService;
         this.draftService = draftService;
         this.mapper = mapper;
-        this.categoryService = categoryService;
+        this.chapterService = chapterService;
+        this.s3Service = s3Service;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -77,7 +82,7 @@ public class ExamUsecase {
         }
 
         List<String> chapterIds = draft.getChapters().stream().map(ChapterDraftDTO::getId).toList();
-        List<ChapterResponseDTO> categories = categoryService.getByIds(chapterIds);
+        List<ChapterResponseDTO> categories = chapterService.getByIds(chapterIds);
 
         ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(accountType, categories, examMatrixDetailDTOS);
 
@@ -116,6 +121,18 @@ public class ExamUsecase {
         return examEntities.stream()
                 .map(mapper::convertToExamResponse)
                 .toList();
+    }
+
+    public ExamDetailDTO getExamById(String userId, String examId) {
+        ExamEntity exam = repo.getExamById(userId, examId);
+
+        List<String> questionIds = exam.getQuestions().stream()
+                .flatMap(questionExam -> questionExam.getQuestionIds().stream())
+                .toList();
+
+        List<QuestionDTO> questions = questionService.findByIds(questionIds);
+
+        return mapper.convertToExamDetailResponse(exam, questions, s3Service);
     }
 
     public List<ExamDTO> getRecentExams(String userId) {
