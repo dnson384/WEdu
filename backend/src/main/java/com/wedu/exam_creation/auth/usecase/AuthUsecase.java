@@ -138,32 +138,11 @@ public class AuthUsecase {
         );
     }
 
-    public boolean logout(String accessToken, String refreshToken) {
-        if (refreshToken == null || !securityService.validateRefreshToken(refreshToken)) {
-            throw new UnAuthorizedException("RT không hợp lệ");
-        }
-
-        if (accessToken == null || !securityService.validateAccessToken(accessToken)) {
-            throw new UnAuthorizedException("AT không hợp lệ");
-        }
-
+    public boolean logout(String authorization) {
+        String accessToken = authorization.substring(7).trim();
         try {
-            RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
             ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
-
-            if (!rtPayload.getUserId().equals(atPayload.getUserId())) {
-                throw new UnAuthorizedException("userId không trùng khớp");
-            }
-
-            if (!rtPayload.getJti().equals(atPayload.getParentJti())) {
-                throw new UnAuthorizedException("Phiên không trùng khớp");
-            }
-
-            if (!refreshTokenService.exists(rtPayload.getJti(), rtPayload.getUserId())) {
-                throw new NotFoundException("RT không tồn tại");
-            }
-
-            return refreshTokenService.delete(rtPayload.getJti());
+            return refreshTokenService.delete(atPayload.getParentJti());
         } catch (JwtException | IllegalArgumentException ex) {
             throw new UnAuthorizedException("RT không hợp lệ");
         }
@@ -210,9 +189,7 @@ public class AuthUsecase {
     }
 
     public String regenerateAccessToken(String refreshToken) {
-        if (!securityService.validateRefreshToken(refreshToken)) {
-            throw new UnAuthorizedException("RT không hợp lệ");
-        }
+        securityService.validateRefreshToken(refreshToken);
 
         try {
             RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
