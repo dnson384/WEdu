@@ -1,8 +1,6 @@
 package com.wedu.exam_creation.storage.service;
 
 import com.wedu.exam_creation.common.exception.BadRequestException;
-import com.wedu.exam_creation.common.exception.UnAuthorizedException;
-import com.wedu.exam_creation.security.service.SecurityService;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -30,25 +28,16 @@ public class S3Service {
     private final String bucketName;
     private final List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png");
 
-    private final SecurityService securityService;
-
-
     public S3Service(
             S3Client s3Client,
             S3Presigner s3Presigner,
-            @Value("${aws.bucketName}") String bucketName, SecurityService securityService
-    ) {
+            @Value("${aws.bucketName}") String bucketName) {
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
         this.bucketName = bucketName;
-        this.securityService = securityService;
     }
 
-    public String uploadFile(MultipartFile file, String folderName, String accessToken) throws IOException {
-        if (accessToken == null || !securityService.validateAccessToken(accessToken)) {
-            throw new UnAuthorizedException("AT không hợp lệ");
-        }
-
+    public String uploadFile(MultipartFile file, String folderName) throws IOException {
         if (file.isEmpty()) {
             throw new BadRequestException("Lỗi: Đầu vào là file trống");
         }

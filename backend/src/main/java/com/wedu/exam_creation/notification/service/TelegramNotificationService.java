@@ -11,24 +11,26 @@ import java.util.Map;
 public class TelegramNotificationService {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private final String botToken;
-
+    private final String questionBotToken;
+    private final String s3BotToken;
     private final String chatId;
 
     public TelegramNotificationService(
-            @Value("${telegram.bot.token}") String botToken,
+            @Value("${telegram.bot.question.token}") String questionBotToken,
+            @Value("${telegram.bot.s3.token}") String s3BotToken,
             @Value("${telegram.chat.id}") String chatId
     ) {
-        this.botToken = botToken;
+        this.questionBotToken = questionBotToken;
+        this.s3BotToken = s3BotToken;
         this.chatId = chatId;
     }
 
+    // PENDING DELETE IMAGE
+    public void notifyFailedDeleteImage(String s3Key) {
+        if (s3Key.trim().isEmpty()) return;
 
-    public void notifyPendingReview(List<String> questionIds) {
-        if (questionIds.isEmpty()) return;
-
-        String message = buildMessage(questionIds);
-        String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+        String message = buildS3Message(s3Key);
+        String url = "https://api.telegram.org/bot" + s3BotToken + "/sendMessage";
 
         Map<String, Object> body = Map.of(
                 "chat_id", chatId,
@@ -39,7 +41,27 @@ public class TelegramNotificationService {
         restTemplate.postForEntity(url, body, String.class);
     }
 
-    private String buildMessage(List<String> ids) {
+    private String buildS3Message(String s3Key) {
+        return "📋 *Ảnh bị xóa lỗi:*\n" + s3Key;
+    }
+
+    // PENDING REVIEW QUESTIONS
+    public void notifyPendingReview(List<String> questionIds) {
+        if (questionIds.isEmpty()) return;
+
+        String message = buildQuestionMessage(questionIds);
+        String url = "https://api.telegram.org/bot" + questionBotToken + "/sendMessage";
+
+        Map<String, Object> body = Map.of(
+                "chat_id", chatId,
+                "text", message,
+                "parse_mode", "Markdown"
+        );
+
+        restTemplate.postForEntity(url, body, String.class);
+    }
+
+    private String buildQuestionMessage(List<String> ids) {
         StringBuilder sb = new StringBuilder("📋 *Câu hỏi mới từ AI cần kiểm duyệt:*\n\n");
         ids.forEach(id -> sb.append("• `").append(id).append("`\n"));
         return sb.toString();
