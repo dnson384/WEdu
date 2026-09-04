@@ -2,6 +2,7 @@ package com.wedu.exam_creation.refreshToken.infrastructure.repository;
 
 import com.mongodb.client.result.DeleteResult;
 import com.wedu.exam_creation.common.exception.InternalServerException;
+import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
 import com.wedu.exam_creation.refreshToken.domain.repository.IRefreshTokenRepository;
 import com.wedu.exam_creation.refreshToken.infrastructure.document.RefreshTokenDocument;
@@ -70,8 +71,12 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
 
         DeleteResult result = mongoTemplate.remove(query, RefreshTokenDocument.class);
 
+        if (result.getDeletedCount() == 0) {
+            throw new NotFoundException("Không tìm thấy RT");
+        }
+
         if (result.getDeletedCount() > 1) {
-            throw new InternalServerException("Dữ liệu không nhất quán, xóa dư!");
+            throw new InternalServerException("Dữ liệu không nhất quán, xóa dư");
         }
 
         return true;
