@@ -173,21 +173,6 @@ public class AuthUsecase {
         return saveUserAndRevokeRT(user, rtPayload.getJti());
     }
 
-    @Transactional
-    public boolean lockAccount(String userId, String refreshToken) {
-        CommonUserResponseAllDTO user = userService.findById(userId);
-
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
-
-        if (user == null) {
-            throw new NotFoundException("Không tìm thấy tài khoản");
-        }
-
-        user.setIsActive(false);
-
-        return saveUserAndRevokeRT(user, rtPayload.getJti());
-    }
-
     public String regenerateAccessToken(String refreshToken) {
         securityService.validateRefreshToken(refreshToken);
 
@@ -215,10 +200,10 @@ public class AuthUsecase {
     @Transactional
     protected boolean saveUserAndRevokeRT(CommonUserResponseAllDTO user, String jti) {
         try {
-            CommonUserResponseAllDTO savedUser = userService.updateUser(user);
+            CommonUserResponseAllDTO updatedUser = userService.updatePassword(user);
 
-            if (savedUser != null) {
-                List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(savedUser.getId());
+            if (updatedUser != null) {
+                List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(updatedUser.getId());
 
                 List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
 
