@@ -1,130 +1,52 @@
 package com.wedu.exam_creation.user.usecase;
 
-import com.wedu.exam_creation.common.dto.token.RTPayload;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
-import com.wedu.exam_creation.common.exception.BadRequestException;
-import com.wedu.exam_creation.common.exception.ForbiddenException;
-import com.wedu.exam_creation.common.exception.NotFoundException;
-import com.wedu.exam_creation.common.exception.UnAuthorizedException;
-import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
-import com.wedu.exam_creation.security.service.SecurityService;
-import com.wedu.exam_creation.storage.service.S3Service;
-import com.wedu.exam_creation.user.domain.entity.UserEntity;
-import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
-import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserService {
-    private final UserRepositoryImpl repo;
-    private final UserDTOMapper mapper;
-    private final RefreshTokenService refreshTokenService;
-    private final SecurityService securityService;
-    private final S3Service s3Service;
+    private final UserUsecase userUsecase;
 
-    public UserService(UserRepositoryImpl repo, UserDTOMapper mapper, RefreshTokenService refreshTokenService, SecurityService securityService, S3Service s3Service) {
-        this.repo = repo;
-        this.mapper = mapper;
-        this.refreshTokenService = refreshTokenService;
-
-        this.securityService = securityService;
-        this.s3Service = s3Service;
+    public UserService(UserUsecase userUsecase) {
+        this.userUsecase = userUsecase;
     }
 
+    // POST
     public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
-        UserEntity newUserEntity = new UserEntity(
-                null,
-                newUser.getEmail(),
-                hashedPassword,
-                newUser.getUsername(),
-                "ROLE_TEACHER",
-                newUser.getLoginMethod(),
-                "avatars/default-avatar-user.png",
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
-
-        UserEntity createdUser = repo.save(newUserEntity);
-
-        return mapper.toCommonAllDTO(createdUser);
+        return userUsecase.createNewUser(newUser, hashedPassword);
     }
 
-    public CommonUserResponseAllDTO updateUser(CommonUserResponseAllDTO user) {
-        UserEntity userEntity = mapper.commonAllToEntity(user);
+    // UPDATE
+    public CommonUserResponseAllDTO updateRole(CommonUserResponseAllDTO user) {
+        return userUsecase.updateRole(user);
+    }
 
-        UserEntity savedUser = repo.save(userEntity);
+    public CommonUserResponseAllDTO updatePassword(CommonUserResponseAllDTO user) {
+        return userUsecase.updatePassword(user);
+    }
 
-        return mapper.toCommonAllDTO(savedUser);
+    public CommonUserResponseAllDTO lockUnlockUser(String userId, boolean isLock) {
+        return userUsecase.lockUnlockUser(userId, isLock);
     }
 
     public Optional<CommonUserResponseAllDTO> findByEmail(String email) {
-        return repo.findByEmail(email).map(mapper::toCommonAllDTO);
+        return userUsecase.findByEmail(email);
     }
 
     public CommonUserResponseAllDTO findById(String userId) {
-        return mapper.toCommonAllDTO(repo.findById(userId));
-    }
-
-    public CommonUserResponseDTO getMe(String accessToken, String refreshToken) {
-        String userId = securityService.getPayloadFromAccessToken(accessToken).getUserId();
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
-
-        if (!rtPayload.getUserId().equals(userId)) {
-            throw new UnAuthorizedException("userId không trùng khớp");
-        }
-
-        if (!refreshTokenService.exists(rtPayload.getJti(), userId)) {
-            throw new NotFoundException("RT không tồn tại");
-        }
-
-        UserEntity user = repo.findById(userId);
-
-        if (user == null) {
-            throw new NotFoundException("Không tìm thấy tài khoản");
-        }
-
-        if (!user.getIsActive()) {
-            throw new ForbiddenException("Tài khoản đã bị khoá");
-        }
-
-        CommonUserResponseDTO userResponse = mapper.toCommonDTO(user);
-
-        String avatarUrl = s3Service.generatePresignedUrl(userResponse.getAvatarUrl());
-        userResponse.setAvatarUrl(avatarUrl);
-
-        return userResponse;
+        return userUsecase.findById(userId);
     }
 
     public List<CommonUserResponseDTO> getAllUsers() {
-        List<UserEntity> users = repo.all();
-
-        if (users.isEmpty()) {
-            throw new NotFoundException("Hệ thống chưa có người dùng nào");
-        }
-
-        return users.stream().map(mapper::toCommonDTO).toList();
+        return userUsecase.getAllUsers();
     }
 
     public List<CommonUserResponseDTO> findUserByKeyword(String keyword) {
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            String cleanKeyword = keyword.trim();
-
-            List<UserEntity> users = repo.findByKeyword(cleanKeyword);
-
-            if (users.isEmpty()) {
-                throw new NotFoundException("Không tồn tại người dùng");
-            }
-
-            return users.stream().map(mapper::toCommonDTO).toList();
-        }
-        throw new BadRequestException("Từ khóa không được rỗng");
+        return userUsecase.findUserByKeyword(keyword);
     }
 }
