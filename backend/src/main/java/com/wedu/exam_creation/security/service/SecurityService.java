@@ -58,11 +58,11 @@ public class SecurityService {
     }
 
     // Validate Token
-    public boolean validateAccessToken(String token) {
-        return provider.validateAccessToken(token);
+    public void validateAccessToken(String token) {
+        provider.validateAccessToken(token);
     }
 
-    public boolean validateRefreshToken(String token) {
-        return provider.validateRefreshToken(token);
+    public void validateRefreshToken(String token) {
+        provider.validateRefreshToken(token);
     }
 }

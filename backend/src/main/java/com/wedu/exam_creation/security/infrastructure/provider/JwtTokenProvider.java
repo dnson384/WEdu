@@ -113,36 +113,28 @@ public class JwtTokenProvider {
         );
     }
 
-    public boolean validateAccessToken(String token) {
+    public void validateAccessToken(String token) {
         validateToken(token, accessSecret, "Access Token");
-        return true;
     }
 
-    public boolean validateRefreshToken(String token) {
+    public void validateRefreshToken(String token) {
         validateToken(token, refreshSecret, "Refresh Token");
-        return true;
     }
 
     private void validateToken(String token, SecretKey secretKey, String tokenType) {
         try {
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
         } catch (MalformedJwtException ex) {
-            log.error("Cấu trúc {} không hợp lệ!", tokenType);
             throw new UnAuthorizedException("Cấu trúc " + tokenType + " không hợp lệ");
         } catch (ExpiredJwtException ex) {
-            log.error("{} đã hết hạn!", tokenType);
             throw new UnAuthorizedException(tokenType + " đã hết hạn");
         } catch (UnsupportedJwtException ex) {
-            log.error("{} không được hỗ trợ!", tokenType);
             throw new UnAuthorizedException(tokenType + " không được hỗ trợ");
         } catch (IllegalArgumentException ex) {
-            log.error("Chuỗi Claims của {} đang để trống!", tokenType);
             throw new UnAuthorizedException("Chuỗi Claims của " + tokenType + " đang để trống");
         } catch (io.jsonwebtoken.security.SignatureException ex) {
-            log.error("Chữ ký {} không đúng!", tokenType);
             throw new UnAuthorizedException("Chữ ký " + tokenType + " không chính xác");
         } catch (io.jsonwebtoken.security.WeakKeyException ex) {
-            log.error("Chữ ký {} Secret Key quá yếu!", tokenType);
             throw new UnAuthorizedException("Chữ ký " + tokenType + " Secret Key quá yếu");
         }
     }
