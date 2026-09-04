@@ -1,19 +1,22 @@
 package com.wedu.exam_creation.user.infrastructure.repository;
 
 import com.mongodb.client.result.DeleteResult;
+import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
 import com.wedu.exam_creation.common.exception.InternalServerException;
-import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
 import com.wedu.exam_creation.user.domain.repository.IUserRepository;
 import com.wedu.exam_creation.user.infrastructure.document.UserDocument;
 import com.wedu.exam_creation.user.infrastructure.mapper.UserMapper;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +28,7 @@ public class UserRepositoryImpl implements IUserRepository {
     private final MongoTemplate mongoTemplate;
     private final UserMapper mapper;
 
-    public UserRepositoryImpl(MongoTemplate mongoTemplate, UserMapper mapper, S3Service s3Service) {
+    public UserRepositoryImpl(MongoTemplate mongoTemplate, UserMapper mapper) {
         this.mongoTemplate = mongoTemplate;
         this.mapper = mapper;
     }
@@ -39,10 +42,45 @@ public class UserRepositoryImpl implements IUserRepository {
     }
 
     @Override
-    public UserEntity save(UserEntity newUser) {
-        UserDocument documentToSave = mapper.toDocument(newUser);
+    public UserEntity save(UserEntity user) {
+        UserDocument documentToSave = mapper.toDocument(user);
         UserDocument savedDocument = mongoTemplate.save(documentToSave);
         return mapper.toEntity(savedDocument);
+    }
+
+    @Override
+    public UserEntity updateField(String userId, UserUpdateFields updateFields) {
+        Query query = new Query(Criteria.where("_id").is(userId));
+
+        Update update = new Update();
+        // Avatar
+        if (updateFields.getS3Key() != null) {
+            update.set("avatarUrl", updateFields.getS3Key());
+        }
+
+        // Username
+        if (updateFields.getUsername() != null) {
+            update.set("username", updateFields.getUsername());
+        }
+
+        // Account Status
+        if (updateFields.getIsActive() != null) {
+            update.set("isActive", updateFields.getIsActive());
+        }
+        update.set("updatedAt", LocalDateTime.now());
+
+        UserDocument updatedDoc = mongoTemplate.findAndModify(
+                query,
+                update,
+                FindAndModifyOptions.options().returnNew(true),
+                UserDocument.class
+        );
+
+        if (updatedDoc == null) {
+            return null;
+        }
+
+        return mapper.toEntity(updatedDoc);
     }
 
     @Override
