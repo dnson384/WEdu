@@ -101,14 +101,6 @@ public class AuthController {
         return ResponseEntity.ok(authUsecase.changePassword(principal.getUser().getId(), reqPayload));
     }
 
-    @PostMapping("/lock")
-    public ResponseEntity<Boolean> lockAccount(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @CookieValue(value = "refreshToken") String refreshToken
-    ) {
-        return ResponseEntity.ok(authUsecase.lockAccount(principal.getUser().getId(), refreshToken));
-    }
-
     @PostMapping("/regenerate-access-token")
     public ResponseEntity<NewAccessTokenResponseDTO> regenerateAccessToken(
             @CookieValue(value = "refreshToken") String refreshToken

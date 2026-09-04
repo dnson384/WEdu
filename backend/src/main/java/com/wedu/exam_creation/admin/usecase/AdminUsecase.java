@@ -3,7 +3,6 @@ package com.wedu.exam_creation.admin.usecase;
 import com.wedu.exam_creation.admin.dto.request.LockOrUnlockRequestDTO;
 import com.wedu.exam_creation.admin.dto.request.SetRoleRequestDTO;
 import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
-import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
@@ -51,7 +50,7 @@ public class AdminUsecase {
 
         curUser.setRole(req.getRole());
 
-        CommonUserResponseAllDTO updatedUser = userService.updateUser(curUser);
+        CommonUserResponseAllDTO updatedUser = userService.updateRole(curUser);
         return mapper.commonAllToCommonDTO(updatedUser);
     }
 
@@ -72,10 +71,7 @@ public class AdminUsecase {
             return mapper.commonAllToCommonDTO(curUser);
         }
 
-        UserUpdateFields updateFields = new UserUpdateFields();
-        updateFields.setIsActive(!req.isLock());
-
-        CommonUserResponseAllDTO updatedUser = userService.updateField(curUser.getId(), updateFields);
+        CommonUserResponseAllDTO updatedUser = userService.lockUnlockUser(curUser.getId(), req.isLock());
 
         return mapper.commonAllToCommonDTO(updatedUser);
     }
