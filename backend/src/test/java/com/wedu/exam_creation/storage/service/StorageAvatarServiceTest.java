@@ -1,9 +1,6 @@
 package com.wedu.exam_creation.storage.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wedu.exam_creation.common.exception.BadRequestException;
-import com.wedu.exam_creation.common.exception.UnAuthorizedException;
-import com.wedu.exam_creation.security.service.SecurityService;
 import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,12 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class StorageServiceTest {
-    private static final String VALID_AT = "mock-at";
-    private static final String INVALID_AT = "invalid-at";
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private String bucketName = "my-test-bucket";
-    private List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png");
+public class StorageAvatarServiceTest {
+    private final List<String> ALLOWED_MIME_TYPES = Arrays.asList("image/jpeg", "image/png");
 
     @Mock
     private S3Client s3Client;
@@ -46,16 +39,14 @@ public class StorageServiceTest {
     @Mock
     private S3Presigner s3Presigner;
 
-    @Mock
-    private SecurityService securityService;
-
     private S3Service s3Service;
 
     private MockMultipartFile validFile;
 
     @BeforeEach
     void setUp() {
-        s3Service = new S3Service(s3Client, s3Presigner, bucketName, securityService);
+        String bucketName = "my-test-bucket";
+        s3Service = new S3Service(s3Client, s3Presigner, bucketName);
 
         ReflectionTestUtils.setField(s3Service, "tika", tika);
         ReflectionTestUtils.setField(s3Service, "ALLOWED_MIME_TYPES", ALLOWED_MIME_TYPES);
@@ -69,36 +60,25 @@ public class StorageServiceTest {
     }
 
     @Test
-    @DisplayName("AT Null - Ném UnAuthorizedException")
-    void nullAT() throws Exception {
-        assertThatThrownBy(() -> s3Service.uploadFile(validFile, "avatars", null))
-                .isInstanceOf(UnAuthorizedException.class)
-                .hasMessage("AT không hợp lệ");
+    @DisplayName("200 - Tải avatar lên thành công")
+    void should_uploadAvatarSuccessfully_when_fileIsValid() throws Exception {
+        when(tika.detect(any(InputStream.class))).thenReturn("image/png");
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(PutObjectResponse.builder().build());
 
-        verify(securityService, never()).validateAccessToken(anyString());
-        verify(tika, never()).detect(any(InputStream.class));
-        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        String s3Key = s3Service.uploadFile(validFile, "avatars");
+
+        assertNotNull(s3Key);
+        assertTrue(s3Key.startsWith("avatars/"));
+
+        verify(tika, times(1)).detect(any(InputStream.class));
+        verify(s3Client, times(1))
+                .putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    @DisplayName("AT không hợp lệ")
-    void invalidAT() throws Exception {
-        when(securityService.validateAccessToken(INVALID_AT))
-                .thenThrow(new UnAuthorizedException("AT không hợp lệ"));
-
-        assertThatThrownBy(() -> s3Service.uploadFile(validFile, "avatars", INVALID_AT))
-                .isInstanceOf(UnAuthorizedException.class)
-                .hasMessage("AT không hợp lệ");
-
-        verify(securityService, times(1)).validateAccessToken(INVALID_AT);
-        verify(tika, never()).detect(any(InputStream.class));
-        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
-    }
-
-
-    @Test
-    @DisplayName("File rỗng")
-    void emptyFile() throws Exception {
+    @DisplayName("400 - File rỗng")
+    void should_returnBadRequest_when_fileIsEmpty() throws Exception {
         MockMultipartFile emptyFile = new MockMultipartFile(
                 "file",
                 "avatar.png",
@@ -106,21 +86,17 @@ public class StorageServiceTest {
                 new byte[0]
         );
 
-        when(securityService.validateAccessToken(VALID_AT))
-                .thenReturn(true);
-
-        assertThatThrownBy(() -> s3Service.uploadFile(emptyFile, "avatars", VALID_AT))
+        assertThatThrownBy(() -> s3Service.uploadFile(emptyFile, "avatars"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: Đầu vào là file trống");
 
-        verify(securityService, times(1)).validateAccessToken(VALID_AT);
         verify(tika, never()).detect(any(InputStream.class));
         verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    @DisplayName("File lớn hơn 5MB")
-    void moreThan5MBFile() throws Exception {
+    @DisplayName("400 - File lớn hơn 5MB")
+    void should_returnBadRequest_when_fileSizeExceedsLimit() throws Exception {
         int largeSize = 5 * 1024 * 1024 + 1;
         MockMultipartFile moreThan5MB = new MockMultipartFile(
                 "file",
@@ -129,21 +105,17 @@ public class StorageServiceTest {
                 new byte[largeSize]
         );
 
-        when(securityService.validateAccessToken(VALID_AT))
-                .thenReturn(true);
-
-        assertThatThrownBy(() -> s3Service.uploadFile(moreThan5MB, "avatars", VALID_AT))
+        assertThatThrownBy(() -> s3Service.uploadFile(moreThan5MB, "avatars"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: File lớn hơn 5MB");
 
-        verify(securityService, times(1)).validateAccessToken(VALID_AT);
         verify(tika, never()).detect(any(InputStream.class));
         verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    @DisplayName("File .exe giả dạng file .png")
-    void fakeImgFile() throws Exception {
+    @DisplayName("400 - File .exe giả dạng file .png")
+    void should_returnBadRequest_when_fileContentIsNotRealImage() throws Exception {
         byte[] exeContent = "MZ_fake_binary_executable_content_here".getBytes();
 
         MockMultipartFile fakeImageFile = new MockMultipartFile(
@@ -153,23 +125,20 @@ public class StorageServiceTest {
                 exeContent
         );
 
-        when(securityService.validateAccessToken(VALID_AT))
-                .thenReturn(true);
         when(tika.detect(any(InputStream.class)))
                 .thenReturn("application/x-msdownload");
 
-        assertThatThrownBy(() -> s3Service.uploadFile(fakeImageFile, "avatars", VALID_AT))
+        assertThatThrownBy(() -> s3Service.uploadFile(fakeImageFile, "avatars"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: File không đúng định dạng");
 
-        verify(securityService, times(1)).validateAccessToken(VALID_AT);
         verify(tika, times(1)).detect(any(InputStream.class));
         verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    @DisplayName("Đuôi file lạ nhưng vẫn là ảnh image")
-    void strangeExtensionFile() throws Exception {
+    @DisplayName("200 - Đuôi file lạ nhưng vẫn là ảnh image")
+    void should_uploadAvatarSuccessfully_when_fileExtensionIsUnknownButContentIsImage() throws Exception {
         MockMultipartFile strangeExtensionFile = new MockMultipartFile(
                 "file",
                 "avatar.abc",
@@ -177,37 +146,31 @@ public class StorageServiceTest {
                 "test-image-content".getBytes()
         );
 
-
-        when(securityService.validateAccessToken(VALID_AT))
-                .thenReturn(true);
         when(tika.detect(any(InputStream.class)))
                 .thenReturn("image/png");
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
 
-        String s3Key = s3Service.uploadFile(strangeExtensionFile, "avatars", VALID_AT);
+        String s3Key = s3Service.uploadFile(strangeExtensionFile, "avatars");
 
         assertNotNull(s3Key);
         assertTrue(s3Key.startsWith("avatars/"));
         assertTrue(s3Key.endsWith(".abc"));
 
-        verify(securityService, times(1)).validateAccessToken(VALID_AT);
         verify(tika, times(1)).detect(any(InputStream.class));
         verify(s3Client, times(1)).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    @DisplayName("AWS S3 Gặp Sự Cố Kết Nối - Ném IOException")
-    void s3ServerError() throws IOException {
-        when(securityService.validateAccessToken(VALID_AT)).thenReturn(true);
+    @DisplayName("500 - AWS S3 gặp sự cố kết nối")
+    void should_returnInternalServerError_when_s3ConnectionFails() throws IOException {
         when(tika.detect(any(InputStream.class))).thenReturn("image/png");
 
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenThrow(new RuntimeException("S3 Connection Refused"));
 
         assertThrows(RuntimeException.class, () -> {
-            s3Service.uploadFile(validFile, "avatars", VALID_AT);
+            s3Service.uploadFile(validFile, "avatars");
         });
     }
-
 }
