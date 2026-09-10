@@ -57,7 +57,7 @@ public class AuthUsecase {
         UserResponseDTO user = mapper.toUserResponseDTO(createdUser);
 
         if (user == null) {
-            throw new InternalServerException("Lỗi trong quá trình chuyển đổi entity -> dto");
+            throw new InternalServerException("Lỗi trong quá trình chuyển đổi dữ liệu");
         }
 
         String jti = UUID.randomUUID().toString();
@@ -80,7 +80,7 @@ public class AuthUsecase {
         boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
 
         if (!saveNewRT) {
-            throw new InternalServerException("Lỗi trong quá trình lưu RT!");
+            throw new InternalServerException("Lỗi trong quá trình đăng ký");
         }
 
         return new AuthorizedResponseDTO(
@@ -130,7 +130,7 @@ public class AuthUsecase {
         boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
 
         if (!saveNewRT) {
-            throw new InternalServerException("Lỗi trong quá trình lưu RT!");
+            throw new InternalServerException("Lỗi trong quá trình đăng nhập");
         }
 
         return new AuthorizedResponseDTO(
@@ -140,12 +140,8 @@ public class AuthUsecase {
 
     public boolean logout(String authorization) {
         String accessToken = authorization.substring(7).trim();
-        try {
-            ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
-            return refreshTokenService.delete(atPayload.getParentJti());
-        } catch (JwtException | IllegalArgumentException ex) {
-            throw new UnAuthorizedException("RT không hợp lệ");
-        }
+        ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
+        return refreshTokenService.delete(atPayload.getParentJti());
     }
 
     @Transactional
