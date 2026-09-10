@@ -60,7 +60,10 @@ public class AuthControllerLoginTest {
     }
 
     private LoginUserRequestDTO validRequest() {
-        return new LoginUserRequestDTO("anv@gmail.com", "Password123@");
+        return new LoginUserRequestDTO(
+                "anv@gmail.com",
+                "Password123@"
+        );
     }
 
     @Test
