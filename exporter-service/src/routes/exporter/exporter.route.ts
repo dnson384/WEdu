@@ -3,6 +3,6 @@ import { exportAsWord } from "./controller/exporterController.js";
 
 const router = express.Router();
 
-router.post("/word", exportAsWord);
+router.post("/exam", exportAsWord);
 
 export default router;
