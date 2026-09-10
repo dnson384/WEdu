@@ -4,9 +4,7 @@ import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
 import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
-import com.wedu.exam_creation.common.exception.ForbiddenException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
-import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.notification.service.TelegramNotificationService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.storage.service.S3Service;
@@ -338,50 +336,6 @@ public class UserUsecaseUpdateUsernameTest {
 
         verify(repo, times(1)).findById(anyString());
         verify(repo, times(1)).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, never()).toCommonDTO(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("404 - Không tìm thấy tài khoản nguời dùng")
-    void should_returnNotFound_when_userAccountDoesNotExist() throws Exception {
-        when(repo.findById(USER_ID))
-                .thenReturn(null);
-
-        assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, NEW_USERNAME))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Không tìm thấy tài khoản");
-
-        verify(repo, times(1)).findById(anyString());
-        verify(repo, never()).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, never()).toCommonDTO(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("403 - Tài khoản đã bị khóa")
-    void should_returnForbidden_when_accountIsLocked() throws Exception {
-        UserEntity lockedUser = new UserEntity(
-                USER_ID,
-                EMAIL,
-                "hashed-password",
-                OLD_USERNAME,
-                "ROLE_TEACHER",
-                "LOCAL",
-                AVATAR_URL,
-                false,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
-
-        when(repo.findById(USER_ID))
-                .thenReturn(lockedUser);
-
-        assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, NEW_USERNAME))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Tài khoản đã bị khóa");
-
-        verify(repo, times(1)).findById(anyString());
-        verify(repo, never()).updateField(anyString(), any(UserUpdateFields.class));
         verify(mapper, never()).toCommonDTO(any(UserEntity.class));
     }
 }

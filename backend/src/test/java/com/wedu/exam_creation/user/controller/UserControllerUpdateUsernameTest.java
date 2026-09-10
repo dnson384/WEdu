@@ -431,7 +431,7 @@ public class UserControllerUpdateUsernameTest {
 
     @Test
     @DisplayName("401 - Authorization có AT rỗng")
-    void emptyAT() throws Exception {
+    void should_returnUnauthorized_when_accessTokenIsEmpty() throws Exception {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer ")
                         .contentType(MediaType.APPLICATION_JSON)
