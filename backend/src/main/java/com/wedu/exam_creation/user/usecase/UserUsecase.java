@@ -164,7 +164,7 @@ public class UserUsecase {
         UserEntity updatedUser = this.updateField(userId, updateFields);
 
         if (updatedUser == null) {
-            throw new InternalServerException("Có lỗi trong quá trình cập nhật vai trò người dùng");
+            throw new InternalServerException("Có lỗi trong quá trình cập nhật tên người dùng");
         }
         return mapper.toCommonDTO(updatedUser);
     }
