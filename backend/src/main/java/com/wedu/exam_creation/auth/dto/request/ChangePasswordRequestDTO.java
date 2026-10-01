@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateAvatarRequestDTO {
-    private String s3Key;
+public class ChangePasswordRequestDTO {
+    private String oldPassword;
+    private String newPassword;
+    private String confirmNewPassword;
 }

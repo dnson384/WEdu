@@ -1,7 +1,5 @@
 package com.wedu.exam_creation.admin.usecase;
 
-import com.wedu.exam_creation.admin.dto.request.LockOrUnlockRequestDTO;
-import com.wedu.exam_creation.admin.dto.request.SetRoleRequestDTO;
 import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
@@ -23,24 +21,24 @@ public class AdminUsecase {
         this.mapper = mapper;
     }
 
-    public List<CommonUserResponseDTO> getAllUsers(CommonUserResponseAllDTO user) {
+    public List<CommonUserResponseDTO> getAllUsers(CommonUserResponseAllDTO admin) {
         return userService.getAllUsers();
     }
 
-    public List<CommonUserResponseDTO> findUsers(CommonUserResponseAllDTO user, String keyword) {
+    public List<CommonUserResponseDTO> findUsers(CommonUserResponseAllDTO admin, String keyword) {
         return userService.findUserByKeyword(keyword);
     }
 
-    public CommonUserResponseDTO updateUserRole(CommonUserResponseAllDTO user, SetRoleRequestDTO req) {
-        if (req.getUserId().equals(user.getId())) {
+    public CommonUserResponseDTO updateUserRole(CommonUserResponseAllDTO admin, String userId, String role) {
+        if (userId.equals(admin.getId())) {
             throw new BadRequestException("Không được phép thay đổi quyền của bản thân");
         }
 
-        if (!isValidateRole(req.getRole())) {
+        if (!isValidateRole(role)) {
             throw new BadRequestException("Quyền không hợp lệ");
         }
 
-        CommonUserResponseAllDTO curUser = userService.findById(req.getUserId());
+        CommonUserResponseAllDTO curUser = userService.findById(userId);
         if (curUser == null) {
             throw new NotFoundException("Không tìm thấy người dùng để phân quyền");
         }
@@ -48,32 +46,70 @@ public class AdminUsecase {
             throw new ForbiddenException("Không được phép thay đổi quyền của admin khác");
         }
 
-        curUser.setRole(req.getRole());
+        curUser.setRole(role);
 
         CommonUserResponseAllDTO updatedUser = userService.updateRole(curUser);
         return mapper.commonAllToCommonDTO(updatedUser);
     }
 
-    public CommonUserResponseDTO lockOrUnlockUser(CommonUserResponseAllDTO user, LockOrUnlockRequestDTO req) {
-        if (req.getUserId().equals(user.getId())) {
-            throw new BadRequestException("Không được phép khóa/mở khóa bản thân");
+    public CommonUserResponseDTO lockUser(CommonUserResponseAllDTO admin, String userId) {
+        if (userId.equals(admin.getId())) {
+            throw new BadRequestException("Không được phép khóa tài khoản bản thân");
         }
 
-        CommonUserResponseAllDTO curUser = userService.findById(req.getUserId());
+        CommonUserResponseAllDTO curUser = userService.findById(userId);
         if (curUser == null) {
-            throw new NotFoundException("Không tìm thấy người dùng để khóa/mở khóa");
+            throw new NotFoundException("Không tìm thấy người dùng để khóa");
         }
         if (curUser.getRole().equals("ROLE_ADMIN")) {
-            throw new ForbiddenException("Không được phép khoá/mở khóa của admin khác");
+            throw new ForbiddenException("Không được phép khóa của admin khác");
         }
 
-        if (req.isLock() == !curUser.getIsActive()) {
+        if (!curUser.getIsActive()) {
             return mapper.commonAllToCommonDTO(curUser);
         }
 
-        CommonUserResponseAllDTO updatedUser = userService.lockUnlockUser(curUser.getId(), req.isLock());
+        CommonUserResponseAllDTO updatedUser = userService.lockUser(curUser.getId());
 
         return mapper.commonAllToCommonDTO(updatedUser);
+    }
+
+    public CommonUserResponseDTO unlockUser(CommonUserResponseAllDTO admin, String userId) {
+        if (userId.equals(admin.getId())) {
+            throw new BadRequestException("Không được phép mở khóa tài khoản bản thân");
+        }
+
+        CommonUserResponseAllDTO curUser = userService.findById(userId);
+        if (curUser == null) {
+            throw new NotFoundException("Không tìm thấy người dùng để mở khóa");
+        }
+        if (curUser.getRole().equals("ROLE_ADMIN")) {
+            throw new ForbiddenException("Không được phép mở khóa của admin khác");
+        }
+
+        if (curUser.getIsActive()) {
+            return mapper.commonAllToCommonDTO(curUser);
+        }
+
+        CommonUserResponseAllDTO updatedUser = userService.unlockUser(curUser.getId());
+
+        return mapper.commonAllToCommonDTO(updatedUser);
+    }
+
+    public boolean deleteUser(CommonUserResponseAllDTO admin, String userId) {
+        if (userId.equals(admin.getId())) {
+            throw new BadRequestException("Không được phép xóa tài khoản bản thân");
+        }
+
+        CommonUserResponseAllDTO curUser = userService.findById(userId);
+        if (curUser == null) {
+            throw new NotFoundException("Không tìm thấy tài khoản để xóa");
+        }
+        if (curUser.getRole().equals("ROLE_ADMIN")) {
+            throw new ForbiddenException("Không được phép xóa tài khoản của admin khác");
+        }
+
+        return userService.deleteUser(userId);
     }
 
     private boolean isValidateRole(String role) {

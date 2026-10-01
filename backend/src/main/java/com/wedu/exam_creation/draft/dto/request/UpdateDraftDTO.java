@@ -9,9 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateLessonsDraftDTO {
-    private String draftId;
-    private String chapterId;
-    private List<UpdateParamDTO> add;
-    private List<String> del;
+public class UpdateChaptersDraftDTO {
+    List<UpdateParamDTO> add;
+    List<String> del;
 }

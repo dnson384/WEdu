@@ -1,7 +1,5 @@
 package com.wedu.exam_creation.admin.controller;
 
-import com.wedu.exam_creation.admin.dto.request.LockOrUnlockRequestDTO;
-import com.wedu.exam_creation.admin.dto.request.SetRoleRequestDTO;
 import com.wedu.exam_creation.admin.usecase.AdminUsecase;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
@@ -22,38 +20,51 @@ public class AdminController {
         this.adminUsecase = adminUsecase;
     }
 
-    @GetMapping("/all-user")
+    @GetMapping("/users")
     public ResponseEntity<List<CommonUserResponseDTO>> getAllUsers(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        List<CommonUserResponseDTO> users = adminUsecase.getAllUsers(principal.getUser());
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(adminUsecase.getAllUsers(principal.getUser()));
     }
 
-    @GetMapping("/search")
+    @GetMapping("/users/search")
     public ResponseEntity<List<CommonUserResponseDTO>> findUsers(
             @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam(name = "keyword") String keyword
     ) {
-        List<CommonUserResponseDTO> result = adminUsecase.findUsers(principal.getUser(), keyword);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(adminUsecase.findUsers(principal.getUser(), keyword));
     }
 
-    @PutMapping("/role")
+    @PutMapping("/{userId}/role")
     public ResponseEntity<CommonUserResponseDTO> updateUserRole(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody SetRoleRequestDTO req
+            @PathVariable("userId") String userId,
+            @RequestParam("role") String role
     ) {
-        CommonUserResponseDTO result = adminUsecase.updateUserRole(principal.getUser(), req);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(adminUsecase.updateUserRole(principal.getUser(), userId, role));
     }
 
-    @PutMapping("/lock-unlock")
+    @PutMapping("/{userId}/lock")
     public ResponseEntity<CommonUserResponseDTO> lockUser(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody LockOrUnlockRequestDTO req
+            @PathVariable("userId") String userId
     ) {
-        CommonUserResponseDTO result = adminUsecase.lockOrUnlockUser(principal.getUser(), req);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(adminUsecase.lockUser(principal.getUser(), userId));
+    }
+
+    @PutMapping("/{userId}/unlock")
+    public ResponseEntity<CommonUserResponseDTO> unLockUser(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable("userId") String userId
+    ) {
+        return ResponseEntity.ok(adminUsecase.unlockUser(principal.getUser(), userId));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Boolean> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable String userId
+    ) {
+        return ResponseEntity.ok(adminUsecase.deleteUser(principal.getUser(), userId));
     }
 }
