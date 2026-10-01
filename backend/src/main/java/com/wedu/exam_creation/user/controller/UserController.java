@@ -2,8 +2,6 @@ package com.wedu.exam_creation.user.controller;
 
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
-import com.wedu.exam_creation.user.dto.request.UpdateAvatarRequestDTO;
-import com.wedu.exam_creation.user.dto.request.UpdateUserRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserUsecase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,24 +23,17 @@ public class UserController {
         return ResponseEntity.ok(userUsecase.getMe(principal.getUser()));
     }
 
-    @PutMapping("/update-avatar")
+    @PatchMapping("/update-avatar")
     public ResponseEntity<Boolean> updateAvatar(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody UpdateAvatarRequestDTO payload) {
-        return ResponseEntity.ok(userUsecase.updateAvatar(principal.getUser().getId(), payload.getS3Key()));
+            @RequestParam("s3Key") String s3Key) {
+        return ResponseEntity.ok(userUsecase.updateAvatar(principal.getUser().getId(), s3Key));
     }
 
     @PatchMapping("/update-username")
-    public ResponseEntity<CommonUserResponseDTO> updateUser(
+    public ResponseEntity<Boolean> updateUser(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody UpdateUserRequestDTO payload) {
-        return ResponseEntity.ok(userUsecase.updateUsername(principal.getUser().getId(), payload.getUsername()));
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<Boolean> deleteAccount(
-            @AuthenticationPrincipal CustomUserDetails principal
-    ) {
-        return ResponseEntity.ok(userUsecase.deleteAccount(principal.getUser().getId()));
+            @RequestParam("username") String username) {
+        return ResponseEntity.ok(userUsecase.updateUsername(principal.getUser().getId(), username));
     }
 }

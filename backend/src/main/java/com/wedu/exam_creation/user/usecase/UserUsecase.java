@@ -10,7 +10,7 @@ import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.common.exception.NotFoundException;
-import com.wedu.exam_creation.notification.service.TelegramNotificationService;
+import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
@@ -18,7 +18,7 @@ import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
 import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,15 +52,14 @@ public class UserUsecase {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         UserEntity createdUser = repo.save(newUserEntity);
 
         return mapper.toCommonAllDTO(createdUser);
     }
-
 
     // GET
     public CommonUserResponseDTO getMe(CommonUserResponseAllDTO user) {
@@ -150,7 +149,7 @@ public class UserUsecase {
         return mapper.toCommonAllDTO(updatedUser);
     }
 
-    public CommonUserResponseDTO updateUsername(String userId, String username) {
+    public boolean updateUsername(String userId, String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new BadRequestException("Tên người dùng rỗng");
         }
@@ -166,12 +165,23 @@ public class UserUsecase {
         if (updatedUser == null) {
             throw new InternalServerException("Có lỗi trong quá trình cập nhật tên người dùng");
         }
-        return mapper.toCommonDTO(updatedUser);
+        return true;
     }
 
-    public CommonUserResponseAllDTO lockUnlockUser(String userId, boolean isLock) {
+    public CommonUserResponseAllDTO lockUser(String userId) {
         UserUpdateFields updateFields = new UserUpdateFields();
-        updateFields.setIsActive(!isLock);
+        updateFields.setIsActive(false);
+
+        UserEntity updatedUser = this.updateField(userId, updateFields);
+        if (updatedUser == null) {
+            throw new InternalServerException("Có lỗi trong quá trình cập nhật vai trò người dùng");
+        }
+        return mapper.toCommonAllDTO(updatedUser);
+    }
+
+    public CommonUserResponseAllDTO unlockUser(String userId) {
+        UserUpdateFields updateFields = new UserUpdateFields();
+        updateFields.setIsActive(true);
 
         UserEntity updatedUser = this.updateField(userId, updateFields);
         if (updatedUser == null) {
@@ -192,7 +202,7 @@ public class UserUsecase {
     }
 
     // DELETE
-    public boolean deleteAccount(String userId) {
+    public boolean deleteUser(String userId) {
         boolean isDeleted = repo.delete(userId);
 
         if (isDeleted) {

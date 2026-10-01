@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +67,7 @@ public class UserRepositoryImpl implements IUserRepository {
         if (updateFields.getIsActive() != null) {
             update.set("isActive", updateFields.getIsActive());
         }
-        update.set("updatedAt", LocalDateTime.now());
+        update.set("updatedAt", Instant.now());
 
         UserDocument updatedDoc = mongoTemplate.findAndModify(
                 query,

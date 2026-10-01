@@ -16,24 +16,7 @@ public class UserService {
         this.userUsecase = userUsecase;
     }
 
-    // POST
-    public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
-        return userUsecase.createNewUser(newUser, hashedPassword);
-    }
-
-    // UPDATE
-    public CommonUserResponseAllDTO updateRole(CommonUserResponseAllDTO user) {
-        return userUsecase.updateRole(user);
-    }
-
-    public CommonUserResponseAllDTO updatePassword(CommonUserResponseAllDTO user) {
-        return userUsecase.updatePassword(user);
-    }
-
-    public CommonUserResponseAllDTO lockUnlockUser(String userId, boolean isLock) {
-        return userUsecase.lockUnlockUser(userId, isLock);
-    }
-
+    // GET
     public Optional<CommonUserResponseAllDTO> findByEmail(String email) {
         return userUsecase.findByEmail(email);
     }
@@ -48,5 +31,32 @@ public class UserService {
 
     public List<CommonUserResponseDTO> findUserByKeyword(String keyword) {
         return userUsecase.findUserByKeyword(keyword);
+    }
+
+    // POST
+    public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
+        return userUsecase.createNewUser(newUser, hashedPassword);
+    }
+
+    // UPDATE
+    public CommonUserResponseAllDTO updateRole(CommonUserResponseAllDTO user) {
+        return userUsecase.updateRole(user);
+    }
+
+    public CommonUserResponseAllDTO updatePassword(CommonUserResponseAllDTO user) {
+        return userUsecase.updatePassword(user);
+    }
+
+    public CommonUserResponseAllDTO unlockUser(String userId) {
+        return userUsecase.unlockUser(userId);
+    }
+
+    public CommonUserResponseAllDTO lockUser(String userId) {
+        return userUsecase.lockUser(userId);
+    }
+
+    // DELETE
+    public boolean deleteUser(String userId) {
+        return userUsecase.deleteUser(userId);
     }
 }
