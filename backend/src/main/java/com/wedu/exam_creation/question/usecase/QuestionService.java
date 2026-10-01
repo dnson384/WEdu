@@ -10,7 +10,7 @@ import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.NewQuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
-import com.wedu.exam_creation.notification.service.TelegramNotificationService;
+import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
 import com.wedu.exam_creation.question.dto.mapper.QuestionDTOMapper;

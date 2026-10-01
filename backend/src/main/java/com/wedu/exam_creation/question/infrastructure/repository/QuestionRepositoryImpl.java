@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -28,8 +28,8 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
         List<QuestionDocument> questionsDoc = questions.stream()
                 .map(question -> {
                     QuestionDocument newDoc = questionMapper.toDocument(question);
-                    newDoc.setCreatedAt(LocalDateTime.now());
-                    newDoc.setUpdatedAt(LocalDateTime.now());
+                    newDoc.setCreatedAt(Instant.now());
+                    newDoc.setUpdatedAt(Instant.now());
                     return newDoc;
                 })
                 .toList();
@@ -41,7 +41,6 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
         return inserted.stream()
                 .map(QuestionDocument::getId)
                 .toList();
-
     }
 
     @Override
