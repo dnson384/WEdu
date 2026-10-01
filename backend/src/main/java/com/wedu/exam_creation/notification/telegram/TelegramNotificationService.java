@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.notification.service;
+package com.wedu.exam_creation.notification.telegram;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
