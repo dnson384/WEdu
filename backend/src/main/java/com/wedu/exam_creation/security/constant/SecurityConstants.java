@@ -6,6 +6,8 @@ public final class SecurityConstants {
             "/auth/register",
             "/auth/logout",
             "/auth/regenerate-access-token",
+            "/auth/forgot-password",
+            "/auth/reset-password",
             "/static/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

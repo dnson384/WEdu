@@ -106,10 +106,10 @@ public class JwtTokenProvider {
                 claims.getSubject(),
                 claims.getExpiration().toInstant()
                         .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime(),
+                        .toInstant(),
                 claims.getIssuedAt().toInstant()
                         .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime()
+                        .toInstant()
         );
     }
 
