@@ -1,15 +1,14 @@
 package com.wedu.exam_creation.storage.service;
 
 import com.wedu.exam_creation.common.exception.BadRequestException;
+import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
@@ -123,5 +122,33 @@ public class S3Service {
             System.err.println("Lỗi khi xóa file trên S3: " + e.getMessage());
             throw e;
         }
+    }
+
+    public List<S3ObjectInfo> listFiles(String prefix) {
+        ListObjectsV2Request request = ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .prefix(prefix + "/")
+                .build();
+
+        ListObjectsV2Response response = s3Client.listObjectsV2(request);
+
+        return response.contents().stream()
+                .filter(obj -> !obj.key().endsWith("/")) // bỏ "thư mục" rỗng
+                .map(this::toS3ObjectInfo)
+                .toList();
+    }
+
+    private S3ObjectInfo toS3ObjectInfo(S3Object obj) {
+        String fileName = obj.key().contains("/")
+                ? obj.key().substring(obj.key().lastIndexOf('/') + 1)
+                : obj.key();
+
+        return new S3ObjectInfo(
+                obj.key(),
+                fileName,
+                obj.size(),
+                obj.lastModified(),
+                generatePresignedUrl(obj.key())
+        );
     }
 }
