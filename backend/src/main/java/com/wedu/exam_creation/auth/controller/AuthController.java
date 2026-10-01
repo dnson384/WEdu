@@ -1,12 +1,13 @@
 package com.wedu.exam_creation.auth.controller;
 
+import com.wedu.exam_creation.auth.dto.request.ChangePasswordRequestDTO;
+import com.wedu.exam_creation.auth.dto.request.ResetPasswordRequestDTO;
 import com.wedu.exam_creation.auth.dto.response.AuthorizedResponseDTO;
+import com.wedu.exam_creation.auth.dto.response.NewAccessTokenResponseDTO;
 import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
 import com.wedu.exam_creation.auth.usecase.AuthUsecase;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
-import com.wedu.exam_creation.refreshToken.dto.response.NewAccessTokenResponseDTO;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
-import com.wedu.exam_creation.user.dto.request.ChangePasswordRequestDTO;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -93,12 +94,14 @@ public class AuthController {
         return ResponseEntity.ok(authUsecase.logout(authorization));
     }
 
-    @PutMapping("/change-password")
+    @PatchMapping("/change-password")
     public ResponseEntity<Boolean> changePassword(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody ChangePasswordRequestDTO reqPayload
+            @RequestBody ChangePasswordRequestDTO reqPayload,
+            @RequestHeader("Authorization") String authorization
     ) {
-        return ResponseEntity.ok(authUsecase.changePassword(principal.getUser().getId(), reqPayload));
+        String accessToken = authorization.substring(7).trim();
+        return ResponseEntity.ok(authUsecase.changePassword(accessToken, principal.getUser().getId(), reqPayload));
     }
 
     @PostMapping("/regenerate-access-token")
@@ -107,5 +110,19 @@ public class AuthController {
     ) {
         String newAT = authUsecase.regenerateAccessToken(refreshToken);
         return ResponseEntity.ok(new NewAccessTokenResponseDTO(newAT));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @RequestParam("email") String email
+    ) {
+        authUsecase.forgotPassword(email);
+        return ResponseEntity.ok("Đường dẫn đặt lại mật khẩu đã được gửi về email!");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO dto) {
+        authUsecase.resetPassword(dto.getPlainToken(), dto.getNewPassword(), dto.getConfirmNewPassword());
+        return ResponseEntity.ok("Đặt lại mật khẩu thành công");
     }
 }

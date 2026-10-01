@@ -1,6 +1,7 @@
 package com.wedu.exam_creation.auth.usecase;
 
 import com.wedu.exam_creation.auth.dto.mapper.AuthDTOMapper;
+import com.wedu.exam_creation.auth.dto.request.ChangePasswordRequestDTO;
 import com.wedu.exam_creation.auth.dto.response.AuthorizedResponseDTO;
 import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
 import com.wedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
@@ -10,11 +11,9 @@ import com.wedu.exam_creation.common.dto.token.RTPayload;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.*;
-import com.wedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
+import com.wedu.exam_creation.passwordResetToken.usecase.PasswordResetTokenService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.security.service.SecurityService;
-import com.wedu.exam_creation.user.dto.request.ChangePasswordPayloadRequestDTO;
-import com.wedu.exam_creation.user.dto.request.ChangePasswordRequestDTO;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserService;
 import io.jsonwebtoken.JwtException;
@@ -31,12 +30,14 @@ public class AuthUsecase {
     private final UserService userService;
     private final SecurityService securityService;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetTokenService passwordResetTokenService;
     private final AuthDTOMapper mapper;
 
-    public AuthUsecase(UserService userService, SecurityService securityService, RefreshTokenService refreshTokenService, AuthDTOMapper mapper) {
+    public AuthUsecase(UserService userService, SecurityService securityService, RefreshTokenService refreshTokenService, PasswordResetTokenService passwordResetTokenService, AuthDTOMapper mapper) {
         this.userService = userService;
         this.securityService = securityService;
         this.refreshTokenService = refreshTokenService;
+        this.passwordResetTokenService = passwordResetTokenService;
         this.mapper = mapper;
     }
 
@@ -54,37 +55,20 @@ public class AuthUsecase {
 
         CommonUserResponseAllDTO createdUser = userService.createNewUser(newUser, hashedPassword);
 
-        UserResponseDTO user = mapper.toUserResponseDTO(createdUser);
+        UserResponseDTO userDto = mapper.toUserResponseDTO(createdUser);
 
-        if (user == null) {
+        if (userDto == null) {
             throw new InternalServerException("Lỗi trong quá trình chuyển đổi dữ liệu");
         }
 
-        String jti = UUID.randomUUID().toString();
+        TokenResult tokenResult = generateToken(userDto);
 
-        // AT
-        ATPayload accessTokenPayload = new ATPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String accessToken = securityService.generateAccessToken(accessTokenPayload);
-
-        // RT
-        RTPayload refreshTokenPayload = new RTPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
-
-
-        // Luu RT
-        NewRTRequestDTO newRTRequestDTO = securityService.parseNewRefreshToken(refreshToken);
-        boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
-
-        if (!saveNewRT) {
+        if (!tokenResult.saved) {
             throw new InternalServerException("Lỗi trong quá trình đăng ký");
         }
 
         return new AuthorizedResponseDTO(
-                user, accessToken, refreshToken
+                userDto, tokenResult.accessToken, tokenResult.refreshToken
         );
     }
 
@@ -111,30 +95,14 @@ public class AuthUsecase {
 
         UserResponseDTO userDto = mapper.toUserResponseDTO(user);
 
-        String jti = UUID.randomUUID().toString();
+        TokenResult tokenResult = generateToken(userDto);
 
-        // AT
-        ATPayload accessTokenPayload = new ATPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String accessToken = securityService.generateAccessToken(accessTokenPayload);
-
-        // RT
-        RTPayload refreshTokenPayload = new RTPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
-        String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
-
-        // Luu RT
-        NewRTRequestDTO newRTRequestDTO = securityService.parseNewRefreshToken(refreshToken);
-        boolean saveNewRT = refreshTokenService.save(newRTRequestDTO);
-
-        if (!saveNewRT) {
+        if (!tokenResult.saved) {
             throw new InternalServerException("Lỗi trong quá trình đăng nhập");
         }
 
         return new AuthorizedResponseDTO(
-                userDto, accessToken, refreshToken
+                userDto, tokenResult.accessToken, tokenResult.refreshToken
         );
     }
 
@@ -145,10 +113,8 @@ public class AuthUsecase {
     }
 
     @Transactional
-    public boolean changePassword(String userId, ChangePasswordRequestDTO reqPayload) {
-        ChangePasswordPayloadRequestDTO payload = reqPayload.getPayload();
-
-        RTPayload rtPayload = securityService.getPayloadFromRefreshToken(reqPayload.getRefreshToken());
+    public boolean changePassword(String accessToken, String userId, ChangePasswordRequestDTO payload) {
+        ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
 
         if (!payload.getNewPassword().equals(payload.getConfirmNewPassword())) {
             throw new UnAuthorizedException("Mật khẩu xác nhận của mật khẩu mới không trùng khớp");
@@ -166,7 +132,7 @@ public class AuthUsecase {
         String newHashedPassword = securityService.hashPassword(payload.getNewPassword());
 
         user.setHashedPassword(newHashedPassword);
-        return saveUserAndRevokeRT(user, rtPayload.getJti());
+        return saveUserAndRevokeRT(user, atPayload.getParentJti());
     }
 
     public String regenerateAccessToken(String refreshToken) {
@@ -175,7 +141,11 @@ public class AuthUsecase {
         try {
             RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
 
-            RefreshTokenEntity token = refreshTokenService.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
+            RTResponseDTO token = refreshTokenService.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
+
+            if (token == null) {
+                throw new UnAuthorizedException("Phiên đăng nhập đã bị thu hồi");
+            }
 
             CommonUserResponseAllDTO user = userService.findById(token.getUserId());
 
@@ -217,5 +187,47 @@ public class AuthUsecase {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
         return false;
+    }
+
+    public void forgotPassword(String email) {
+        String emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailRegex)) {
+            throw new BadRequestException("Email không đúng định dạng");
+        }
+
+        passwordResetTokenService.requestReset(email);
+    }
+
+    public void resetPassword(String plainToken, String newPassword, String confirmNewPassword) {
+        passwordResetTokenService.resetPassword(plainToken, newPassword, confirmNewPassword);
+    }
+
+    public TokenResult generateToken(UserResponseDTO user) {
+        String jti = UUID.randomUUID().toString();
+
+        // AT
+        ATPayload accessTokenPayload = new ATPayload(
+                jti, user.getId(), user.getEmail(), user.getRole()
+        );
+        String accessToken = securityService.generateAccessToken(accessTokenPayload);
+
+        // RT
+        RTPayload refreshTokenPayload = new RTPayload(
+                jti, user.getId(), user.getEmail(), user.getRole()
+        );
+        String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
+
+        // Luu RT
+        NewRTRequestDTO newRTRequestDTO = securityService.parseNewRefreshToken(refreshToken);
+        boolean savedNewRT = refreshTokenService.save(newRTRequestDTO);
+
+        return new TokenResult(savedNewRT, accessToken, refreshToken);
+    }
+
+    public record TokenResult(
+            boolean saved,
+            String accessToken,
+            String refreshToken
+    ) {
     }
 }

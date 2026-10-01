@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.user.dto.request;
+package com.wedu.exam_creation.auth.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
