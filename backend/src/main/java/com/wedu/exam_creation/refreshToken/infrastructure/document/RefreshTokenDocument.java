@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -23,6 +23,6 @@ public class RefreshTokenDocument {
     @Field(targetType = FieldType.OBJECT_ID)
     private String userId;
 
-    private LocalDateTime expiresAt;
-    private LocalDateTime issuedAt;
+    private Instant expiresAt;
+    private Instant issuedAt;
 }

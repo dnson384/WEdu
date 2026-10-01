@@ -2,8 +2,8 @@ package com.wedu.exam_creation.refreshToken.usecase;
 
 import com.wedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.wedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
-import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.refreshToken.domain.entity.RefreshTokenEntity;
+import com.wedu.exam_creation.refreshToken.domain.repository.IRefreshTokenRepository;
 import com.wedu.exam_creation.refreshToken.dto.mapper.RefreshTokenDTOMapper;
 import com.wedu.exam_creation.refreshToken.infrastructure.repository.RefreshTokenRepositoryImpl;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import java.util.List;
 
 @Service
 public class RefreshTokenService {
-    private final RefreshTokenRepositoryImpl repo;
+    private final IRefreshTokenRepository repo;
     private final RefreshTokenDTOMapper mapper;
 
     public RefreshTokenService(RefreshTokenRepositoryImpl repo, RefreshTokenDTOMapper mapper) {
@@ -24,10 +24,6 @@ public class RefreshTokenService {
         List<RefreshTokenEntity> refreshTokenEntities = repo.getRefreshTokenByUserId(userId);
 
         return refreshTokenEntities.stream().map(mapper::toResponseDTO).toList();
-    }
-
-    public boolean exists(String jti, String userId) {
-        return repo.checkExist(jti, userId);
     }
 
     public boolean save(NewRTRequestDTO newRT) {
@@ -50,13 +46,8 @@ public class RefreshTokenService {
         return repo.deleteMany(jtis);
     }
 
-    public RefreshTokenEntity getRefreshToken(String jti, String userId) {
+    public RTResponseDTO getRefreshToken(String jti, String userId) {
         RefreshTokenEntity entity = repo.getRefreshTokenByJti(jti, userId);
-
-        if (entity == null) {
-            throw new NotFoundException("RT không tồn tại");
-        }
-
-        return entity;
+        return mapper.toResponseDTO(entity);
     }
 }

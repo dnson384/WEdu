@@ -7,8 +7,6 @@ import java.util.List;
 public interface IRefreshTokenRepository {
     boolean save(RefreshTokenEntity newEntity);
 
-    boolean checkExist(String jti, String userId);
-
     RefreshTokenEntity getRefreshTokenByJti(String jti, String userId);
 
     List<RefreshTokenEntity> getRefreshTokenByUserId(String userId);

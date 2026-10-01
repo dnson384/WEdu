@@ -25,24 +25,14 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
         this.mapper = mapper;
     }
 
+    @Override
     public boolean save(RefreshTokenEntity newEntity) {
         RefreshTokenDocument document = mapper.toDocument(newEntity);
         RefreshTokenDocument savedRefreshToken = mongoTemplate.save(document);
         return savedRefreshToken.getId() != null;
     }
 
-    public boolean checkExist(String jti, String userId) {
-        Criteria criteria = new Criteria();
-        criteria.andOperator(
-                Criteria.where("jti").is(jti),
-                Criteria.where("userId").is(userId)
-        );
-
-        Query query = new Query(criteria);
-
-        return mongoTemplate.exists(query, RefreshTokenDocument.class);
-    }
-
+    @Override
     public RefreshTokenEntity getRefreshTokenByJti(String jti, String userId) {
         Criteria criteria = new Criteria();
         criteria.andOperator(
@@ -57,6 +47,7 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
         return mapper.toEntity(doc);
     }
 
+    @Override
     public List<RefreshTokenEntity> getRefreshTokenByUserId(String userId) {
         Query query = new Query(Criteria.where("userId").is(userId));
 
@@ -65,6 +56,7 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
         return refreshTokenDocuments.stream().map(mapper::toEntity).toList();
     }
 
+    @Override
     @Transactional
     public boolean delete(String jti) {
         Query query = new Query(Criteria.where("jti").is(jti));
@@ -82,6 +74,7 @@ public class RefreshTokenRepositoryImpl implements IRefreshTokenRepository {
         return true;
     }
 
+    @Override
     public boolean deleteMany(List<String> jtis) {
         Query query = new Query(Criteria.where("jti").in(jtis));
 
