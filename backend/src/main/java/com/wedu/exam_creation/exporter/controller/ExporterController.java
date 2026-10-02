@@ -27,7 +27,7 @@ public class ExporterController {
     }
 
     @PostMapping("/exam")
-    public ResponseEntity<Resource> exportWord(
+    public ResponseEntity<Resource> exportExam(
             @AuthenticationPrincipal CustomUserDetails principal,
             @RequestBody ExportRequestDTO payload
     ) {
