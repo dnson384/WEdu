@@ -12,12 +12,11 @@ import com.wedu.exam_creation.draft.domain.payload.*;
 import com.wedu.exam_creation.draft.domain.repository.IDraftRepository;
 import com.wedu.exam_creation.draft.dto.mapper.DraftDTOMapper;
 import com.wedu.exam_creation.draft.dto.request.CreateDraftDTO;
-import com.wedu.exam_creation.draft.dto.request.UpdateChaptersDraftDTO;
-import com.wedu.exam_creation.draft.dto.request.UpdateLessonsDraftDTO;
+import com.wedu.exam_creation.draft.dto.request.UpdateDraftDTO;
 import com.wedu.exam_creation.draft.usecase.util.DraftUtil;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +42,8 @@ public class DraftUsecase {
                 payload.getQuestionsCount(),
                 payload.getQuestionTypes(),
                 new ArrayList<>(),
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
         return repo.createDraft(payloadDomain);
     }
@@ -54,9 +53,9 @@ public class DraftUsecase {
         return mapper.toDTO(draft);
     }
 
-    public boolean updateChapters(UpdateChaptersDraftDTO payload, String userId) {
+    public boolean updateChapters(String draftId, UpdateDraftDTO payload, String userId) {
         UpdateChaptersPayload payloadDomain = new UpdateChaptersPayload(
-                payload.getDraftId(),
+                draftId,
                 userId,
                 payload.getAdd().stream()
                         .map(item -> new UpdateParam(
@@ -70,11 +69,11 @@ public class DraftUsecase {
         return repo.updateChapters(payloadDomain);
     }
 
-    public boolean updateLessons(UpdateLessonsDraftDTO payload, String userId) {
+    public boolean updateLessons(String draftId, String chapterId, UpdateDraftDTO payload, String userId) {
         UpdateLessonsPayload payloadDomain = new UpdateLessonsPayload(
-                payload.getDraftId(),
+                draftId,
                 userId,
-                payload.getChapterId(),
+                chapterId,
                 payload.getAdd().stream()
                         .map(item -> new UpdateParam(
                                 item.getId(),

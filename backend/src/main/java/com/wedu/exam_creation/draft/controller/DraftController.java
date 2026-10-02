@@ -2,8 +2,7 @@ package com.wedu.exam_creation.draft.controller;
 
 import com.wedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.wedu.exam_creation.draft.dto.request.CreateDraftDTO;
-import com.wedu.exam_creation.draft.dto.request.UpdateChaptersDraftDTO;
-import com.wedu.exam_creation.draft.dto.request.UpdateLessonsDraftDTO;
+import com.wedu.exam_creation.draft.dto.request.UpdateDraftDTO;
 import com.wedu.exam_creation.draft.usecase.DraftUsecase;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import org.springframework.http.ResponseEntity;
@@ -37,33 +36,38 @@ public class DraftController {
         return ResponseEntity.ok(draftUsecase.getDraft(draftId, principal.getUser().getId()));
     }
 
-    @PutMapping("/chapter")
+    @PutMapping("/{draftId}/chapter")
     public ResponseEntity<Boolean> updateChapters(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody UpdateChaptersDraftDTO payload
+            @PathVariable("draftId") String draftId,
+            @RequestBody UpdateDraftDTO payload
     ) {
-        return ResponseEntity.ok(draftUsecase.updateChapters(payload, principal.getUser().getId()));
+        return ResponseEntity.ok(draftUsecase.updateChapters(draftId, payload, principal.getUser().getId()));
     }
 
-    @PutMapping("/lesson")
+    @PutMapping("/{draftId}/{chapterId}/lesson")
     public ResponseEntity<Boolean> updateLessons(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody UpdateLessonsDraftDTO payload
+            @PathVariable("draftId") String draftId,
+            @PathVariable("chapterId") String chapterId,
+            @RequestBody UpdateDraftDTO payload
     ) {
-        return ResponseEntity.ok(draftUsecase.updateLessons(payload, principal.getUser().getId()));
+        return ResponseEntity.ok(draftUsecase.updateLessons(draftId, chapterId, payload, principal.getUser().getId()));
     }
 
-    @PutMapping("/generate-matrix")
+    @PutMapping("/{draftId}/generate-matrix")
     public ResponseEntity<Boolean> generateMatrix(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestParam String draftId) {
+            @PathVariable("draftId") String draftId
+    ) {
         return ResponseEntity.ok(draftUsecase.generateMatrix(draftId, principal.getUser().getId()));
     }
 
-    @PutMapping("/generate-matrix-details")
+    @PutMapping("/{draftId}/generate-matrix-details")
     public ResponseEntity<Boolean> generateMatrixDetails(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestParam String draftId) {
+            @PathVariable("draftId") String draftId
+    ) {
         return ResponseEntity.ok(draftUsecase.generateMatrixDetails(
                 draftId, principal.getUser().getId()
         ));
@@ -76,15 +80,15 @@ public class DraftController {
         return ResponseEntity.ok(draftUsecase.getRecentDraft(principal.getUser().getId()));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/user-drafts")
     public ResponseEntity<List<DraftDTO>> getAllUserDrafts(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
         return ResponseEntity.ok(draftUsecase.getAllUserDrafts(principal.getUser().getId()));
     }
 
-    @DeleteMapping("/delete/{draftId}")
-    public ResponseEntity<Boolean> deleteExam(
+    @DeleteMapping("/{draftId}")
+    public ResponseEntity<Boolean> deleteDraft(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable String draftId
     ) {

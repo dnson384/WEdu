@@ -9,7 +9,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateChaptersDraftDTO {
+// Payload dùng chung cho update chương và bài
+public class UpdateDraftDTO {
     List<UpdateParamDTO> add;
     List<String> del;
 }
