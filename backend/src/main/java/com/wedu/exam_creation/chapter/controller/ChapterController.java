@@ -18,7 +18,7 @@ public class ChapterController {
         this.chapterUsecase = chapterUsecase;
     }
 
-    @GetMapping("/all")
+    @GetMapping("/chapters")
     public ResponseEntity<List<ChapterResponseDTO>> getAll() {
         List<ChapterResponseDTO> result = chapterUsecase.getAll();
         return ResponseEntity.ok(result);

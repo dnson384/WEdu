@@ -14,7 +14,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,8 +37,8 @@ public class ChapterRepositoryImpl implements IChapterRepository {
         ChapterDocument existedChapter = mongoTemplate.findOne(query, ChapterDocument.class);
 
         if (existedChapter == null) {
-            chapterDocument.setCreateAt(LocalDateTime.now());
-            chapterDocument.setUpdatedAt(LocalDateTime.now());
+            chapterDocument.setCreateAt(Instant.now());
+            chapterDocument.setUpdatedAt(Instant.now());
             chapterDocument.getLessons().get(0).setId(new ObjectId().toString());
             ChapterDocument created = mongoTemplate.save(chapterDocument);
 
@@ -61,7 +61,7 @@ public class ChapterRepositoryImpl implements IChapterRepository {
         if (existingLessonIndex == -1) {
             newLesson.setId(new ObjectId().toString());
             existedChapter.getLessons().add(newLesson);
-            existedChapter.setUpdatedAt(LocalDateTime.now());
+            existedChapter.setUpdatedAt(Instant.now());
             mongoTemplate.save(existedChapter);
 
             int lastIndex = existedChapter.getLessons().size() - 1;
@@ -87,7 +87,7 @@ public class ChapterRepositoryImpl implements IChapterRepository {
                         existingLesson.getBankStats().add(newStat);
                     }
                 }
-                existedChapter.setUpdatedAt(LocalDateTime.now());
+                existedChapter.setUpdatedAt(Instant.now());
                 mongoTemplate.save(existedChapter);
             }
 
