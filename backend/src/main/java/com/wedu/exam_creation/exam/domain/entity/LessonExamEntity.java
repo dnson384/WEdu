@@ -9,8 +9,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChapterExamEntity {
-    List<LessonExamEntity> lessons;
-    private String id;
-    private String name;
+public class LessonExamEntity {
+    String id;
+    String name;
+    List<ExamMatrixItemEntity> matrix;
+    List<ExamMatrixDetailItemEntity> matrixDetails;
 }

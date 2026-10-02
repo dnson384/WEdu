@@ -2,7 +2,6 @@ package com.wedu.exam_creation.exam.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
-import com.wedu.exam_creation.exam.dto.request.GenerateExamPayload;
 import com.wedu.exam_creation.exam.dto.response.ExamDTO;
 import com.wedu.exam_creation.exam.dto.response.ExamGeneratedResponseDTO;
 import com.wedu.exam_creation.exam.usecase.ExamService;
@@ -25,13 +24,13 @@ public class ExamController {
         this.examService = examService;
     }
 
-    @PostMapping("/generate")
+    @PostMapping("/generate/{draftId}")
     public ResponseEntity<ExamGeneratedResponseDTO> generateExam(
             @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody GenerateExamPayload payload
+            @PathVariable String draftId
     ) throws JsonProcessingException {
         return ResponseEntity.ok(examUsecase.generateExam(
-                payload.getDraftId(),
+                draftId,
                 principal.getUser().getId(),
                 principal.getUser().getAccountType()
         ));
@@ -44,7 +43,7 @@ public class ExamController {
         return ResponseEntity.ok(examService.getExamById(principal.getUser().getId(), examId));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/user-exams")
     public ResponseEntity<List<ExamDTO>> getAllExams(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
@@ -58,7 +57,7 @@ public class ExamController {
         return ResponseEntity.ok(examUsecase.getRecentExams(principal.getUser().getId()));
     }
 
-    @DeleteMapping("/delete/{examId}")
+    @DeleteMapping("/{examId}")
     public ResponseEntity<Boolean> deleteExam(
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable String examId

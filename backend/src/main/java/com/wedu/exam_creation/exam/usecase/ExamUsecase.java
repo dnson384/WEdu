@@ -16,9 +16,11 @@ import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.draft.usecase.DraftService;
 import com.wedu.exam_creation.exam.domain.entity.ChapterExamEntity;
 import com.wedu.exam_creation.exam.domain.entity.ExamEntity;
+import com.wedu.exam_creation.exam.domain.entity.LessonExamEntity;
 import com.wedu.exam_creation.exam.domain.entity.QuestionExamEntity;
 import com.wedu.exam_creation.exam.domain.repository.IExamRepository;
-import com.wedu.exam_creation.exam.dto.mapper.ExamDTOMapper;
+import com.wedu.exam_creation.exam.dto.mapper.ExamCommonDraftDTOMapper;
+import com.wedu.exam_creation.exam.dto.mapper.ExamResponseDTOMapper;
 import com.wedu.exam_creation.exam.dto.response.ExamDTO;
 import com.wedu.exam_creation.exam.dto.response.ExamGeneratedResponseDTO;
 import com.wedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
@@ -27,7 +29,7 @@ import com.wedu.exam_creation.storage.service.S3Service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,15 +38,17 @@ public class ExamUsecase {
     private final IExamRepository repo;
     private final QuestionService questionService;
     private final DraftService draftService;
-    private final ExamDTOMapper mapper;
+    private final ExamResponseDTOMapper mapperResponseDTO;
+    private final ExamCommonDraftDTOMapper examCommonDraftDTOMapper;
     private final ChapterService chapterService;
     private final S3Service s3Service;
 
-    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamDTOMapper mapper, ChapterService chapterService, S3Service s3Service) {
+    public ExamUsecase(IExamRepository repo, QuestionService questionService, DraftService draftService, ExamResponseDTOMapper mapperResponseDTO, ExamCommonDraftDTOMapper examCommonDraftDTOMapper, ChapterService chapterService, S3Service s3Service) {
         this.repo = repo;
         this.questionService = questionService;
         this.draftService = draftService;
-        this.mapper = mapper;
+        this.mapperResponseDTO = mapperResponseDTO;
+        this.examCommonDraftDTOMapper = examCommonDraftDTOMapper;
         this.chapterService = chapterService;
         this.s3Service = s3Service;
     }
@@ -57,11 +61,15 @@ public class ExamUsecase {
 
         List<ExamMatrixDetailDTO> examMatrixDetailDTOS = new ArrayList<>();
         for (ChapterDraftDTO chapter : draft.getChapters()) {
-            List<String> lessonIds = chapter.getLessons().stream().map(LessonDraftDTO::getId).toList();
+            List<LessonDraftDTO> lessonsDTO = chapter.getLessons();
+            List<LessonExamEntity> lessonExamEntities = lessonsDTO.stream()
+                    .map(examCommonDraftDTOMapper::lessonDraftDTOToLessonExamEntity)
+                    .toList();
 
             chaptersExam.add(new ChapterExamEntity(
-                    lessonIds,
-                    chapter.getId()
+                    lessonExamEntities,
+                    chapter.getId(),
+                    chapter.getName()
             ));
 
             for (LessonDraftDTO lesson : chapter.getLessons()) {
@@ -95,7 +103,6 @@ public class ExamUsecase {
         ExamEntity payload = new ExamEntity(
                 null,
                 draft.getUserId(),
-                draftId,
                 draft.getExamName(),
                 chaptersExam,
                 questions.stream()
@@ -105,8 +112,8 @@ public class ExamUsecase {
                                 q.getQuestionIds()
                         ))
                         .toList(),
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         String examId = repo.saveExam(payload);
@@ -119,7 +126,7 @@ public class ExamUsecase {
         List<ExamEntity> examEntities = repo.getAllUserExams(userId);
 
         return examEntities.stream()
-                .map(mapper::convertToExamResponse)
+                .map(mapperResponseDTO::convertToExamResponse)
                 .toList();
     }
 
@@ -132,12 +139,12 @@ public class ExamUsecase {
 
         List<QuestionDTO> questions = questionService.findByIds(questionIds);
 
-        return mapper.convertToExamDetailResponse(exam, questions, s3Service);
+        return mapperResponseDTO.convertToExamDetailResponse(exam, questions, s3Service);
     }
 
     public List<ExamDTO> getRecentExams(String userId) {
         List<ExamEntity> examEntities = repo.getRecentExams(userId);
-        return examEntities.stream().map(mapper::convertToExamResponse).toList();
+        return examEntities.stream().map(mapperResponseDTO::convertToExamResponse).toList();
     }
 
     public boolean deleteExam(String userId, String examId) {

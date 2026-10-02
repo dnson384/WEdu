@@ -8,6 +8,7 @@ import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.VariablesDTO;
 import com.wedu.exam_creation.exam.domain.entity.ChapterExamEntity;
 import com.wedu.exam_creation.exam.domain.entity.ExamEntity;
+import com.wedu.exam_creation.exam.domain.entity.LessonExamEntity;
 import com.wedu.exam_creation.exam.dto.response.ExamChapterDTO;
 import com.wedu.exam_creation.exam.dto.response.ExamDTO;
 import com.wedu.exam_creation.storage.service.S3Service;
@@ -20,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
-public class ExamDTOMapper {
+public class ExamResponseDTOMapper {
     public ExamDetailDTO convertToExamDetailResponse(
             ExamEntity exam,
             List<QuestionDTO> questions,
@@ -32,9 +33,13 @@ public class ExamDTOMapper {
 
         List<QuestionDTO> validQuestions = new ArrayList<>();
         for (ChapterExamEntity chapter : exam.getChapters()) {
+            List<String> lessonId = chapter.getLessons().stream()
+                    .map(LessonExamEntity::getId)
+                    .toList();
+
             List<QuestionDTO> matchedQuestions = questions.stream()
                     .filter(q -> q.getChapterId().equals(chapter.getId()) &&
-                            chapter.getLessonIds().contains(q.getLessonId()))
+                            lessonId.contains(q.getLessonId()))
                     .toList();
             validQuestions.addAll(matchedQuestions);
         }
@@ -118,7 +123,9 @@ public class ExamDTOMapper {
         List<ExamChapterDTO> chapterDTOS = entity.getChapters().stream()
                 .map(chapter -> new ExamChapterDTO(
                         chapter.getId(),
-                        chapter.getLessonIds()
+                        chapter.getLessons().stream()
+                                .map(LessonExamEntity::getId)
+                                .toList()
                 ))
                 .toList();
 

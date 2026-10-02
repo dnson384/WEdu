@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -13,10 +13,9 @@ import java.util.List;
 public class ExamEntity {
     private String id;
     private String userId;
-    private String draftId;
     private String name;
     private List<ChapterExamEntity> chapters;
     private List<QuestionExamEntity> questions;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

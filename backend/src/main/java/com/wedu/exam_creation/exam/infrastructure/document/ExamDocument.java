@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -24,16 +24,13 @@ public class ExamDocument {
     @Field(targetType = FieldType.OBJECT_ID)
     private String userId;
 
-    @Field(targetType = FieldType.OBJECT_ID)
-    private String draftId;
-
     private String name;
     private List<ChapterExamDocument> chapters;
     private List<QuestionExamDocument> questions;
 
     @CreatedDate
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

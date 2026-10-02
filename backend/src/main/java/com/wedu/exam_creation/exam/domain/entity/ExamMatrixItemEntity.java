@@ -4,13 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChapterExamEntity {
-    List<LessonExamEntity> lessons;
-    private String id;
-    private String name;
+public class ExamMatrixItemEntity {
+    String questionType;
+    String difficultyLevel;
+    Integer selectedCount;
 }
