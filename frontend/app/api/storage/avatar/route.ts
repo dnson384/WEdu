@@ -1,11 +1,15 @@
-import { UploadAvatarUsecase } from "@/application/usecases/user/uploadAvatarUsecase";
-import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
+import { UploadAvatarUsecase } from "@/usecases/storage/UploadAvatarUsecase";
+import { StorageRepositoryImpl } from "@/infrastructure/repositories/StorageRepositoryImpl";
+
 export async function POST(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+  }
 
   const formData: FormData = await req.formData();
 
@@ -16,13 +20,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const repo = new UserRepositoryImpl();
+    const repo = new StorageRepositoryImpl();
     const usecase = new UploadAvatarUsecase(repo);
-    const response = await usecase.execute(
-      formData,
-      accessToken!,
-      refreshToken!,
-    );
+    const response = await usecase.execute(formData, accessToken);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

@@ -1,11 +1,14 @@
-import { UpdateAvatarUsecase } from "@/application/usecases/user/updateAvatarUsecase";
+import { UpdateAvatarUsecase } from "@/usecases/user/UpdateAvatarUsecase";
 import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+  }
 
   const { s3Key }: { s3Key: string } = await req.json();
 
@@ -16,7 +19,7 @@ export async function PUT(req: NextRequest) {
   try {
     const repo = new UserRepositoryImpl();
     const usecase = new UpdateAvatarUsecase(repo);
-    const response = await usecase.execute(s3Key, accessToken!, refreshToken!);
+    const response = await usecase.execute(s3Key, accessToken);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

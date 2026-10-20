@@ -5,16 +5,7 @@ import {
 
 export interface IUserRepository {
   getMe(accessToken: string): Promise<UserEntity>;
-  uploadAvatar(
-    formData: FormData,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<string>;
-  updateAvatar(
-    s3Key: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean>;
+  updateAvatar(s3Key: string, accessToken: string): Promise<boolean>;
   updateUsername(
     username: string,
     accessToken: string,
