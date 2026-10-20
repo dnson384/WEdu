@@ -1,10 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getMeService } from "@/presentation/services/user.service";
+import { UserService } from "@/presentation/services/UserService";
+import { useMemo } from "react";
 import { UserEntity } from "@/domain/entities/user.entity";
 
 export const useAuth = () => {
+  const userService = useMemo(() => new UserService(), []);
+
   const initialUserData = (): UserEntity => ({
     id: "",
     email: "",
@@ -16,7 +19,7 @@ export const useAuth = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ["user-profile"],
-    queryFn: async () => getMeService(),
+    queryFn: async () => userService.getMe(),
     staleTime: 5 * 60 * 1000,
   });
 

@@ -4,7 +4,7 @@ import {
 } from "../entities/user.entity";
 
 export interface IUserRepository {
-  getMe(accessToken: string, refreshToken: string): Promise<UserEntity>;
+  getMe(accessToken: string): Promise<UserEntity>;
   uploadAvatar(
     formData: FormData,
     accessToken: string,
