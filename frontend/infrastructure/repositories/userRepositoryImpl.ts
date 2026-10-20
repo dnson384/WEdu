@@ -24,50 +24,19 @@ export class UserRepositoryImpl implements IUserRepository {
     return data;
   }
 
-  public async uploadAvatar(
-    formData: FormData,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<string> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
-    const { data } = await axios.post<string>(
-      `${this.baseUrl}/storage/avatar`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-
-    return data;
-  }
-
   public async updateAvatar(
     s3Key: string,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
-    const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/user/avatar`,
-      { s3Key },
+    const { data } = await axios.patch(
+      `${this.baseUrl}/user/avatar/${s3Key}`,
+      {},
       {
+        params: {
+          s3Key: s3Key,
+        },
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
