@@ -15,20 +15,10 @@ export class UserRepositoryImpl implements IUserRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  public async getMe(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<UserEntity> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  public async getMe(accessToken: string): Promise<UserEntity> {
     const { data } = await axios.get(`${this.baseUrl}/user/me`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        Cookie: customCookieHeader,
       },
     });
     return data;
