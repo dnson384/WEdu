@@ -7,7 +7,7 @@ import {
 export interface IAuthRepository {
   login(payload: LoginPayloadEntity): Promise<AuthorizedResponseEntity>;
   register(payload: NewUserRequestEntity): Promise<AuthorizedResponseEntity>;
-  logout(): Promise<boolean>;
+  logout(accessToken: string): Promise<boolean>;
   forgotPassword(email: string): Promise<string>;
   resetPassword(
     plainToken: string,

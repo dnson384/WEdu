@@ -20,6 +20,11 @@ export class AuthService {
     return data;
   }
 
+  async logout(): Promise<boolean> {
+    const { data } = await axios.post("/api/auth/logout");
+    return data;
+  }
+
   async forgotPassword(email: string): Promise<string> {
     const { data } = await axios.post<string>(
       "/api/auth/forgot-password",
