@@ -11,4 +11,17 @@ export class StorageService {
 
     return data;
   }
+
+  async uploadFileToQuestionBank(
+    subject: string,
+    formData: FormData,
+  ): Promise<boolean> {
+    formData.append("subject", subject);
+    
+    const { data } = await axios.post<boolean>(
+      "/api/storage/question-bank",
+      formData,
+    );
+    return data;
+  }
 }

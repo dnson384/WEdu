@@ -11,6 +11,23 @@ export class StorageRepositoryImpl implements IStorageRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
+  async uploadFileToQuestionBank(
+    formData: FormData,
+    accessToken: string,
+  ): Promise<string> {
+    const { data } = await axios.post<string>(
+      `${this.baseUrl}/storage/question-bank`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return data;
+  }
+
   public async uploadAvatar(
     formData: FormData,
     accessToken: string,
