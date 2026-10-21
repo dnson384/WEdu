@@ -47,21 +47,16 @@ export class UserRepositoryImpl implements IUserRepository {
   public async updateUsername(
     username: string,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
-    const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/user/update-user`,
-      { username },
+    const { data } = await axios.patch(
+      `${this.baseUrl}/user/update-username`,
+      {},
       {
+        params: {
+          username: username,
+        },
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );

@@ -9,7 +9,7 @@ import Error from "@/presentation/components/layout/Error";
 
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
 import useUpdateAvatar from "@/presentation/hooks/Me/useUpdateAvatar";
-import useUpdateMe from "@/presentation/hooks/Me/useUpdateMe";
+import useUpdateUsername from "@/presentation/hooks/Me/useUpdateUsername";
 import useChangePassword from "@/presentation/hooks/Me/useChangePassword";
 import Success from "@/presentation/components/layout/Success";
 import useAccount from "@/presentation/hooks/Me/useAccount";
@@ -36,9 +36,10 @@ export default function Me() {
     isEditing,
     handleToggleEdit,
     formData,
+    isSubmitting,
     handleInputChange,
     handleSaveProfile,
-  } = useUpdateMe({
+  } = useUpdateUsername({
     username: user.username || "",
   });
 
@@ -200,7 +201,8 @@ export default function Me() {
                       </button>
                       <button
                         type="submit"
-                        className="px-6 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25 transition-all"
+                        disabled={isSubmitting}
+                        className="px-6 py-2 rounded-xl text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Lưu thay đổi
                       </button>

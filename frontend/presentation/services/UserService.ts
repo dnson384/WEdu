@@ -8,6 +8,13 @@ export class UserService {
     return data;
   }
 
+  async updateUsername(username: string): Promise<boolean> {
+    const { data } = await axios.put<boolean>("/api/user/update/username", {
+      username,
+    });
+    return data;
+  }
+
   async updateAvatar(s3Key: string): Promise<boolean> {
     const { data } = await axios.put<boolean>(`/api/user/update/avatar`, {
       s3Key,

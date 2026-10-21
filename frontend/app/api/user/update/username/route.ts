@@ -1,11 +1,14 @@
-import { UpdateUsernameUsecase } from "@/application/usecases/user/updateUsernameUsecase";
-import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
+import { UpdateUsernameUsecase } from "@/usecases/user/UpdateUsernameUsecase";
+import { UserRepositoryImpl } from "@/infrastructure/repositories/UserRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+  }
 
   const { username }: { username: string } = await req.json();
 
@@ -16,11 +19,7 @@ export async function PUT(req: NextRequest) {
   try {
     const repo = new UserRepositoryImpl();
     const usecase = new UpdateUsernameUsecase(repo);
-    const response = await usecase.execute(
-      username,
-      accessToken!,
-      refreshToken!,
-    );
+    const response = await usecase.execute(username, accessToken!);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
