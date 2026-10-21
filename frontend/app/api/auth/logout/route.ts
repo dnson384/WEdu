@@ -2,13 +2,19 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
-import LogoutUsecase from "@/application/usecases/auth/logoutUsecase";
+import LogoutUsecase from "@/usecases/auth/LogoutUsecase";
 
 export async function POST(req: NextRequest) {
   try {
+    const accessToken = req.cookies.get("accessToken")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+    }
+
     const repo = new AuthRepositoryImpl();
     const usecase = new LogoutUsecase(repo);
-    const response = await usecase.execute();
+    const response = await usecase.execute(accessToken);
 
     const nextResponse = NextResponse.json(response, { status: 200 });
 

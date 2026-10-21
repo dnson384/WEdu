@@ -1,11 +1,10 @@
 import {
   AuthorizedResponseEntity,
   LoginPayloadEntity,
-  RegisterPayloadEntity,
+  NewUserRequestEntity,
 } from "@/domain/entities/auth.entity";
 import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
-import { cookies } from "next/headers";
 
 export class AuthRepositoryImpl implements IAuthRepository {
   private readonly baseUrl: string;
@@ -42,10 +41,10 @@ export class AuthRepositoryImpl implements IAuthRepository {
     return authorizedResponse;
   }
   public async register(
-    payload: RegisterPayloadEntity,
+    payload: NewUserRequestEntity,
   ): Promise<AuthorizedResponseEntity> {
     const response = await axios.post(
-      `${this.baseUrl}/user/register`,
+      `${this.baseUrl}/auth/register`,
       payload,
       {
         withCredentials: true,
@@ -70,18 +69,20 @@ export class AuthRepositoryImpl implements IAuthRepository {
     return authorizedResponse;
   }
 
-  public async logout(): Promise<boolean> {
-    const cookieStore = await cookies();
-
-    const refreshToken = cookieStore.get("refreshToken")?.value;
-
+  public async logout(accessToken: string): Promise<boolean> {
     const { data } = await axios.post<boolean>(
-      `${this.baseUrl}/user/logout`,
-      refreshToken,
+      `${this.baseUrl}/auth/logout`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
     );
 
     return data;
   }
+
   public async forgotPassword(email: string): Promise<string> {
     const { data } = await axios.post<string>(
       `${this.baseUrl}/auth/forgot-password`,

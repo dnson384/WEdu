@@ -14,7 +14,7 @@ interface Data {
 }
 
 export default function NavBar({ avatarUrl, username }: Data) {
-  const { isLoadLogout, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
+  const { isLoggingOut, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
     useNavBar();
 
   const pathname = usePathname();
@@ -118,7 +118,7 @@ export default function NavBar({ avatarUrl, username }: Data) {
           </div>
         </section>
 
-        {isLoadLogout && (
+        {isLoggingOut && (
           <section
             id="logout-theme"
             className="fixed inset-0 z-50 bg-black/50 h-screen w-screen flex justify-center items-center"

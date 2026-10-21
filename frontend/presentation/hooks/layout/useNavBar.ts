@@ -1,28 +1,43 @@
 import { icons } from "@/presentation/common/icons";
-import { LogoutService } from "@/presentation/services/auth.service";
+import { AuthService } from "@/presentation/services/AuthService";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export default function useNavBar() {
   const router = useRouter();
+  const authService = useMemo(() => new AuthService(), []);
 
-  let [isLoadLogout, setIsLoadLogout] = useState<boolean>(false);
-  let [isLogedOut, setIsLogedout] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+  const [isLoggedOut, setIsLoggedOut] = useState<boolean>(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+
+  const userSectionRef = useRef<HTMLDivElement>(null);
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen((prev) => !prev);
+  };
 
   const handleLogoutClick = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    setIsUserMenuOpen(false);
+
     try {
-      setIsLoadLogout(true);
-      const data = await LogoutService();
-      if (data === true) {
-        setIsLogedout(true);
+      const data = await authService.logout();
+      if (data) {
+        setIsLoggedOut(true);
+      } else {
+        setIsLoggingOut(false);
       }
     } catch (err) {
       if (isAxiosError(err)) {
-        console.log(err.response?.data.message);
+        console.error(err.response?.data?.message || "Đăng xuất thất bại");
       } else {
-        console.error(err);
+        console.error("Lỗi khi đăng xuất:", err);
       }
+      setIsLoggingOut(false);
     }
   };
 
@@ -50,13 +65,6 @@ export default function useNavBar() {
     },
   ];
 
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
-  const userSectionRef = useRef<HTMLDivElement>(null);
-
-  const toggleUserMenu = () => {
-    setIsUserMenuOpen((prev) => !prev);
-  };
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -77,18 +85,19 @@ export default function useNavBar() {
   }, [isUserMenuOpen]);
 
   useEffect(() => {
+    if (!isLoggedOut) return;
+
     const timer = setTimeout(() => {
-      if (isLoadLogout && isLogedOut) {
-        isLoadLogout = false;
-        router.refresh();
-      }
-    }, 1500);
+      setIsLoggingOut(false);
+      router.replace("/auth/login");
+      router.refresh();
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [isLogedOut]);
+  }, [isLoggedOut, router]);
 
   return {
-    isLoadLogout,
+    isLoggingOut,
     menu,
     isUserMenuOpen,
     toggleUserMenu,

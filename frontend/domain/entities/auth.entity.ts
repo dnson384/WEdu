@@ -5,7 +5,7 @@ export interface LoginPayloadEntity {
   plainPassword: string;
 }
 
-export interface RegisterPayloadEntity {
+export interface NewUserRequestEntity {
   email: string;
   plainPassword: string;
   confirmPassword: string;

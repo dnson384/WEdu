@@ -1,8 +1,9 @@
 "use client";
 import { RegisterPayload } from "@/presentation/schemas/auth.schema";
-import { RegisterService } from "@/presentation/services/auth.service";
+import { AuthService } from "@/presentation/services/AuthService";
 import { isAxiosError } from "axios";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 
 interface FormData {
   username: string;
@@ -12,7 +13,8 @@ interface FormData {
 }
 
 export default function useRegister() {
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const authService = useMemo(() => new AuthService(), []);
 
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -21,26 +23,25 @@ export default function useRegister() {
     confirmPassword: "",
   });
 
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const handleFormChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const [notiPassword, setNotiPassword] = useState<String>("");
-
-  useEffect(() => {
+  const notiPassword = useMemo(() => {
     if (
-      formData.password != formData.confirmPassword &&
-      formData.confirmPassword.trim().length > 0
+      formData.confirmPassword.length > 0 &&
+      formData.password !== formData.confirmPassword
     ) {
-      setNotiPassword("Mật khẩu xác nhận không trùng khớp!");
-    } else {
-      setNotiPassword("");
+      return "Mật khẩu xác nhận không trùng khớp!";
     }
-  }, [formData.confirmPassword]);
-
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+    return "";
+  }, [formData.password, formData.confirmPassword]);
 
   const handleShowPasswordClick = () => {
     setShowPassword((prev) => !prev);
@@ -49,49 +50,64 @@ export default function useRegister() {
   const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const trimmedUsername = formData.username.trim();
+    const trimmedEmail = formData.email.trim();
+    const { password, confirmPassword } = formData;
+
+    // 1. Kiểm tra rỗng
+    if (!trimmedUsername || !trimmedEmail || !password || !confirmPassword) {
+      setError("Vui lòng điền đầy đủ tất cả các trường");
+      return;
+    }
+
+    // 2. Kiểm tra khớp mật khẩu
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không trùng khớp");
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
     const payload: RegisterPayload = {
-      email: formData.email,
-      plainPassword: formData.password,
-      confirmPassword: formData.confirmPassword,
-      username: formData.username ,
+      username: trimmedUsername,
+      email: trimmedEmail,
+      plainPassword: password,
+      confirmPassword: confirmPassword,
       loginMethod: "LOCAL",
     };
 
     try {
-      const authorized = await RegisterService(payload);
+      const authorized = await authService.register(payload);
       if (authorized) {
-        window.location.replace("/");
+        router.replace("/");
       }
     } catch (err) {
       if (isAxiosError(err)) {
         setError(err.response?.data.message);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    if (error !== null) {
-      const timer = setTimeout(() => {
-        setError(null);
-      }, 2000);
+    if (!error) return;
 
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      setError(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [error]);
 
   return {
-    // Data input
     formData,
     handleFormChange,
-
-    // Password notification
     notiPassword,
-
-    // Error
     error,
-
-    // Show password
     showPassword,
+    isSubmitting,
     handleShowPasswordClick,
     handleRegisterSubmit,
   };

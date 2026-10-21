@@ -1,14 +1,27 @@
 import axios from "axios";
-import { LoginPayload, ResetPasswordPayload } from "../schemas/auth.schema";
+import { LoginPayload, RegisterPayload, ResetPasswordPayload } from "../schemas/auth.schema";
 
 import { AuthorizedResponseEntity } from "@/domain/entities/auth.entity";
 
 export class AuthService {
+  async register(payload: RegisterPayload) {
+    const { data } = await axios.post<AuthorizedResponseEntity>(
+      "/api/auth/register",
+      payload,
+    );
+    return data;
+  }
+
   async login(payload: LoginPayload): Promise<AuthorizedResponseEntity> {
     const { data } = await axios.post<AuthorizedResponseEntity>(
       "/api/auth/login",
       payload,
     );
+    return data;
+  }
+
+  async logout(): Promise<boolean> {
+    const { data } = await axios.post("/api/auth/logout");
     return data;
   }
 
