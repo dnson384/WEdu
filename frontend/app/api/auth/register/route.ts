@@ -2,11 +2,10 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { NewUserRequestEntity } from "@/domain/entities/auth.entity";
+import RegisterUsecase from "@/usecases/auth/RegisterUsecase";
 import { RegisterPayload } from "@/presentation/schemas/auth.schema";
-import { RegisterPayloadEntity } from "@/domain/entities/auth.entity";
 import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
-import LoginUsecase from "@/application/usecases/auth/loginUsecase";
-import RegisterUsecase from "@/application/usecases/auth/registerUsecase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const { email, plainPassword, confirmPassword, username, loginMethod } =
       validated.data;
-    const payload: RegisterPayloadEntity = {
+    const payload: NewUserRequestEntity = {
       email: email,
       plainPassword: plainPassword,
       confirmPassword: confirmPassword,
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: false,
       path: "/",
-      maxAge: 15 * 60,
+      maxAge: 5 * 60,
       sameSite: "lax",
     });
 

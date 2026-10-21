@@ -1,12 +1,12 @@
 import {
   AuthorizedResponseEntity,
   LoginPayloadEntity,
-  RegisterPayloadEntity,
+  NewUserRequestEntity,
 } from "../entities/auth.entity";
 
 export interface IAuthRepository {
   login(payload: LoginPayloadEntity): Promise<AuthorizedResponseEntity>;
-  register(payload: RegisterPayloadEntity): Promise<AuthorizedResponseEntity>;
+  register(payload: NewUserRequestEntity): Promise<AuthorizedResponseEntity>;
   logout(): Promise<boolean>;
   forgotPassword(email: string): Promise<string>;
   resetPassword(

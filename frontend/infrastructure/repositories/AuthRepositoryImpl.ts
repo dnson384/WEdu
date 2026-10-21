@@ -1,7 +1,7 @@
 import {
   AuthorizedResponseEntity,
   LoginPayloadEntity,
-  RegisterPayloadEntity,
+  NewUserRequestEntity,
 } from "@/domain/entities/auth.entity";
 import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
@@ -42,10 +42,10 @@ export class AuthRepositoryImpl implements IAuthRepository {
     return authorizedResponse;
   }
   public async register(
-    payload: RegisterPayloadEntity,
+    payload: NewUserRequestEntity,
   ): Promise<AuthorizedResponseEntity> {
     const response = await axios.post(
-      `${this.baseUrl}/user/register`,
+      `${this.baseUrl}/auth/register`,
       payload,
       {
         withCredentials: true,
