@@ -1,11 +1,14 @@
-import { uploadDocxFileUsecase } from "@/application/usecases/uploadFile/upload-docx-file";
-import { UploadDocxFileRepositoryImpl } from "@/infrastructure/repositories/uploadFileRepositoryImpl";
+import { UploadFileToQuestionBankUsecase } from "@/usecases/storage/UploadFileToQuestionBankUsecase";
+import { StorageRepositoryImpl } from "@/infrastructure/repositories/StorageRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+  }
 
   const formData: FormData = await req.formData();
 
@@ -19,14 +22,9 @@ export async function POST(req: NextRequest) {
     );
 
   try {
-    const repo = new UploadDocxFileRepositoryImpl();
-    const usecase = new uploadDocxFileUsecase(repo);
-    const response = await usecase.execute(
-      subject,
-      formData,
-      accessToken!,
-      refreshToken!,
-    );
+    const repo = new StorageRepositoryImpl();
+    const usecase = new UploadFileToQuestionBankUsecase(repo);
+    const response = await usecase.execute(formData, accessToken);
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
     if (isAxiosError(err)) {
