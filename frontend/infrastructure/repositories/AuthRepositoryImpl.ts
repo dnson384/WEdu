@@ -7,7 +7,7 @@ import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
 import { cookies } from "next/headers";
 
-export class authRepositoryImpl implements IAuthRepository {
+export class AuthRepositoryImpl implements IAuthRepository {
   private readonly baseUrl: string;
 
   constructor() {
@@ -78,6 +78,32 @@ export class authRepositoryImpl implements IAuthRepository {
     const { data } = await axios.post<boolean>(
       `${this.baseUrl}/user/logout`,
       refreshToken,
+    );
+
+    return data;
+  }
+  public async forgotPassword(email: string): Promise<string> {
+    const { data } = await axios.post<string>(
+      `${this.baseUrl}/auth/forgot-password`,
+      {},
+      {
+        params: {
+          email: email,
+        },
+      },
+    );
+
+    return data;
+  }
+
+  public async resetPassword(
+    plainToken: string,
+    newPassword: string,
+    confirmNewPassword: string,
+  ): Promise<string> {
+    const { data } = await axios.post<string>(
+      `${this.baseUrl}/auth/reset-password`,
+      { plainToken, newPassword, confirmNewPassword },
     );
 
     return data;

@@ -6,9 +6,13 @@ const BACKEND_URL = process.env.BACKEND_URL;
 const publicPaths = [
   "/auth/login",
   "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
   "/landing-page",
   "/api/auth/login",
   "/api/auth/register",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
 ];
 
 export async function middleware(request: NextRequest) {

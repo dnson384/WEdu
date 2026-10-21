@@ -24,3 +24,17 @@ export const RegisterPayload = z.object({
 
 export type LoginPayload = z.infer<typeof LoginPayload>;
 export type RegisterPayload = z.infer<typeof RegisterPayload>;
+
+export const ResetPasswordPayload = z.object({
+  plainToken: z.string({ error: "Token đặt lại mật khẩu rỗng" }),
+  newPassword: z
+    .string()
+    .min(8, "Mật khẩu phải từ 8 ký tự")
+    .max(32, "Mật khẩu tối đa 32 ký tự"),
+  confirmNewPassword: z
+    .string()
+    .min(8, "Mật khẩu phải từ 8 ký tự")
+    .max(32, "Mật khẩu tối đa 32 ký tự"),
+});
+
+export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayload>;

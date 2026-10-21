@@ -141,6 +141,8 @@ export default function Login() {
               </div>
             </label>
 
+            <Link href="/auth/forgot-password">Qu?n m?t kh?u</Link>
+
             <button
               type="submit"
               className="bg-blue-500 text-white font-bold py-2.5 rounded-lg hover:bg-blue-600"

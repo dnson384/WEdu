@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { LoginPayload } from "@/presentation/schemas/auth.schema";
 import { LoginPayloadEntity } from "@/domain/entities/auth.entity";
-import { authRepositoryImpl } from "@/infrastructure/repositories/authRepositoryImpl";
+import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
 import LoginUsecase from "@/application/usecases/auth/loginUsecase";
 
 export async function POST(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       plainPassword: plainPassword,
     };
 
-    const repo = new authRepositoryImpl();
+    const repo = new AuthRepositoryImpl();
     const usecase = new LoginUsecase(repo);
     const response = await usecase.execute(payload);
 
