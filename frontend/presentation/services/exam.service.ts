@@ -4,7 +4,6 @@ import {
   ExamResponseEntity,
 } from "@/domain/entities/exam.entity";
 import axios from "axios";
-import { ExportPayload } from "../schemas/export.schema";
 
 export async function GenerateExamService(
   draftId: string,
@@ -33,16 +32,6 @@ export async function GetExamService(
 
 export async function getAllExamsService() {
   const response = await axios.get<ExamResponseEntity[]>(`/api/exam/all`);
-  return response.data;
-}
-
-export async function exportWordFileService(
-  payload: ExportPayload,
-): Promise<Blob> {
-  const response = await axios.post("/api/exam/export", payload, {
-    responseType: "blob",
-  });
-
   return response.data;
 }
 

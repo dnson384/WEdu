@@ -2,7 +2,6 @@ import {
   ExamDetailReponseEntity,
   ExamGeneratedResponseEntity,
   ExamResponseEntity,
-  ExportEntity,
 } from "@/domain/entities/exam.entity";
 import { IExamsRepository } from "@/domain/repositories/IExamRepository";
 import axios from "axios";
@@ -58,25 +57,6 @@ export class ExamsRepositoryImpl implements IExamsRepository {
         },
       },
     );
-    return data;
-  }
-
-  async exportExamWordFile(
-    payload: ExportEntity,
-    accessToken: string,
-  ): Promise<Buffer> {
-    const { data } = await axios.post<Buffer>(
-      `${this.baseUrl}/exporter/exam`,
-      payload,
-      {
-        responseType: "arraybuffer",
-
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    );
-
     return data;
   }
 

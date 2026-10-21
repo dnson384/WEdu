@@ -1,15 +1,16 @@
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { ExportPayload } from "../../../../presentation/schemas/export.schema";
-import { NextRequest, NextResponse } from "next/server";
-import { ExamsRepositoryImpl } from "@/infrastructure/repositories/exam.repository";
-import { ExportEntity } from "@/domain/entities/exam.entity";
-import { ExportExamWordFileUsecase } from "@/application/usecases/exam/exportExamWordFileUsecase";
+import { ExportExamUsecase } from "@/usecases/exporter/ExportExamUsecase";
+import { ExporterRepositoryImpl } from "@/infrastructure/repositories/ExporterRepositoryImpl";
+import { ExportPayload } from "@/presentation/schemas/export.schema";
 
 export async function POST(req: NextRequest) {
   try {
     const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refreshToken")?.value;
+    if (!accessToken) {
+      return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+    }
 
     const body = await req.json();
 
@@ -25,18 +26,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { examId, examName } = validated.data;
-    const payloadDomain: ExportEntity = {
-      examId: examId,
-      examName: examName,
-    };
 
-    const repo = new ExamsRepositoryImpl();
-    const usecase = new ExportExamWordFileUsecase(repo);
-    const response = await usecase.execute(
-      payloadDomain,
-      accessToken!,
-      refreshToken!,
-    );
+    const repo = new ExporterRepositoryImpl();
+    const usecase = new ExportExamUsecase(repo);
+    const response = await usecase.execute(examId, examName, accessToken!);
 
     const uint8Array = new Uint8Array(response as unknown as ArrayBuffer);
 
