@@ -3,7 +3,7 @@ import {
   UpdateDraftParam,
   UpdateChaptersDraftPayload,
 } from "@/presentation/schemas/draft.schema";
-import { getAllChaptersService } from "@/presentation/services/chapter.service";
+import { ChapterSerivce } from "@/presentation/services/ChapterService";
 import {
   GetDraft,
   UpdateChapters,
@@ -39,7 +39,7 @@ export default function useSelectChapterPage() {
       },
       {
         queryKey: ["all-chapters"],
-        queryFn: () => getAllChaptersService(),
+        queryFn: () => new ChapterSerivce().getAll(),
         staleTime: 1000 * 60 * 5,
       },
     ],
