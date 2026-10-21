@@ -1,12 +1,12 @@
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
-import { authRepositoryImpl } from "@/infrastructure/repositories/authRepositoryImpl";
+import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
 import LogoutUsecase from "@/application/usecases/auth/logoutUsecase";
 
 export async function POST(req: NextRequest) {
   try {
-    const repo = new authRepositoryImpl();
+    const repo = new AuthRepositoryImpl();
     const usecase = new LogoutUsecase(repo);
     const response = await usecase.execute();
 

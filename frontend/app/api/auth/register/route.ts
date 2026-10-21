@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { RegisterPayload } from "@/presentation/schemas/auth.schema";
 import { RegisterPayloadEntity } from "@/domain/entities/auth.entity";
-import { authRepositoryImpl } from "@/infrastructure/repositories/authRepositoryImpl";
+import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
 import LoginUsecase from "@/application/usecases/auth/loginUsecase";
 import RegisterUsecase from "@/application/usecases/auth/registerUsecase";
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       loginMethod: loginMethod,
     };
 
-    const repo = new authRepositoryImpl();
+    const repo = new AuthRepositoryImpl();
     const usecase = new RegisterUsecase(repo);
     const response = await usecase.execute(payload);
 
