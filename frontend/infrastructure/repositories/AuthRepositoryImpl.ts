@@ -20,7 +20,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
   public async login(
     payload: LoginPayloadEntity,
   ): Promise<AuthorizedResponseEntity> {
-    const response = await axios.post(`${this.baseUrl}/user/login`, payload, {
+    const response = await axios.post(`${this.baseUrl}/auth/login`, payload, {
       withCredentials: true,
     });
 

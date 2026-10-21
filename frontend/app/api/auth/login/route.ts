@@ -5,7 +5,7 @@ import { z } from "zod";
 import { LoginPayload } from "@/presentation/schemas/auth.schema";
 import { LoginPayloadEntity } from "@/domain/entities/auth.entity";
 import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
-import LoginUsecase from "@/application/usecases/auth/loginUsecase";
+import LoginUsecase from "@/usecases/auth/LoginUsecase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,12 +36,12 @@ export async function POST(req: NextRequest) {
       { user: response.user },
       { status: 200 },
     );
-    
+
     nextResponse.cookies.set("accessToken", response.accessToken, {
       httpOnly: true,
       secure: false,
       path: "/",
-      maxAge: 15 * 60,
+      maxAge: 5 * 60,
       sameSite: "lax",
     });
 
