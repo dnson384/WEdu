@@ -5,27 +5,37 @@ import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
-import useMatrix from "@/presentation/hooks/Generate/Exam/Child/useMatrix";
+import useMatrix from "@/presentation/hooks/Generate/Child/useMatrix";
 import { transformMatrixToUI } from "@/presentation/utils/transformMatrixToUI";
+import Error from "@/presentation/components/layout/Error";
 
 export default function Matrix() {
+  const { user, isLoadingUser } = useAuth();
   const {
     changesChapters,
     curChapter,
-    isLoading,
+    isLoadingDraft,
+    isSubmitting,
+    errorMessage,
     handleChangeChapter,
     handleMatrixInputChange,
     handleBackClick,
     handleContinueClick,
   } = useMatrix();
 
-  const { user, isLoadingUser } = useAuth();
-
   const chaptersCount = changesChapters.length;
+  const isGlobalError = isLoadingDraft || isLoadingUser;
 
   return (
     <>
-      {isLoadingUser || isLoading ? (
+      {/* Thông báo lỗi */}
+      {errorMessage && (
+        <div className="fixed inset-0 z-50 h-fit top-20 flex justify-center pointer-events-none">
+          <Error message={errorMessage} />
+        </div>
+      )}
+
+      {isGlobalError ? (
         <Loader />
       ) : (
         <div className="bg-blue-50/10 pt-20 flex justify-center">
@@ -97,7 +107,7 @@ export default function Matrix() {
 
             <div className="my-10 w-full flex justify-end">
               <NavigationBTN
-                enableToContinue={true}
+                enableToContinue={!isSubmitting}
                 handleContinueClick={handleContinueClick}
                 handleBackClick={handleBackClick}
               />

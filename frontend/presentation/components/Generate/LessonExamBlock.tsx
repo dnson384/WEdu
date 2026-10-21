@@ -1,5 +1,5 @@
 import { LessonData } from "@/domain/entities/chapter.entity";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ExamLessonSelect from "./ExamLessonSelect";
 
 interface LessonBlockData {
@@ -54,7 +54,7 @@ export default function LessonExamBlock({
         type="button"
         disabled={!stagedLesson}
         onClick={handleAddClick}
-        className="bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-colors whitespace-nowrap"
+        className="bg-blue-500 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-colors whitespace-nowrap"
       >
         Thêm nội dung
       </button>

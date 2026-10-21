@@ -10,42 +10,36 @@ import NavBar from "@/presentation/components/layout/Navbar";
 
 // Hook
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
-import useSelectChapterPage from "@/presentation/hooks/Generate/Exam/Child/useSelectChapterPage";
+import useSelectChapterPage from "@/presentation/hooks/Generate/Child/useSelectChapterPage";
+import useChapter from "@/presentation/hooks/Generate/useChapter";
 
 export default function SelectChapter() {
+  const { user, isLoadingUser } = useAuth();
+  const { chapters, isLoadingChapters } = useChapter();
   const {
-    chapters,
     isLoadingDraft,
+    isSubmitting,
     errorMessage,
     selectedChapters,
+    unSelectedChaptersData,
     handleAddChapter,
     handleRemoveChapter,
     handleBackClick,
     handleContinueClick,
-  } = useSelectChapterPage();
+  } = useSelectChapterPage(chapters);
 
-  const { user, isLoadingUser } = useAuth();
-
-  // Chương chưa được chọn
-  const unSelectedChaptersData = chapters
-    .map((chapter) => ({
-      id: chapter.id,
-      name: chapter.name,
-    }))
-    .filter(
-      (chapter) => !selectedChapters.map((sc) => sc.id).includes(chapter.id),
-    );
+  const isGlobalLoading = isLoadingUser || isLoadingDraft || isLoadingChapters;
 
   return (
     <>
       {/* Thông báo lỗi */}
       {errorMessage && (
-        <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center">
+        <div className="fixed inset-0 z-50 h-fit top-20 flex justify-center pointer-events-none">
           <Error message={errorMessage} />
         </div>
       )}
 
-      {isLoadingUser || isLoadingDraft ? (
+      {isGlobalLoading ? (
         <Loader />
       ) : (
         <div className="bg-blue-50/50 h-screen pt-20">
@@ -89,7 +83,9 @@ export default function SelectChapter() {
 
               <div className="mt-10 w-full flex justify-end">
                 <NavigationBTN
-                  enableToContinue={selectedChapters.length > 0}
+                  enableToContinue={
+                    selectedChapters.length > 0 && !isSubmitting
+                  }
                   handleContinueClick={handleContinueClick}
                   handleBackClick={handleBackClick}
                 />

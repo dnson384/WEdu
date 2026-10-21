@@ -4,7 +4,7 @@ import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
-import useAlreadyStructure from "@/presentation/hooks/Generate/Exam/Child/useAlreadyStructure";
+import useAlreadyStructure from "@/presentation/hooks/Generate/Child/useAlreadyStructure";
 
 export default function GenerateExam() {
   const {

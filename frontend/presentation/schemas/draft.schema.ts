@@ -13,26 +13,12 @@ export const UpdateDraftParam = z.object({
   name: z.string({ error: "Thiếu Name" }),
 });
 
-// Update chương
-export const UpdateChaptersDraftPayload = z.object({
-  draftId: z.string(),
-  add: z.array(UpdateDraftParam),
-  del: z.array(z.string()),
-});
-
-// Update bài
-export const UpdateLessonssDraftPayload = z.object({
-  draftId: z.string(),
-  chapterId: z.string(),
+// Update chương và update bài
+export const UpdateDraftPayload = z.object({
   add: z.array(UpdateDraftParam),
   del: z.array(z.string()),
 });
 
 export type CreateDraftPayload = z.infer<typeof CreateDraftPayload>;
 export type UpdateDraftParam = z.infer<typeof UpdateDraftParam>;
-export type UpdateChaptersDraftPayload = z.infer<
-  typeof UpdateChaptersDraftPayload
->;
-export type UpdateLessonssDraftPayload = z.infer<
-  typeof UpdateLessonssDraftPayload
->;
+export type UpdateDraftPayload = z.infer<typeof UpdateDraftPayload>;

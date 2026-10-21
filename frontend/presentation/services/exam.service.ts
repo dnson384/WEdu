@@ -1,22 +1,8 @@
 import {
   ExamDetailReponseEntity,
-  ExamGeneratedResponseEntity,
   ExamResponseEntity,
 } from "@/domain/entities/exam.entity";
 import axios from "axios";
-
-export async function GenerateExamService(
-  draftId: string,
-): Promise<ExamGeneratedResponseEntity> {
-  const response = await axios.post<ExamGeneratedResponseEntity>(
-    `/api/exam/generate`,
-    {
-      draftId: draftId,
-    },
-  );
-
-  return response.data;
-}
 
 export async function GetExamService(
   examId: string,
