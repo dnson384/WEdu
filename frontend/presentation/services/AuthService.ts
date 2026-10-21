@@ -1,5 +1,5 @@
 import axios from "axios";
-import { LoginPayload, RegisterPayload, ResetPasswordPayload } from "../schemas/auth.schema";
+import { ChangePasswordPayload, LoginPayload, RegisterPayload, ResetPasswordPayload } from "../schemas/auth.schema";
 
 import { AuthorizedResponseEntity } from "@/domain/entities/auth.entity";
 
@@ -22,6 +22,15 @@ export class AuthService {
 
   async logout(): Promise<boolean> {
     const { data } = await axios.post("/api/auth/logout");
+    return data;
+  }
+
+  async changePassword(payload: ChangePasswordPayload): Promise<boolean> {
+    const { data } = await axios.put<boolean>(
+      "/api/auth/change-password",
+      payload,
+    );
+
     return data;
   }
 

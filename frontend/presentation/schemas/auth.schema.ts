@@ -38,3 +38,20 @@ export const ResetPasswordPayload = z.object({
 });
 
 export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayload>;
+
+export const ChangePasswordPayload = z.object({
+  oldPassword: z
+    .string()
+    .min(8, "Mật khẩu phải từ 8 ký tự")
+    .max(32, "Mật khẩu tối đa 32 ký tự"),
+  newPassword: z
+    .string()
+    .min(8, "Mật khẩu phải từ 8 ký tự")
+    .max(32, "Mật khẩu tối đa 32 ký tự"),
+  confirmNewPassword: z
+    .string()
+    .min(8, "Mật khẩu phải từ 8 ký tự")
+    .max(32, "Mật khẩu tối đa 32 ký tự"),
+});
+
+export type ChangePasswordPayload = z.infer<typeof ChangePasswordPayload>;

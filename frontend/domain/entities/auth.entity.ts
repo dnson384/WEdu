@@ -18,3 +18,9 @@ export interface AuthorizedResponseEntity {
   accessToken: string;
   refreshToken: string;
 }
+
+export interface ChangePasswordEntity {
+  oldPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
