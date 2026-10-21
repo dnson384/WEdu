@@ -4,15 +4,16 @@ import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
 import { ExportPayload } from "@/presentation/schemas/export.schema";
 import {
   deleteExamService,
-  exportWordFileService,
   GetExamService,
 } from "@/presentation/services/exam.service";
+import { ExportService } from "@/presentation/services/ExportService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function useExam() {
   const router = useRouter();
+  const exportService = useMemo(() => new ExportService(), []);
   const queryClient = useQueryClient();
 
   const pathname = usePathname();
@@ -78,7 +79,7 @@ export default function useExam() {
     };
 
     try {
-      const blob = await exportWordFileService(payload);
+      const blob = await exportService.exportExam(payload);
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

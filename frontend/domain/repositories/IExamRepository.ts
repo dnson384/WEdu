@@ -1,5 +1,4 @@
 import {
-  ExportEntity,
   ExamDetailReponseEntity,
   ExamResponseEntity,
   ExamGeneratedResponseEntity,
@@ -20,11 +19,6 @@ export interface IExamsRepository {
     accessToken: string,
     refreshToken: string,
   ): Promise<ExamResponseEntity[]>;
-  exportExamWordFile(
-    payload: ExportEntity,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<Buffer>;
   deleteExam(
     examId: string,
     accessToken: string,
