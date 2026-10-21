@@ -53,7 +53,7 @@ export default function ChapterExamBlock({
         type="button"
         disabled={!stagedChapter}
         onClick={handleAddClick}
-        className="bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-colors whitespace-nowrap"
+        className="bg-blue-500 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-medium shadow-md transition-colors whitespace-nowrap"
       >
         Thêm
       </button>

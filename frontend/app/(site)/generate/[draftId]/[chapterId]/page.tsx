@@ -9,41 +9,42 @@ import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 // HOOK
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
-import useSelectLessonPage from "@/presentation/hooks/Generate/Exam/Child/useSelectLessonPage";
+import useSelectLessonPage from "@/presentation/hooks/Generate/Child/useSelectLessonPage";
+import useChapter from "@/presentation/hooks/Generate/useChapter";
 
 export default function SelectLesson() {
+  const { user, isLoadingUser } = useAuth();
+  const { chapters, isLoadingChapters } = useChapter();
   const {
     currentChapter,
     isLoading,
+    isLoadingDraft,
+    isSubmitting,
     errorMessage,
     selectedLessons,
+    unSelectedLessons,
     handleAddLesson,
     handleRemoveLesson,
     handleBackClick,
     handleContinueClick,
-  } = useSelectLessonPage();
+  } = useSelectLessonPage(chapters);
 
-  const { user, isLoadingUser } = useAuth();
-
-  const lessons = currentChapter?.lessons ?? [];
-
-  const unSelectedLessons = lessons.filter(
-    (lesson) => !selectedLessons.map((l) => l.id).includes(lesson.id),
-  );
+  const isGlobalLoading =
+    isLoadingUser || isLoading || isLoadingChapters || isLoadingDraft;
 
   return (
-    <div className="h-screen">
+    <div className="min-h-screen bg-blue-500/5">
       {/* Thông báo lỗi */}
       {errorMessage && (
-        <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center">
+        <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center pointer-events-none">
           <Error message={errorMessage} />
         </div>
       )}
 
-      {isLoadingUser || isLoading ? (
+      {isGlobalLoading ? (
         <Loader />
       ) : (
-        <div className="bg-blue-500/5 h-screen pt-20">
+        <div className="min-h-screen pt-20">
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
           <main className="ml-60">
             <section className="bg-white rounded-2xl shadow-lg w-4xl mx-auto py-10 px-15">
@@ -51,7 +52,7 @@ export default function SelectLesson() {
                 Nội dung / Đơn vị kiến thức
               </h1>
               <h2 className="mt-10 text-3xl font-bold text-blue-600">
-                {currentChapter?.chapter}
+                {currentChapter?.name}
               </h2>
 
               <article className="mt-5">
@@ -87,7 +88,9 @@ export default function SelectLesson() {
 
                 <div className="mt-10 w-full flex justify-end">
                   <NavigationBTN
-                    enableToContinue={selectedLessons.length > 0}
+                    enableToContinue={
+                      selectedLessons.length > 0 && !isSubmitting
+                    }
                     handleContinueClick={handleContinueClick}
                     handleBackClick={handleBackClick}
                   />

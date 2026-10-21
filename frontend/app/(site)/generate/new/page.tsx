@@ -2,21 +2,28 @@
 
 import NavBar from "@/presentation/components/layout/Navbar";
 import { useAuth } from "@/presentation/hooks/Auth/useAuth";
-import useStructure from "@/presentation/hooks/Generate/Exam/Child/useStructure";
+import useExamStructure from "@/presentation/hooks/Generate/Child/useExamStructure";
 
 export default function GenerateExam() {
   const {
-    examName,
-    questionsCount,
-    questionTypes,
-    error,
+    draft,
+    errorMessage,
+    isSubmitting,
     handleExamNameChange,
     handleQuestionsCountChange,
     handleQuestionTypesChange,
     handleContinueClick,
-  } = useStructure();
+  } = useExamStructure();
 
   const { user, isLoadingUser } = useAuth();
+
+  const examName = draft.examName;
+  const questionsCount = draft.questionsCount;
+  const questionTypes = {
+    "Nhiều lựa chọn": draft.questionTypes.includes("Nhiều lựa chọn"),
+    "Đúng sai": draft.questionTypes.includes("Đúng sai"),
+    "Trả lời ngắn": draft.questionTypes.includes("Trả lời ngắn"),
+  };
 
   const icons = {
     error: (
@@ -37,11 +44,11 @@ export default function GenerateExam() {
   return (
     <>
       {/* Thông báo lỗi */}
-      {error && (
+      {errorMessage && (
         <div className="fixed inset-0 z-10 h-fit top-20 flex justify-center">
           <div className="bg-red-100 px-3 py-1 rounded-md flex items-center gap-2">
             {icons.error}
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-500">{errorMessage}</p>
           </div>
         </div>
       )}
@@ -123,7 +130,8 @@ export default function GenerateExam() {
                 <button
                   type="button"
                   onClick={handleContinueClick}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-semibold shadow-md transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-lg font-semibold shadow-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Tiếp tục
                 </button>

@@ -1,10 +1,9 @@
 import axios from "axios";
 import { IDraftRepository } from "@/domain/repositories/IDraftRepository";
 import {
-  CreateDraftPayloadEntity,
+  CreateDraftEntity,
   DraftEntity,
-  UpdateChaptersDraftPayloadEntity,
-  UpdateLessonsDraftPayloadEntity,
+  UpdateDraftEntity,
 } from "@/domain/entities/draft.entity";
 
 export class DraftRepositoryImpl implements IDraftRepository {
@@ -18,46 +17,27 @@ export class DraftRepositoryImpl implements IDraftRepository {
   }
 
   async createDraft(
-    payload: CreateDraftPayloadEntity,
+    payload: CreateDraftEntity,
     accessToken: string,
-    refreshToken: string,
   ): Promise<string> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
     const { data } = await axios.post<string>(
       `${this.baseUrl}/draft/create`,
       payload,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
     return data;
   }
 
-  async getDraft(
-    draftId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async getDraft(draftId: string, accessToken: string): Promise<DraftEntity> {
     const { data } = await axios.get<DraftEntity>(
       `${this.baseUrl}/draft/${draftId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
@@ -65,23 +45,16 @@ export class DraftRepositoryImpl implements IDraftRepository {
   }
 
   async updateChapters(
-    payload: UpdateChaptersDraftPayloadEntity,
+    draftId: string,
+    payload: UpdateDraftEntity,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
     const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/draft/chapter`,
+      `${this.baseUrl}/draft/${draftId}/chapter`,
       payload,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
@@ -89,51 +62,30 @@ export class DraftRepositoryImpl implements IDraftRepository {
   }
 
   async updateLessons(
-    payload: UpdateLessonsDraftPayloadEntity,
+    draftId: string,
+    chapterId: string,
+    payload: UpdateDraftEntity,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
     const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/draft/lesson`,
+      `${this.baseUrl}/draft/${draftId}/${chapterId}/lesson`,
       payload,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
     return data;
   }
 
-  async generateMatrix(
-    draftId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async generateMatrix(draftId: string, accessToken: string): Promise<boolean> {
     const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/draft/generate-matrix`,
+      `${this.baseUrl}/draft/${draftId}/generate-matrix`,
       {},
       {
-        params: {
-          draftId: draftId,
-        },
-
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
@@ -143,46 +95,25 @@ export class DraftRepositoryImpl implements IDraftRepository {
   async generateMatrixDetails(
     draftId: string,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
     const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/draft/generate-matrix-details`,
+      `${this.baseUrl}/draft/${draftId}/generate-matrix-details`,
       {},
       {
-        params: {
-          draftId: draftId,
-        },
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
     return data;
   }
 
-  async getRecentDraft(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity[]> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async getRecentDraft(accessToken: string): Promise<DraftEntity[]> {
     const { data } = await axios.get<DraftEntity[]>(
       `${this.baseUrl}/draft/recent`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
@@ -190,22 +121,12 @@ export class DraftRepositoryImpl implements IDraftRepository {
     return data;
   }
 
-  async getAllUserDrafts(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity[]> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async getAllUserDrafts(accessToken: string): Promise<DraftEntity[]> {
     const { data } = await axios.get<DraftEntity[]>(
-      `${this.baseUrl}/draft/all`,
+      `${this.baseUrl}/draft/user-drafts`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );
@@ -213,20 +134,12 @@ export class DraftRepositoryImpl implements IDraftRepository {
     return data;
   }
 
-  async deleteDraft(draftId: string, accessToken: string, refreshToken: string): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async deleteDraft(draftId: string, accessToken: string): Promise<boolean> {
     const { data } = await axios.delete<boolean>(
-      `${this.baseUrl}/draft/delete/${draftId}`,
+      `${this.baseUrl}/draft/${draftId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );

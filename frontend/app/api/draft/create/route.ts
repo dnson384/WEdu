@@ -1,14 +1,19 @@
-import CreateDraftUsecase from "@/application/usecases/draft/createDraft";
-import { CreateDraftPayloadEntity } from "@/domain/entities/draft.entity";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
-import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+import CreateDraftUsecase from "@/usecases/draft/CreateDraftUsecase";
+import { CreateDraftEntity } from "@/domain/entities/draft.entity";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
 
 export async function POST(req: NextRequest) {
   try {
     const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refreshToken")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+    }
 
     const body = await req.json();
 
@@ -17,14 +22,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           message: "Dữ liệu đầu vào không hợp lệ!",
-          error: validated.error.flatten().fieldErrors,
+          error: z.flattenError(validated.error).fieldErrors,
         },
         { status: 400 },
       );
     }
 
     const { examName, questionsCount, questionTypes } = validated.data;
-    const payload: CreateDraftPayloadEntity = {
+    const payload: CreateDraftEntity = {
       examName: examName,
       questionsCount: questionsCount,
       questionTypes: questionTypes,
@@ -32,11 +37,7 @@ export async function POST(req: NextRequest) {
 
     const repo = new DraftRepositoryImpl();
     const usecase = new CreateDraftUsecase(repo);
-    const response = await usecase.execute(
-      payload,
-      accessToken!,
-      refreshToken!,
-    );
+    const response = await usecase.execute(payload, accessToken);
 
     return NextResponse.json(response, { status: 201 });
   } catch (err) {

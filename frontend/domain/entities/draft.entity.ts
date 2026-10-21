@@ -1,9 +1,10 @@
-export interface CreateDraftPayloadEntity {
+export interface CreateDraftEntity {
   examName: string;
   questionsCount: number;
   questionTypes: string[];
 }
 
+// Response Entity
 export interface MatrixItems {
   questionType: string;
   difficultyLevel: string;
@@ -39,20 +40,13 @@ export interface DraftEntity {
   chapters: ChapterDraft[];
 }
 
+// Update
 export interface UpdateDraftParamEntity {
   id: string;
   name: string;
 }
 
-export interface UpdateChaptersDraftPayloadEntity {
-  draftId: string;
-  add: UpdateDraftParamEntity[];
-  del: Array<string>;
-}
-
-export interface UpdateLessonsDraftPayloadEntity {
-  draftId: string;
-  chapterId: string;
+export interface UpdateDraftEntity {
   add: UpdateDraftParamEntity[];
   del: Array<string>;
 }

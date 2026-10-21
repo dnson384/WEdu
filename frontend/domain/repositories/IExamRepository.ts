@@ -8,7 +8,6 @@ export interface IExamsRepository {
   generateExam(
     draftId: string,
     accessToken: string,
-    refreshToken: string,
   ): Promise<ExamGeneratedResponseEntity>;
   getExamById(
     examId: string,

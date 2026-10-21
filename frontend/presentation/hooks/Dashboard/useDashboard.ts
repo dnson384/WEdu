@@ -1,6 +1,6 @@
 "use client";
 
-import { GetRecentDraftService } from "@/presentation/services/draft.service";
+import { DraftService } from "@/presentation/services/DraftService";
 import { getRecentExamService } from "@/presentation/services/exam.service";
 import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ export default function useDashboard() {
     queries: [
       {
         queryKey: ["draft-recent"],
-        queryFn: () => GetRecentDraftService(),
+        queryFn: () => new DraftService().getRecent(),
         staleTime: 1000 * 60 * 5,
         retry: false,
         refetchOnMount: true,

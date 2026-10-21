@@ -1,52 +1,34 @@
 import {
-  CreateDraftPayloadEntity,
-  UpdateChaptersDraftPayloadEntity,
+  CreateDraftEntity,
   DraftEntity,
-  UpdateLessonsDraftPayloadEntity,
+  UpdateDraftEntity,
 } from "../entities/draft.entity";
 
 export interface IDraftRepository {
-  createDraft(
-    payload: CreateDraftPayloadEntity,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<string>;
-  getDraft(
-    draftId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity>;
+  createDraft(payload: CreateDraftEntity, accessToken: string): Promise<string>;
+
+  getDraft(draftId: string, accessToken: string): Promise<DraftEntity>;
+
   updateChapters(
-    payload: UpdateChaptersDraftPayloadEntity,
+    draftId: string,
+    payload: UpdateDraftEntity,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean>;
+
   updateLessons(
-    payload: UpdateLessonsDraftPayloadEntity,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean>;
-  generateMatrix(
     draftId: string,
+    chapterId: string,
+    payload: UpdateDraftEntity,
     accessToken: string,
-    refreshToken: string,
   ): Promise<boolean>;
-  generateMatrixDetails(
-    draftId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean>;
-  getRecentDraft(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity[]>;
-  getAllUserDrafts(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<DraftEntity[]>;
-  deleteDraft(
-    draftId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean>;
+
+  generateMatrix(draftId: string, accessToken: string): Promise<boolean>;
+
+  generateMatrixDetails(draftId: string, accessToken: string): Promise<boolean>;
+
+  getRecentDraft(accessToken: string): Promise<DraftEntity[]>;
+
+  getAllUserDrafts(accessToken: string): Promise<DraftEntity[]>;
+
+  deleteDraft(draftId: string, accessToken: string): Promise<boolean>;
 }
