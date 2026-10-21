@@ -12,9 +12,3 @@ export interface UserResponseEntity {
   email: string;
   role: string;
 }
-
-export interface ChangePasswordPayloadEntity {
-  oldPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
-}

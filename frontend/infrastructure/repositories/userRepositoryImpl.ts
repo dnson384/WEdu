@@ -1,5 +1,4 @@
 import {
-  ChangePasswordPayloadEntity,
   UserEntity,
 } from "@/domain/entities/user.entity";
 import { IUserRepository } from "@/domain/repositories/IUserRepository";
@@ -57,31 +56,6 @@ export class UserRepositoryImpl implements IUserRepository {
         },
         headers: {
           Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    );
-
-    return data;
-  }
-
-  public async changePassword(
-    payload: ChangePasswordPayloadEntity,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean> {
-    const cookieHeaderParts: string[] = [];
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
-    const { data } = await axios.put<boolean>(
-      `${this.baseUrl}/user/change-password`,
-      { payload, refreshToken },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );

@@ -1,14 +1,18 @@
-import { changePasswordUsecase } from "@/application/usecases/user/changePasswordUsecase";
-import { UpdateUsernameUsecase } from "@/application/usecases/user/updateUsernameUsecase";
-import { ChangePasswordPayloadEntity } from "@/domain/entities/user.entity";
-import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
-import { ChangePasswordPayload } from "@/presentation/schemas/userSchema";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+import { ChangePasswordUsecase } from "@/usecases/auth/ChangePasswordUsecase";
+import { ChangePasswordPayload } from "@/presentation/schemas/auth.schema";
+import { ChangePasswordEntity } from "@/domain/entities/auth.entity";
+import { AuthRepositoryImpl } from "@/infrastructure/repositories/AuthRepositoryImpl";
 
 export async function PUT(req: NextRequest) {
   const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+  }
 
   const body = await req.json();
 
@@ -17,27 +21,23 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(
       {
         message: "Dữ liệu đầu vào không hợp lệ!",
-        error: validated.error.flatten().fieldErrors,
+        error: z.flattenError(validated.error).fieldErrors,
       },
       { status: 400 },
     );
   }
 
   const { oldPassword, newPassword, confirmNewPassword } = validated.data;
-  const payload: ChangePasswordPayloadEntity = {
+  const payload: ChangePasswordEntity = {
     oldPassword: oldPassword,
     newPassword: newPassword,
     confirmNewPassword: confirmNewPassword,
   };
 
   try {
-    const repo = new UserRepositoryImpl();
-    const usecase = new changePasswordUsecase(repo);
-    const response = await usecase.execute(
-      payload,
-      accessToken!,
-      refreshToken!,
-    );
+    const repo = new AuthRepositoryImpl();
+    const usecase = new ChangePasswordUsecase(repo);
+    const response = await usecase.execute(payload, accessToken);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

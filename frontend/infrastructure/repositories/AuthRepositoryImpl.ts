@@ -1,3 +1,4 @@
+import { ChangePasswordEntity } from "@/domain/entities/auth.entity";
 import {
   AuthorizedResponseEntity,
   LoginPayloadEntity,
@@ -73,6 +74,23 @@ export class AuthRepositoryImpl implements IAuthRepository {
     const { data } = await axios.post<boolean>(
       `${this.baseUrl}/auth/logout`,
       {},
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    return data;
+  }
+
+  public async changePassword(
+    payload: ChangePasswordEntity,
+    accessToken: string,
+  ): Promise<boolean> {
+    const { data } = await axios.patch<boolean>(
+      `${this.baseUrl}/auth/change-password`,
+      payload,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
