@@ -4,10 +4,7 @@ import { IChapterRepository } from "@/domain/repositories/IChapterRepository";
 export class GetAllChaptersUsecase {
   constructor(private readonly repo: IChapterRepository) {}
 
-  async execute(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<ChapterEntity[]> {
-    return await this.repo.getAll(accessToken, refreshToken);
+  async execute(accessToken: string): Promise<ChapterEntity[]> {
+    return await this.repo.getAll(accessToken);
   }
 }

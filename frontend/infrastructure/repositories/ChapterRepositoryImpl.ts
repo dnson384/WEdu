@@ -12,23 +12,12 @@ export class ChapterRepositoryImpl implements IChapterRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  async getAll(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<ChapterEntity[]> {
-    const cookieHeaderParts: string[] = [];
-
-    cookieHeaderParts.push(`accessToken=${accessToken}`);
-    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
-
-    const customCookieHeader = cookieHeaderParts.join("; ");
-
+  async getAll(accessToken: string): Promise<ChapterEntity[]> {
     const { data } = await axios.get<ChapterEntity[]>(
-      `${this.baseUrl}/chapter/all`,
+      `${this.baseUrl}/chapter/chapters`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          Cookie: customCookieHeader,
         },
       },
     );

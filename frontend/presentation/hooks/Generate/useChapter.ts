@@ -1,12 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { ChapterEntity } from "@/domain/entities/chapter.entity";
-import { getAllChaptersService } from "@/presentation/services/chapter.service";
+import { ChapterSerivce } from "@/presentation/services/ChapterService";
+import { useMemo } from "react";
 
 export default function useChapter() {
+  const chapterService = useMemo(() => new ChapterSerivce(), []);
+
   const { data, isLoading } = useQuery({
     queryKey: ["all-chapters"],
-    queryFn: async () => getAllChaptersService(),
+    queryFn: async () => chapterService.getAll(),
     staleTime: 5 * 60 * 1000,
   });
 
