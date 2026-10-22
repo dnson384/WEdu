@@ -1,24 +1,19 @@
-import { GetExamByIdUsecase } from "@/application/usecases/exam/getExamById.usecase";
-import { ExamsRepositoryImpl } from "@/infrastructure/repositories/exam.repository";
+import { GetAllExamsUsecase } from "@/usecases/exam/GetAllExamsUsecase";
+import { ExamsRepositoryImpl } from "@/infrastructure/repositories/ExamsRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
     const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refreshToken")?.value;
 
-    const examId = req.nextUrl.searchParams.get("examId");
-    if (!examId) {
-      return NextResponse.json(
-        { message: "Thiếu mã bài kiểm tra" },
-        { status: 400 },
-      );
+    if (!accessToken) {
+      return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
     }
 
     const repo = new ExamsRepositoryImpl();
-    const usecase = new GetExamByIdUsecase(repo);
-    const response = await usecase.execute(examId, accessToken!, refreshToken!);
+    const usecase = new GetAllExamsUsecase(repo);
+    const response = await usecase.execute(accessToken);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {

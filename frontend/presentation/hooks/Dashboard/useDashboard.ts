@@ -1,18 +1,21 @@
 "use client";
 
 import { DraftService } from "@/presentation/services/DraftService";
-import { getRecentExamService } from "@/presentation/services/exam.service";
+import { ExamService } from "@/presentation/services/ExamService";
 import { useQueries } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 export default function useDashboard() {
   const router = useRouter();
+  const draftService = useMemo(() => new DraftService(), []);
+  const examService = useMemo(() => new ExamService(), []);
 
   const results = useQueries({
     queries: [
       {
         queryKey: ["draft-recent"],
-        queryFn: () => new DraftService().getRecent(),
+        queryFn: () => draftService.getRecent(),
         staleTime: 1000 * 60 * 5,
         retry: false,
         refetchOnMount: true,
@@ -20,7 +23,7 @@ export default function useDashboard() {
       },
       {
         queryKey: ["exam-recent"],
-        queryFn: () => getRecentExamService(),
+        queryFn: () => examService.getRecent(),
         staleTime: 1000 * 60 * 5,
         retry: false,
         refetchOnMount: true,

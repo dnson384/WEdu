@@ -23,13 +23,12 @@ export default function useExamFilter({ chapters, exams }: UseFilterProps) {
   // Danh sách Chương sau khi tìm kiếm
   const filteredChapters = useMemo(() => {
     return chapters.filter((c) =>
-      c.chapter.toLowerCase().includes(chapterSearch.toLowerCase()),
+      c.name.toLowerCase().includes(chapterSearch.toLowerCase()),
     );
   }, [chapters, chapterSearch]);
 
   // -------------------- Filter - Lesson --------------------
   const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
-
   const [lessonSearch, setLessonSearch] = useState("");
 
   // Xử lý logic chọn Bài học (Lesson)
@@ -57,30 +56,59 @@ export default function useExamFilter({ chapters, exams }: UseFilterProps) {
   }, [availableLessons, lessonSearch]);
 
   // -------------------- Exam Filtered --------------------
-  const [examFiltered, setExamFiltered] = useState<ExamResponseEntity[]>([]);
-  useEffect(() => {
-    setExamFiltered(exams);
-  }, [exams]);
+  const [appliedFilters, setAppliedFilters] = useState<{
+    chapterIds: string[];
+    lessonIds: string[];
+  }>({
+    chapterIds: [],
+    lessonIds: [],
+  });
 
   const handleFilterClick = () => {
-    const filtered = exams.filter((exam) => {
-      const matchesChapter = selectedChapterIds.every((selectedChampId) =>
-        exam.chapters.some((chapter) => chapter.id === selectedChampId),
+    setAppliedFilters({
+      chapterIds: selectedChapterIds,
+      lessonIds: selectedLessonIds,
+    });
+  };
+
+  const examFiltered: ExamResponseEntity[] = useMemo(() => {
+    const { chapterIds, lessonIds } = appliedFilters;
+
+    if (chapterIds.length === 0 && lessonIds.length === 0) {
+      return exams;
+    }
+
+    return exams.filter((exam) => {
+      const matchesChapter = chapterIds.every((selectedId) =>
+        exam.chapters.some((chapter) => chapter.id === selectedId),
       );
 
       const allLessonIdsInExam = exam.chapters.flatMap(
         (chapter) => chapter.lessonIds,
       );
 
-      const matchesLesson = selectedLessonIds.every((selectedLessonId) =>
-        allLessonIdsInExam.includes(selectedLessonId),
+      const matchesLesson = lessonIds.every((selectedId) =>
+        allLessonIdsInExam.includes(selectedId),
       );
+
+      console.log("lessonIds", lessonIds);
+      console.log("allLessonIdsInExam", allLessonIdsInExam);
 
       return matchesChapter && matchesLesson;
     });
+  }, [exams, appliedFilters]);
 
-    setExamFiltered(filtered);
-  };
+  useEffect(() => {
+    console.log("chapterIds", selectedChapterIds);
+  }, [selectedChapterIds]);
+
+  useEffect(() => {
+    console.log("lessonIds", selectedLessonIds);
+  }, [selectedLessonIds]);
+
+  useEffect(() => {
+    console.log("appliedFilters", appliedFilters);
+  }, [appliedFilters]);
 
   return {
     selectedChapterIds,
@@ -95,7 +123,6 @@ export default function useExamFilter({ chapters, exams }: UseFilterProps) {
     toggleLesson,
     totalChaptersSelected: selectedChapterIds.length,
     totalLessonsSelected: selectedLessonIds.length,
-    // Filtered
     examFiltered,
     handleFilterClick,
   };

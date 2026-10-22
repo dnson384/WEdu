@@ -1,22 +1,22 @@
 import { ExamResponseEntity } from "@/domain/entities/exam.entity";
-import { getAllExamsService } from "@/presentation/services/exam.service";
+import { ExamService } from "@/presentation/services/ExamService";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-
-const EMPTY_EXAMS: ExamResponseEntity[] = [];
+import { useMemo } from "react";
 
 export default function useAllExam() {
   const router = useRouter();
+  const examService = useMemo(() => new ExamService(), []);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["all_exam"],
-    queryFn: () => getAllExamsService(),
+    queryKey: ["user-exams"],
+    queryFn: () => examService.getAllExams(),
     staleTime: 1000 * 60 * 5,
     retry: false,
     refetchOnWindowFocus: false,
   });
 
-  const exams: ExamResponseEntity[] = data || EMPTY_EXAMS;
+  const exams: ExamResponseEntity[] = data || [];
 
   const handleCardClick = (examId: string) => {
     router.push(`/exam/${examId}`);
@@ -24,7 +24,7 @@ export default function useAllExam() {
 
   return {
     exams,
-    isLoading,
+    isLoadingExams: isLoading,
     handleCardClick,
   };
 }

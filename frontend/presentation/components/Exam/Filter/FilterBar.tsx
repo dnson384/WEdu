@@ -1,3 +1,4 @@
+import { ChapterEntity, LessonData } from "@/domain/entities/chapter.entity";
 import { DropdownFilter } from "./DropDownFilter";
 import { icons } from "@/presentation/common/icons";
 
@@ -8,8 +9,8 @@ interface FilterBarProps {
   lessonSearch: string;
   setChapterSearch: (v: string) => void;
   setLessonSearch: (v: string) => void;
-  filteredChapters: any[];
-  filteredLessons: any[];
+  filteredChapters: ChapterEntity[];
+  filteredLessons: LessonData[];
   toggleChapter: (id: string) => void;
   toggleLesson: (id: string) => void;
   totalChaptersSelected: number;
@@ -34,7 +35,7 @@ export default function FilterBar({
 }: FilterBarProps) {
   const chapterItems = filteredChapters.map((c) => ({
     id: c.id,
-    name: c.chapter,
+    name: c.name,
   }));
   const lessonItems = filteredLessons.map((l) => ({ id: l.id, name: l.name }));
 
