@@ -4,7 +4,8 @@ export interface UserEntity {
   username: string;
   role: string;
   avatarUrl: string;
-  accountType: string
+  isActived: boolean;
+  accountType: string;
 }
 
 export interface UserResponseEntity {
