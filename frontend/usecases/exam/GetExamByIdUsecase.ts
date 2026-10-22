@@ -1,3 +1,4 @@
+import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
 import { IExamsRepository } from "@/domain/repositories/IExamRepository";
 
 export class GetExamByIdUsecase {
@@ -6,8 +7,7 @@ export class GetExamByIdUsecase {
   async execute(
     examId: string,
     accessToken: string,
-    refreshToken: string,
-  ): Promise<any> {
-    return await this.repo.getExamById(examId, accessToken, refreshToken);
+  ): Promise<ExamDetailReponseEntity> {
+    return await this.repo.getExamById(examId, accessToken);
   }
 }

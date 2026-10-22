@@ -9,22 +9,15 @@ export interface IExamsRepository {
     draftId: string,
     accessToken: string,
   ): Promise<ExamGeneratedResponseEntity>;
+
   getExamById(
     examId: string,
     accessToken: string,
-    refreshToken: string,
   ): Promise<ExamDetailReponseEntity>;
-  getAllExams(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<ExamResponseEntity[]>;
-  deleteExam(
-    examId: string,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<boolean>;
-  getRecentExam(
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<ExamResponseEntity[]>;
+
+  getAllExams(accessToken: string): Promise<ExamResponseEntity[]>;
+
+  getRecentExam(accessToken: string): Promise<ExamResponseEntity[]>;
+
+  deleteExam(examId: string, accessToken: string): Promise<boolean>;
 }

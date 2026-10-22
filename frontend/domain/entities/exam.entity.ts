@@ -18,7 +18,7 @@ export interface ExamQuestion {
   questions: QuestionDetail[];
 }
 
-export interface ExamChapterReposneEntity {
+export interface ExamChapterReponseEntity {
   id: string;
   lessonIds: string[];
 }
@@ -26,7 +26,7 @@ export interface ExamChapterReposneEntity {
 export interface ExamResponseEntity {
   id: string;
   name: string;
-  chapters: ExamChapterReposneEntity[];
+  chapters: ExamChapterReponseEntity[];
   questionsCount: number;
 }
 

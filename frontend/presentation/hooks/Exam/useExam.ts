@@ -1,81 +1,72 @@
-"use client";
-
 import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
 import { ExportPayload } from "@/presentation/schemas/export.schema";
-import {
-  deleteExamService,
-  GetExamService,
-} from "@/presentation/services/exam.service";
+import { ExamService } from "@/presentation/services/ExamService";
 import { ExportService } from "@/presentation/services/ExportService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AxiosError } from "axios";
+import { ApiError } from "next/dist/server/api-utils";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+
+const initialExamDetail = (): ExamDetailReponseEntity => ({
+  id: "",
+  name: "",
+  groups: [],
+});
 
 export default function useExam() {
   const router = useRouter();
-  const exportService = useMemo(() => new ExportService(), []);
   const queryClient = useQueryClient();
-
-  const pathname = usePathname();
-  const pathnameSplitted = pathname.split("/");
-  const examId = pathnameSplitted[pathnameSplitted.length - 1];
-
+  const params = useParams();
   const searchParams = useSearchParams();
+  const examService = useMemo(() => new ExamService(), []);
+  const exportService = useMemo(() => new ExportService(), []);
+
+  const examId = (params?.examId as string) || "";
+
   const errorParam = searchParams.get("errors");
+  const notiParam = searchParams.get("noti");
+
   const [errorsList, setErrorsList] = useState<string[]>(() =>
     errorParam ? errorParam.split("_||_") : [],
   );
-
-  useEffect(() => {
-    if (errorsList.length === 0) return;
-
-    const timer = setTimeout(() => {
-      setErrorsList([]);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  let notiParam = searchParams.get("noti");
   const [noti, setNoti] = useState<string | null>(notiParam);
 
-  useEffect(() => {
-    if (noti === null || noti.length === 0) return;
-
-    const timer = setTimeout(() => {
-      setNoti(null);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const initialResponse = (): ExamDetailReponseEntity => ({
-    id: "",
-    name: "",
-    groups: [],
-  });
-
-  const { data, isLoading } = useQuery({
+  const {
+    data: fetchedExamDetail,
+    error: fetchError,
+    isLoading: isLoadingExam,
+  } = useQuery<ExamDetailReponseEntity, AxiosError<ApiError>>({
     queryKey: ["exam", examId],
-    queryFn: () => GetExamService(examId),
+    queryFn: () => examService.get(examId),
     staleTime: 1000 * 60 * 5,
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: !!examId,
+    enabled: Boolean(examId),
   });
 
-  const details = data || initialResponse();
-
+  const [examDetail, setExamDetail] =
+    useState<ExamDetailReponseEntity>(initialExamDetail);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-  const handleExportDocx = async () => {
-    if (isSubmitted) return;
+  const [syncedExamId, setSyncedExamId] = useState<string | null>(null);
+  if (fetchedExamDetail && fetchedExamDetail.id !== syncedExamId) {
+    setSyncedExamId(fetchedExamDetail.id);
+    setExamDetail(fetchedExamDetail);
+  }
 
+  useEffect(() => {
+    if (fetchError?.response?.status === 404) {
+      router.replace("/exam/all");
+    }
+  }, [fetchError, router]);
+
+  const handleExportExam = async () => {
     setIsSubmitted(true);
 
     const payload: ExportPayload = {
-      examId: details.id,
-      examName: details.name,
+      examId: examDetail.id,
+      examName: examDetail.name,
     };
 
     try {
@@ -84,7 +75,7 @@ export default function useExam() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${details.name}.docx`;
+      a.download = `${examDetail.name}.docx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -96,31 +87,55 @@ export default function useExam() {
     }
   };
 
+  const handleExportMatrix = async () => {
+    setIsSubmitted(true);
+  };
+
   const handleDeleteClick = async () => {
     if (isSubmitted) return;
 
     setIsSubmitted(true);
 
     try {
-      const response = await deleteExamService(examId);
+      const response = await examService.delete(examId);
 
       if (response) {
-        await queryClient.invalidateQueries({ queryKey: ["all_exam"] });
+        await queryClient.invalidateQueries({ queryKey: ["user-exams"] });
         router.replace("/exam/all");
       }
     } catch (error) {
       console.error("Lỗi khi xóa đề", error);
-    } finally {
       setIsSubmitted(false);
     }
   };
 
+  useEffect(() => {
+    if (errorsList.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setErrorsList([]);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [errorsList]);
+
+  useEffect(() => {
+    if (noti === null || noti.length === 0) return;
+
+    const timer = setTimeout(() => {
+      setNoti(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [noti]);
+
   return {
-    details,
-    isLoading,
+    examDetail,
+    isLoadingExam,
     errorsList,
     noti,
-    handleExportDocx,
+    handleExportExam,
+    handleExportMatrix,
     handleDeleteClick,
   };
 }

@@ -50,7 +50,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
 
   async getAllExams(accessToken: string): Promise<ExamResponseEntity[]> {
     const { data } = await axios.get<ExamResponseEntity[]>(
-      `${this.baseUrl}/exam/all`,
+      `${this.baseUrl}/exam/user-exams`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -75,7 +75,7 @@ export class ExamsRepositoryImpl implements IExamsRepository {
 
   async deleteExam(examId: string, accessToken: string): Promise<boolean> {
     const { data } = await axios.delete<boolean>(
-      `${this.baseUrl}/exam/delete/${examId}`,
+      `${this.baseUrl}/exam/${examId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,

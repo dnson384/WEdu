@@ -1,15 +1,18 @@
-import { DeleteExamUsecase } from "@/application/usecases/exam/DeleteExamUsecase";
-import { ExamsRepositoryImpl } from "@/infrastructure/repositories/exam.repository";
+import { GetExamByIdUsecase } from "@/usecases/exam/GetExamByIdUsecase";
+import { ExamsRepositoryImpl } from "@/infrastructure/repositories/ExamsRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function DELETE(
+export async function GET(
   req: NextRequest,
-  { params }: { params: { examId: string } },
+  { params }: { params: Promise<{ examId: string }> },
 ) {
   try {
     const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refreshToken")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ message: "Thiếu AT" }, { status: 400 });
+    }
 
     const resolvedParams = await params;
     const examId = resolvedParams.examId;
@@ -19,8 +22,8 @@ export async function DELETE(
     }
 
     const repo = new ExamsRepositoryImpl();
-    const usecase = new DeleteExamUsecase(repo);
-    const response = await usecase.execute(examId, accessToken!, refreshToken!);
+    const usecase = new GetExamByIdUsecase(repo);
+    const response = await usecase.execute(examId, accessToken);
 
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
