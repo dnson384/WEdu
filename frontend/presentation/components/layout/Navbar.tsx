@@ -13,58 +13,70 @@ interface Data {
   username: string;
 }
 
+const DEFAULT_AVATAR = "/frontend/public/default-avatar-user.png";
+
+const navLinks = [
+  {
+    name: "Tổng quan",
+    href: "/",
+    icon: icons.dashboard,
+  },
+  {
+    name: "Tạo đề kiểm tra",
+    href: "/generate",
+    icon: icons.generateNavGray,
+  },
+  {
+    name: "Danh sách đề",
+    href: "/exam/all",
+    icon: icons.book,
+  },
+  {
+    name: "Tải lên câu hỏi",
+    href: "/upload",
+    icon: icons.database,
+  },
+];
+
 export default function NavBar({ avatarUrl, username }: Data) {
   const { isLoggingOut, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
     useNavBar();
 
   const pathname = usePathname();
 
-  const navLinks = [
-    {
-      name: "Tổng quan",
-      href: "/",
-      icon: icons.dashboard,
-    },
-    {
-      name: "Tạo đề kiểm tra",
-      href: "/generate",
-      icon: icons.generateNavGray,
-    },
-    {
-      name: "Danh sách đề",
-      href: "/exam/all",
-      icon: icons.book,
-    },
-    {
-      name: "Tải lên câu hỏi",
-      href: "/upload",
-      icon: icons.database,
-    },
-  ];
+  const isLinkActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
 
   return (
-    <nav className="fixed z-100 bg-white top-0 left-0 h-screen hidden lg:block lg:w-60 shadow-md px-3 py-6">
+    <nav className="fixed z-40 bg-white top-0 left-0 h-screen hidden lg:block lg:w-60 shadow-md px-3 py-6">
       <div className="h-full flex flex-col justify-between">
         <section id="content">
           <div className="px-3 mb-10">
             <Logo />
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             {navLinks.map((link) => {
-              if (link.href) {
-                const curLink = link.href === pathname;
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`flex items-center gap-3 text-sm px-3 py-2 rounded-md transition-colors ${curLink ? "bg-blue-500 text-white" : "text-gray-500 hover:bg-gray-200 hover:text-black"}`}
-                  >
+              const active = isLinkActive(link.href);
+
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-lg font-medium transition-colors ${
+                    active
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-black"
+                  }`}
+                >
+                  <span className={active ? "text-white" : "text-gray-500"}>
                     {link.icon}
-                    {link.name}
-                  </Link>
-                );
-              }
+                  </span>
+                  <span>{link.name}</span>
+                </Link>
+              );
             })}
           </div>
         </section>
@@ -75,15 +87,16 @@ export default function NavBar({ avatarUrl, username }: Data) {
           className="relative select-none"
         >
           {isUserMenuOpen && (
-            <div className="absolute bottom-full left-0 mb-3 w-full bg-white rounded-lg shadow-xl border border-gray-100 py-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
-              {menu.map((item, idx) => (
+            <div className="absolute bottom-full left-0 mb-3 w-full bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              {menu.map((item, index) => (
                 <button
-                  key={idx}
+                  key={index}
+                  type="button"
                   onClick={item.onClick}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left cursor-pointer"
                 >
-                  {item.icon}
-                  {item.label}
+                  <span className="text-gray-500">{item.icon}</span>
+                  <span>{item.label}</span>
                 </button>
               ))}
             </div>
@@ -91,25 +104,46 @@ export default function NavBar({ avatarUrl, username }: Data) {
 
           <div
             onClick={toggleUserMenu}
-            className={`cursor-pointer p-1.5 -mx-1.5 rounded-lg ${pathname === "/me" ? "bg-blue-500 hover:bg-blue-500/90 transition-colors" : "hover:bg-gray-100 transition-colors"}`}
+            className={`cursor-pointer p-2 rounded-xl transition-colors ${
+              pathname.startsWith("/me")
+                ? "bg-blue-600 text-white"
+                : "hover:bg-gray-100 text-gray-800"
+            }`}
           >
-            <div id="user-avatar" className="flex items-center gap-4">
-              <Image
-                src={avatarUrl}
-                alt="avatar-user"
-                width={80}
-                height={80}
-                quality={100}
-                className={`h-10 w-10 rounded-full object-cover ${pathname === "/me" ? "" : "border border-gray-200"}`}
-              />
+            <div id="user-avatar" className="flex items-center gap-3">
+              <div className="relative h-10 w-10 shrink-0">
+                <Image
+                  src={
+                    avatarUrl && avatarUrl.trim() !== ""
+                      ? avatarUrl
+                      : DEFAULT_AVATAR
+                  }
+                  alt={username}
+                  width={40}
+                  height={40}
+                  quality={90}
+                  className={`h-10 w-10 rounded-full object-cover ${
+                    pathname.startsWith("/me")
+                      ? "border-2 border-white"
+                      : "border border-gray-200"
+                  }`}
+                />
+              </div>
+
               <div className="overflow-hidden">
                 <p
-                  className={`font-bold text-sm ${pathname === "/me" ? "text-white" : "text-gray-800 truncate"}`}
+                  className={`font-semibold text-sm truncate ${
+                    pathname.startsWith("/me") ? "text-white" : "text-gray-900"
+                  }`}
                 >
                   {username}
                 </p>
                 <p
-                  className={`text-xs ${pathname === "/me" ? "text-white" : "text-gray-400"}`}
+                  className={`text-xs truncate ${
+                    pathname.startsWith("/me")
+                      ? "text-blue-100"
+                      : "text-gray-500"
+                  }`}
                 >
                   Quản lý tài khoản
                 </p>
@@ -119,17 +153,17 @@ export default function NavBar({ avatarUrl, username }: Data) {
         </section>
 
         {isLoggingOut && (
-          <section
+          <div
             id="logout-theme"
-            className="fixed inset-0 z-50 bg-black/50 h-screen w-screen flex justify-center items-center"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-center items-center"
           >
-            <div className="flex flex-col items-center gap-5">
-              <h2 className="text-white text-2xl font-bold">
-                Đang đăng xuất. Đợi xí!
-              </h2>
+            <div className="flex flex-col items-center gap-4 bg-gray-900/80 px-8 py-6 rounded-2xl shadow-2xl">
               <div className="loader-white"></div>
+              <h2 className="text-white text-lg font-medium">
+                Đang đăng xuất...
+              </h2>
             </div>
-          </section>
+          </div>
         )}
       </div>
     </nav>

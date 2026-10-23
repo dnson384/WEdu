@@ -1,11 +1,9 @@
-import {
-  UserEntity,
-} from "../entities/user.entity";
+import { UserEntity } from "../entities/user.entity";
 
 export interface IUserRepository {
   getMe(accessToken: string): Promise<UserEntity>;
+
   updateAvatar(s3Key: string, accessToken: string): Promise<boolean>;
+
   updateUsername(username: string, accessToken: string): Promise<boolean>;
-  lockAccount(accessToken: string, refreshToken: string): Promise<boolean>;
-  deleteAccount(accessToken: string, refreshToken: string): Promise<boolean>;
 }
