@@ -15,7 +15,7 @@ const publicPaths = [
   "/api/auth/reset-password",
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
@@ -44,8 +44,14 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(accessToken, accessSecret);
 
       accountId = payload.sub as string;
-    } catch (error: any) {
-      if (error?.code === "ERR_JWT_EXPIRED") {
+    } catch (error: unknown) {
+      const isJwtExpired =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        (error as Record<string, unknown>).code === "ERR_JWT_EXPIRED";
+
+      if (isJwtExpired) {
         accessToken = undefined;
       } else {
         return forceLogout(request);
@@ -55,15 +61,13 @@ export async function middleware(request: NextRequest) {
 
   // Refresh AT
   if (!accessToken) {
-    debugger;
-
     if (!refreshToken) {
       return forceLogout(request);
     }
 
     try {
       const response = await fetch(
-        `${BACKEND_URL}/refresh-token/generate-access-token`,
+        `${BACKEND_URL}/auth/regenerate-access-token`,
         {
           method: "POST",
           headers: {
@@ -74,6 +78,9 @@ export async function middleware(request: NextRequest) {
         },
       );
 
+      if (response.status === 401 || response.status === 403) {
+        return forceLogout(request);
+      }
       if (!response.ok) {
         throw new Error("Spring Boot từ chối cấp lại token");
       }
@@ -112,7 +119,7 @@ export async function middleware(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 15 * 60,
+      maxAge: 5 * 60,
       sameSite: "lax",
     });
   }
