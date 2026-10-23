@@ -27,14 +27,28 @@ spring:
               - profile
               - email
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_APP_USERNAME}
+    password: ${MAIL_APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 app:
   static:
     dir: "./static/"
   jwt:
     access-secret: ${JWT_ACCESS_SECRET}
     refresh-secret: ${JWT_REFRESH_SECRET}
-    access-expiration-ms: 900000
+    access-expiration-ms: 300000
     refresh-expiration-ms: 604800000
+  frontend:
+    url: ${FRONTEND_URL}
 
 aws:
   accessKey: "${AWS_ACCESS_KEY_ID}"
@@ -46,7 +60,7 @@ ai:
   deepseek:
     api-key: ${DEEPSEEK_API_KEY}
     base-url: https://api.deepseek.com
-    model: deepseek-chat
+    model: deepseek-flash
     timeout-seconds: 30
 
 telegram:
