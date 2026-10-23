@@ -2,7 +2,7 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 import { GetAllUserDraftsUsecase } from "@/usecases/draft/GetAllUserDraftUsecase";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
 
 export async function GET(req: NextRequest) {
   try {

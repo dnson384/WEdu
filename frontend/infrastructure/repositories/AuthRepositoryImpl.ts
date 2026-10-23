@@ -1,9 +1,9 @@
-import { ChangePasswordEntity } from "@/domain/entities/auth.entity";
 import {
-  AuthorizedResponseEntity,
   LoginPayloadEntity,
   NewUserRequestEntity,
+  AuthorizedResponseEntity,
 } from "@/domain/entities/auth.entity";
+import { ChangePasswordEntity } from "@/domain/entities/auth.entity";
 import { IAuthRepository } from "@/domain/repositories/IAuthRepository";
 import axios from "axios";
 
@@ -41,6 +41,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
     }
     return authorizedResponse;
   }
+
   public async register(
     payload: NewUserRequestEntity,
   ): Promise<AuthorizedResponseEntity> {

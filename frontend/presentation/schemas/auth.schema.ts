@@ -4,7 +4,7 @@ export const LoginPayload = z.object({
   email: z.email({ error: "Email không đúng định dạng" }),
   plainPassword: z
     .string()
-    .min(8, "Mật khảu phải từ 8 ký tự")
+    .min(8, "Mật khẩu phải từ 8 ký tự")
     .max(32, "Mật khẩu tối đa 32 ký tự"),
 });
 
@@ -22,9 +22,6 @@ export const RegisterPayload = z.object({
   loginMethod: z.enum(["LOCAL", "GOOGLE"]),
 });
 
-export type LoginPayload = z.infer<typeof LoginPayload>;
-export type RegisterPayload = z.infer<typeof RegisterPayload>;
-
 export const ResetPasswordPayload = z.object({
   plainToken: z.string({ error: "Token đặt lại mật khẩu rỗng" }),
   newPassword: z
@@ -36,8 +33,6 @@ export const ResetPasswordPayload = z.object({
     .min(8, "Mật khẩu phải từ 8 ký tự")
     .max(32, "Mật khẩu tối đa 32 ký tự"),
 });
-
-export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayload>;
 
 export const ChangePasswordPayload = z.object({
   oldPassword: z
@@ -54,4 +49,7 @@ export const ChangePasswordPayload = z.object({
     .max(32, "Mật khẩu tối đa 32 ký tự"),
 });
 
+export type LoginPayload = z.infer<typeof LoginPayload>;
+export type RegisterPayload = z.infer<typeof RegisterPayload>;
 export type ChangePasswordPayload = z.infer<typeof ChangePasswordPayload>;
+export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayload>;
