@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import UpdateChaptersDraftUsecase from "@/usecases/draft/UpdateChaptersDraftUsecase";
 import { UpdateDraftEntity } from "@/domain/entities/draft.entity";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
 import { UpdateDraftPayload } from "@/presentation/schemas/draft.schema";
 
 export async function PUT(

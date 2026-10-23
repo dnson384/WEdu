@@ -3,7 +3,7 @@ import MatrixDetailsBlock from "@/presentation/components/Generate/MatrixDetails
 import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useMatrixDetails from "@/presentation/hooks/Generate/Child/useMatrixDetails";
 import { transformMatrixDetailsToUI } from "@/presentation/utils/transformMatrixDetailsToUI";
 import Error from "@/presentation/components/layout/Error";

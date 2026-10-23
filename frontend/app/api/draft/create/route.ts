@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import CreateDraftUsecase from "@/usecases/draft/CreateDraftUsecase";
 import { CreateDraftEntity } from "@/domain/entities/draft.entity";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
 import { CreateDraftPayload } from "@/presentation/schemas/draft.schema";
 
 export async function POST(req: NextRequest) {

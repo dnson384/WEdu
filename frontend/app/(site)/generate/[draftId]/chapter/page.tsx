@@ -9,7 +9,7 @@ import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 
 // Hook
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useSelectChapterPage from "@/presentation/hooks/Generate/Child/useSelectChapterPage";
 import useChapter from "@/presentation/hooks/Generate/useChapter";
 
