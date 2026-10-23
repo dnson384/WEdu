@@ -25,7 +25,7 @@ public class StorageController {
             @RequestParam("file") MultipartFile file
     ) {
         try {
-            String s3Key = s3Service.uploadFile(file, "avatars");
+            String s3Key = s3Service.uploadFile(file, "avatars", 5);
             return ResponseEntity.ok(s3Key);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -39,7 +39,7 @@ public class StorageController {
             @RequestParam("subject") String subject
     ) {
         try {
-            String s3Key = s3Service.uploadFile(file, "documents/" + subject);
+            String s3Key = s3Service.uploadFile(file, "documents/" + subject, 50);
             return ResponseEntity.ok(s3Key);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

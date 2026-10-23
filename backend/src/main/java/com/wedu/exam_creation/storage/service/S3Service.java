@@ -36,13 +36,13 @@ public class S3Service {
         this.bucketName = bucketName;
     }
 
-    public String uploadFile(MultipartFile file, String folderName) throws IOException {
+    public String uploadFile(MultipartFile file, String folderName, Integer vol) throws IOException {
         if (file.isEmpty()) {
             throw new BadRequestException("Lỗi: Đầu vào là file trống");
         }
 
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new BadRequestException("Lỗi: File lớn hơn 5MB");
+        if (file.getSize() > (long) vol * 1024 * 1024) {
+            throw new BadRequestException("Lỗi: File lớn hơn " + vol + "MB");
         }
 
         String detectedType = tika.detect(file.getInputStream());
