@@ -1,10 +1,8 @@
 package com.wedu.exam_creation.user.controller;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
-import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
@@ -15,7 +13,6 @@ import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetail
 import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import com.wedu.exam_creation.security.infrastructure.service.CustomOAuth2UserService;
 import com.wedu.exam_creation.security.infrastructure.service.CustomUserDetailsService;
-import com.wedu.exam_creation.user.dto.request.UpdateUserRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,10 +25,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,10 +44,6 @@ public class UserControllerUpdateUsernameTest {
     private static final String AVATAR_URL = "avatars/s3key.png";
     private static final String OLD_USERNAME = "old-username";
     private static final String NEW_USERNAME = "new-username-123";
-
-
-    private static final String PRESIGNED_AVATAR = "https://s3.amazonaws.com/my-pic-presigned.png";
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private MockMvc mockMvc;
@@ -70,13 +64,6 @@ public class UserControllerUpdateUsernameTest {
     private UserUsecase userUsecase;
 
     private CommonUserResponseAllDTO mockUser;
-    private CommonUserResponseDTO mockUserRes;
-
-    private UpdateUserRequestDTO validRequest() {
-        UpdateUserRequestDTO dto = new UpdateUserRequestDTO();
-        dto.setUsername(NEW_USERNAME);
-        return dto;
-    }
 
     @BeforeEach
     void setUp() {
@@ -90,23 +77,11 @@ public class UserControllerUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
-        mockUserRes = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                NEW_USERNAME,
-                "ROLE_TEACHER",
-                PRESIGNED_AVATAR,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
     }
-
 
     @Test
     @DisplayName("200 - Cập nhật username thành công")
@@ -121,23 +96,23 @@ public class UserControllerUpdateUsernameTest {
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
         when(userUsecase.updateUsername(USER_ID, NEW_USERNAME))
-                .thenReturn(mockUserRes);
+                .thenReturn(true);
 
         // When
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, NEW_USERNAME);
     }
 
     @Test
     @DisplayName("400 - Cập nhật với username rỗng")
     void should_returnBadRequest_when_usernameIsEmpty() throws Exception {
-        UpdateUserRequestDTO empty = new UpdateUserRequestDTO("");
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -154,46 +129,17 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(empty))
+                        .param("username", "")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Tên người dùng rỗng"));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("400 - Cập nhật với username null")
-    void should_returnBadRequest_when_usernameIsNull() throws Exception {
-        UpdateUserRequestDTO nullUsername = new UpdateUserRequestDTO(null);
-
-        CustomUserDetails principal = new CustomUserDetails(mockUser);
-        ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
-
-        // Given
-        // 1. Sec
-        doNothing().when(jwtTokenProvider).validateAccessToken(VALID_AT);
-        when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
-        when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
-        // 2. Use case
-        when(userUsecase.updateUsername(USER_ID, null))
-                .thenThrow(new BadRequestException("Tên người dùng rỗng"));
-
-        mockMvc.perform(patch("/user/update-username")
-                        .header("Authorization", "Bearer " + VALID_AT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(nullUsername))
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("message").value("Tên người dùng rỗng"));
-
-        verify(userUsecase, times(1)).updateUsername(anyString(), isNull());
+        verify(userUsecase).updateUsername(USER_ID, "");
     }
 
     @Test
     @DisplayName("400 - Cập nhật với username chỉ chứa khoảng trắng")
     void should_returnBadRequest_when_usernameContainsOnlyWhitespace() throws Exception {
-        UpdateUserRequestDTO onlySpace = new UpdateUserRequestDTO("      ");
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -210,27 +156,18 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(onlySpace))
+                        .param("username", "      ")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Tên người dùng rỗng"));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, "      ");
     }
 
     @Test
     @DisplayName("400 - Cập nhật với username quá dài")
     void should_returnBadRequest_when_usernameExceedsMaxLength() throws Exception {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder str = new StringBuilder();
-
-        for (int i = 0; i < 260; i++) {
-            int index = (int) (Math.random() * characters.length());
-            str.append(characters.charAt(index));
-        }
-
-        String longUsername = str.toString();
-        UpdateUserRequestDTO longUsernamePayload = new UpdateUserRequestDTO(longUsername);
+        String longUsername = "a".repeat(260);
 
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
@@ -248,29 +185,18 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(longUsernamePayload))
+                        .param("username", longUsername)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Tên người dùng quá dài"));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, longUsername);
     }
 
     @Test
     @DisplayName("200 - Cập nhật với username là có số")
     void should_updateUsernameSuccessfully_when_usernameContainsDigits() throws Exception {
-        UpdateUserRequestDTO hasNum = new UpdateUserRequestDTO("abc123");
 
-        CommonUserResponseDTO mockNumRes = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                "abc123",
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now());
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -282,34 +208,23 @@ public class UserControllerUpdateUsernameTest {
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
         when(userUsecase.updateUsername(USER_ID, "abc123"))
-                .thenReturn(mockNumRes);
+                .thenReturn(true);
 
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(hasNum))
+                        .param("username", "abc123")
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, "abc123");
     }
 
     @Test
     @DisplayName("200 - Cập nhật với username là có emoji")
     void should_updateUsernameSuccessfully_when_usernameContainsEmojis() throws Exception {
-        UpdateUserRequestDTO emoji = new UpdateUserRequestDTO("Nguyen Van A \uD83D\uDE00");
 
-        CommonUserResponseDTO mockEmojiRes = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                "Nguyen Van A \uD83D\uDE00",
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -321,34 +236,23 @@ public class UserControllerUpdateUsernameTest {
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
         when(userUsecase.updateUsername(USER_ID, "Nguyen Van A \uD83D\uDE00"))
-                .thenReturn(mockEmojiRes);
+                .thenReturn(true);
 
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(emoji))
+                        .param("username", "Nguyen Van A \uD83D\uDE00")
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, "Nguyen Van A \uD83D\uDE00");
     }
 
     @Test
     @DisplayName("200 - Cập nhật với username là có unicode")
     void should_updateUsernameSuccessfully_when_usernameContainsUnicodeCharacters() throws Exception {
-        UpdateUserRequestDTO unicode = new UpdateUserRequestDTO("Nguyễn Văn A");
 
-        CommonUserResponseDTO mockUnicodeCommon = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                "Nguyễn Văn A",
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -360,16 +264,17 @@ public class UserControllerUpdateUsernameTest {
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
         when(userUsecase.updateUsername(USER_ID, "Nguyễn Văn A"))
-                .thenReturn(mockUnicodeCommon);
+                .thenReturn(true);
 
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(unicode))
+                        .param("username", "Nguyễn Văn A")
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(true));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, "Nguyễn Văn A");
     }
 
     @Test
@@ -378,13 +283,13 @@ public class UserControllerUpdateUsernameTest {
         // When
         mockMvc.perform(patch("/user/update-username")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
         // Then
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -393,12 +298,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -407,12 +312,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -421,12 +326,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -435,12 +340,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer ")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Không có AT"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -452,12 +357,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + INVALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Cấu trúc Access Token không hợp lệ"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -471,12 +376,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + expiredAT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Access Token đã hết hạn"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -487,20 +392,20 @@ public class UserControllerUpdateUsernameTest {
         doThrow(new UnAuthorizedException("Chữ ký Access Token không chính xác"))
                 .when(jwtTokenProvider).validateAccessToken(editedAT);
 
-        mockMvc.perform(get("/user/update-username")
+        mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + editedAT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Chữ ký Access Token không chính xác"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
-    @DisplayName("400 - Body rỗng")
-    void should_returnBadRequest_when_requestBodyIsEmpty() throws Exception {
+    @DisplayName("400 - Thiếu request parameter username")
+    void should_returnBadRequest_when_usernameIsMissing() throws Exception {
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
 
@@ -516,12 +421,12 @@ public class UserControllerUpdateUsernameTest {
                 )
                 .andExpect(status().isBadRequest());
 
-        verify(userUsecase, times(0)).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
-    @DisplayName("400 - Payload lạ")
-    void should_returnBadRequest_when_payloadIsInvalid() throws Exception {
+    @DisplayName("400 - JSON body không thay thế request parameter username")
+    void should_returnBadRequest_when_usernameIsOnlyInJsonBody() throws Exception {
         String newBody = "{\"username\": \"Nguyen Van A\", \"role\": \"ROLE_ADMIN\"}";
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
@@ -540,7 +445,7 @@ public class UserControllerUpdateUsernameTest {
                 )
                 .andExpect(status().isBadRequest());
 
-        verify(userUsecase, times(0)).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -558,12 +463,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Tài khoản chưa tồn tại"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -579,8 +484,8 @@ public class UserControllerUpdateUsernameTest {
                 "avatars/userA.png",
                 false,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);
@@ -592,15 +497,15 @@ public class UserControllerUpdateUsernameTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername("usera@gmail.com")).thenReturn(principal);
 
-        mockMvc.perform(get("/user/update-username")
+        mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("message").value("Tài khoản đã bị khóa"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -619,12 +524,12 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(post("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("message").value("Phương thức HTTP không được hỗ trợ"));
 
-        verify(userUsecase, never()).updateUsername(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -645,17 +550,17 @@ public class UserControllerUpdateUsernameTest {
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("message").value("Có lỗi trong quá trình cập nhật tài khoản"));
 
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, NEW_USERNAME);
     }
 
     @Test
-    @DisplayName("200 - Kiểm tra response không lộ thông tin nhạy cảm")
-    void should_returnSuccessWithoutSensitiveInformation_when_accessTokenIsValid() throws Exception {
+    @DisplayName("200 - Trả về false khi usecase không cập nhật username")
+    void should_returnFalse_when_usecaseReturnsFalse() throws Exception {
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
 
@@ -665,18 +570,18 @@ public class UserControllerUpdateUsernameTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(userUsecase.updateUsername(USER_ID, NEW_USERNAME)).thenReturn(mockUserRes);
+        when(userUsecase.updateUsername(USER_ID, NEW_USERNAME)).thenReturn(false);
 
         // When
         mockMvc.perform(patch("/user/update-username")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("username", NEW_USERNAME)
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("hashedPassword").doesNotExist());
+                .andExpect(jsonPath("$").value(false));
 
         // Then
-        verify(userUsecase, times(1)).updateUsername(anyString(), anyString());
+        verify(userUsecase).updateUsername(USER_ID, NEW_USERNAME);
     }
 }

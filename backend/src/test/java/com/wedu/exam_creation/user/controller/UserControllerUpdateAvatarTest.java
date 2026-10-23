@@ -1,7 +1,6 @@
 package com.wedu.exam_creation.user.controller;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
@@ -14,7 +13,6 @@ import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetail
 import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import com.wedu.exam_creation.security.infrastructure.service.CustomOAuth2UserService;
 import com.wedu.exam_creation.security.infrastructure.service.CustomUserDetailsService;
-import com.wedu.exam_creation.user.dto.request.UpdateAvatarRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,10 +24,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,7 +42,6 @@ public class UserControllerUpdateAvatarTest {
     private static final String OLD_S3KEY = "avatars/old-s3key.png";
     private static final String NEW_S3KEY = "avatars/new-s3key.png";
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,12 +63,6 @@ public class UserControllerUpdateAvatarTest {
 
     private CommonUserResponseAllDTO mockUser;
 
-    private UpdateAvatarRequestDTO validRequest() {
-        UpdateAvatarRequestDTO dto = new UpdateAvatarRequestDTO();
-        dto.setS3Key(NEW_S3KEY);
-        return dto;
-    }
-
     @BeforeEach
     void setUp() {
         mockUser = new CommonUserResponseAllDTO(
@@ -84,8 +75,8 @@ public class UserControllerUpdateAvatarTest {
                 OLD_S3KEY,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
     }
 
@@ -104,14 +95,14 @@ public class UserControllerUpdateAvatarTest {
         when(userUsecase.updateAvatar(USER_ID, NEW_S3KEY))
                 .thenReturn(true);
 
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk()).andExpect(jsonPath("$").value(true));
 
-        verify(userUsecase, times(1)).updateAvatar(anyString(), anyString());
+        verify(userUsecase).updateAvatar(USER_ID, NEW_S3KEY);
     }
 
     @Test
@@ -126,23 +117,23 @@ public class UserControllerUpdateAvatarTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(userUsecase.updateAvatar(anyString(), anyString()))
+        when(userUsecase.updateAvatar(USER_ID, NEW_S3KEY))
                 .thenThrow(new InternalServerException("Có lỗi trong quá trình cập nhật avatar"));
 
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("message").value("Có lỗi trong quá trình cập nhật avatar"));
 
-        verify(userUsecase, times(1)).updateAvatar(anyString(), anyString());
+        verify(userUsecase).updateAvatar(USER_ID, NEW_S3KEY);
     }
 
     @Test
-    @DisplayName("200 - Cập nhật thành công nhưng xóa ảnh cũ khỏi S3 thất bại")
-    void should_updateAvatarSuccessfully_when_deleteOldImageFromS3Fails() throws Exception {
+    @DisplayName("200 - Trả về false khi usecase không cập nhật avatar")
+    void should_returnFalse_when_usecaseReturnsFalse() throws Exception {
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
 
@@ -152,23 +143,22 @@ public class UserControllerUpdateAvatarTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(userUsecase.updateAvatar(anyString(), anyString()))
-                .thenReturn(true);
+        when(userUsecase.updateAvatar(USER_ID, NEW_S3KEY))
+                .thenReturn(false);
 
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
-                .andExpect(status().isOk());
+                .andExpect(status().isOk()).andExpect(jsonPath("$").value(false));
 
-        verify(userUsecase, times(1)).updateAvatar(anyString(), anyString());
+        verify(userUsecase).updateAvatar(USER_ID, NEW_S3KEY);
     }
 
     @Test
     @DisplayName("400 - Update với S3Key rỗng")
-    void emptyS3Key() throws Exception {
-        UpdateAvatarRequestDTO empty = new UpdateAvatarRequestDTO("");
+    void should_returnBadRequest_when_s3KeyIsEmpty() throws Exception {
 
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
@@ -182,20 +172,20 @@ public class UserControllerUpdateAvatarTest {
         when(userUsecase.updateAvatar(USER_ID, ""))
                 .thenThrow(new BadRequestException("s3Key rỗng"));
 
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(empty))
+                        .param("s3Key", "")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("s3Key rỗng"));
 
-        verify(userUsecase, times(1)).updateAvatar(anyString(), anyString());
+        verify(userUsecase).updateAvatar(USER_ID, "");
     }
 
     @Test
-    @DisplayName("400 - Body rỗng")
-    void should_returnBadRequest_when_requestBodyIsEmpty() throws Exception {
+    @DisplayName("400 - Thiếu request parameter s3Key")
+    void should_returnBadRequest_when_s3KeyIsMissing() throws Exception {
         CustomUserDetails principal = new CustomUserDetails(mockUser);
         ATPayload payload = new ATPayload("parent-jti", USER_ID, EMAIL, "ROLE_TEACHER");
 
@@ -205,70 +195,70 @@ public class UserControllerUpdateAvatarTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
 
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isBadRequest());
 
-        verify(userUsecase, times(0)).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
     @DisplayName("400 - không có Authentication")
     void should_returnBadRequest_when_notAuthenticated() throws Exception {
         // When
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
         // Then
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
     @DisplayName("400 - Header Authorization rỗng")
     void should_returnBadRequest_when_authorizationIsEmpty() throws Exception {
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
     @DisplayName("400 - Authorization chỉ có \"Bearer\"")
     void should_returnBadRequest_when_authorizationHeaderContainsOnlyBearer() throws Exception {
-        mockMvc.perform(put("/user/update-avatar")
-                        .header("Authorization", VALID_AT)
+        mockMvc.perform(patch("/user/update-avatar")
+                        .header("Authorization", "Bearer")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
     @DisplayName("401 - Authorization có AT rỗng")
     void should_returnUnauthorized_when_accessTokenIsEmpty() throws Exception {
-        mockMvc.perform(put("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer ")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Không có AT"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -280,12 +270,12 @@ public class UserControllerUpdateAvatarTest {
         mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + INVALID_AT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Cấu trúc Access Token không hợp lệ"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -299,12 +289,12 @@ public class UserControllerUpdateAvatarTest {
         mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + expiredAT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Access Token đã hết hạn"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
     @Test
@@ -315,15 +305,15 @@ public class UserControllerUpdateAvatarTest {
         doThrow(new UnAuthorizedException("Chữ ký Access Token không chính xác"))
                 .when(jwtTokenProvider).validateAccessToken(editedAT);
 
-        mockMvc.perform(get("/user/update-avatar")
+        mockMvc.perform(patch("/user/update-avatar")
                         .header("Authorization", "Bearer " + editedAT)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest()))
+                        .param("s3Key", NEW_S3KEY)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Chữ ký Access Token không chính xác"));
 
-        verify(userUsecase, never()).updateAvatar(anyString(), anyString());
+        verifyNoInteractions(userUsecase);
     }
 
 }

@@ -24,7 +24,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -72,8 +72,8 @@ public class UserControllerMeTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         mockUserRes = new CommonUserResponseDTO(
@@ -84,8 +84,8 @@ public class UserControllerMeTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
     }
 
@@ -257,8 +257,8 @@ public class UserControllerMeTest {
                 "avatars/userA.png",
                 false,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);
@@ -341,8 +341,8 @@ public class UserControllerMeTest {
                 "avatars/userA.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         CustomUserDetails principalA = new CustomUserDetails(mockUserA);
@@ -355,8 +355,8 @@ public class UserControllerMeTest {
                 "avatars/userA.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         String VALID_AT_A = "valid-at-a";

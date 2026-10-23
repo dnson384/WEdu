@@ -2,10 +2,10 @@ package com.wedu.exam_creation.user.usecase;
 
 import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
 import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
-import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
+import org.mockito.ArgumentCaptor;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
-import com.wedu.exam_creation.notification.service.TelegramNotificationService;
+import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -51,7 +51,6 @@ public class UserUsecaseUpdateUsernameTest {
 
     private UserEntity mockOldUserEntity;
     private UserEntity mockNewUserEntity;
-    private CommonUserResponseDTO mockUserCommon;
 
     @BeforeEach
     void setUp() {
@@ -67,8 +66,8 @@ public class UserUsecaseUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         mockNewUserEntity = new UserEntity(
@@ -81,48 +80,35 @@ public class UserUsecaseUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
-        mockUserCommon = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                NEW_USERNAME,
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
     }
 
     // Update username
     @Test
     @DisplayName("200 - Cập nhật username")
-    void should_updateUsernameSuccessfully_when_requestIsValid() throws Exception {
+    void should_updateUsernameSuccessfully_when_requestIsValid() {
         when(repo.findById(USER_ID))
                 .thenReturn(mockOldUserEntity);
         when(repo.updateField(eq(USER_ID), any(UserUpdateFields.class)))
                 .thenReturn(mockNewUserEntity);
-        when(mapper.toCommonDTO(mockNewUserEntity))
-                .thenReturn(mockUserCommon);
 
-        CommonUserResponseDTO result = userUsecase.updateUsername(USER_ID, NEW_USERNAME);
+        boolean result = userUsecase.updateUsername(USER_ID, NEW_USERNAME);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(USER_ID);
-        assertThat(result.getUsername()).isEqualTo(NEW_USERNAME);
+        assertThat(result).isTrue();
 
         verify(repo, times(1)).findById(anyString());
-        verify(repo, times(1)).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, times(1)).toCommonDTO(any(UserEntity.class));
+        ArgumentCaptor<UserUpdateFields> fieldsCaptor = ArgumentCaptor.forClass(UserUpdateFields.class);
+        verify(repo).updateField(eq(USER_ID), fieldsCaptor.capture());
+        assertThat(fieldsCaptor.getValue().getUsername()).isEqualTo(NEW_USERNAME);
+        verifyNoInteractions(mapper, mapperCommon, s3Service);
     }
 
     @Test
     @DisplayName("400 - Cập nhật với username rỗng")
-    void should_returnBadRequest_when_usernameIsEmpty() throws Exception {
+    void should_returnBadRequest_when_usernameIsEmpty() {
         assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, ""))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Tên người dùng rỗng");
@@ -134,7 +120,7 @@ public class UserUsecaseUpdateUsernameTest {
 
     @Test
     @DisplayName("400 - Cập nhật với username là null")
-    void should_returnBadRequest_when_usernameIsNull() throws Exception {
+    void should_returnBadRequest_when_usernameIsNull() {
         assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, null))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Tên người dùng rỗng");
@@ -146,7 +132,7 @@ public class UserUsecaseUpdateUsernameTest {
 
     @Test
     @DisplayName("400 - Cập nhật với username là chỉ chứa khoảng trắng")
-    void should_returnBadRequest_when_usernameContainsOnlyWhitespace() throws Exception {
+    void should_returnBadRequest_when_usernameContainsOnlyWhitespace() {
         assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, "    "))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Tên người dùng rỗng");
@@ -158,16 +144,8 @@ public class UserUsecaseUpdateUsernameTest {
 
     @Test
     @DisplayName("400 - Cập nhật với username quá dài")
-    void should_returnBadRequest_when_usernameExceedsMaxLength() throws Exception {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder str = new StringBuilder();
-
-        for (int i = 0; i < 260; i++) {
-            int index = (int) (Math.random() * characters.length());
-            str.append(characters.charAt(index));
-        }
-
-        String longUsername = str.toString();
+    void should_returnBadRequest_when_usernameExceedsMaxLength() {
+        String longUsername = "a".repeat(255);
 
         assertThatThrownBy(() -> userUsecase.updateUsername(USER_ID, longUsername))
                 .isInstanceOf(BadRequestException.class)
@@ -180,7 +158,7 @@ public class UserUsecaseUpdateUsernameTest {
 
     @Test
     @DisplayName("200 - Cập nhật với username có số")
-    void should_updateUsernameSuccessfully_when_usernameContainsDigits() throws Exception {
+    void should_updateUsernameSuccessfully_when_usernameContainsDigits() {
         String hasNum = "abc123";
 
         UserEntity mockNum = new UserEntity(
@@ -193,42 +171,30 @@ public class UserUsecaseUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
-        CommonUserResponseDTO mockNumCommon = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                hasNum,
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
 
         when(repo.findById(USER_ID))
                 .thenReturn(mockOldUserEntity);
         when(repo.updateField(eq(USER_ID), any(UserUpdateFields.class)))
                 .thenReturn(mockNum);
-        when(mapper.toCommonDTO(mockNum))
-                .thenReturn(mockNumCommon);
 
-        CommonUserResponseDTO result = userUsecase.updateUsername(USER_ID, hasNum);
+        boolean result = userUsecase.updateUsername(USER_ID, hasNum);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isEqualTo(hasNum);
+        assertThat(result).isTrue();
 
         verify(repo, times(1)).findById(anyString());
-        verify(repo, times(1)).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, times(1)).toCommonDTO(any(UserEntity.class));
+        ArgumentCaptor<UserUpdateFields> fieldsCaptor = ArgumentCaptor.forClass(UserUpdateFields.class);
+        verify(repo).updateField(eq(USER_ID), fieldsCaptor.capture());
+        assertThat(fieldsCaptor.getValue().getUsername()).isEqualTo(hasNum);
+        verifyNoInteractions(mapper, mapperCommon, s3Service);
     }
 
     @Test
     @DisplayName("200 - Cập nhật với username có emoji")
-    void should_updateUsernameSuccessfully_when_usernameContainsEmojis() throws Exception {
+    void should_updateUsernameSuccessfully_when_usernameContainsEmojis() {
         String hasEmoji = "Nguyen Van A \uD83D\uDE00";
 
         UserEntity mockEmoji = new UserEntity(
@@ -241,42 +207,30 @@ public class UserUsecaseUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
-        CommonUserResponseDTO mockEmojiCommon = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                hasEmoji,
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
 
         when(repo.findById(USER_ID))
                 .thenReturn(mockOldUserEntity);
         when(repo.updateField(eq(USER_ID), any(UserUpdateFields.class)))
                 .thenReturn(mockEmoji);
-        when(mapper.toCommonDTO(mockEmoji))
-                .thenReturn(mockEmojiCommon);
 
-        CommonUserResponseDTO result = userUsecase.updateUsername(USER_ID, hasEmoji);
+        boolean result = userUsecase.updateUsername(USER_ID, hasEmoji);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isEqualTo(hasEmoji);
+        assertThat(result).isTrue();
 
         verify(repo, times(1)).findById(anyString());
-        verify(repo, times(1)).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, times(1)).toCommonDTO(any(UserEntity.class));
+        ArgumentCaptor<UserUpdateFields> fieldsCaptor = ArgumentCaptor.forClass(UserUpdateFields.class);
+        verify(repo).updateField(eq(USER_ID), fieldsCaptor.capture());
+        assertThat(fieldsCaptor.getValue().getUsername()).isEqualTo(hasEmoji);
+        verifyNoInteractions(mapper, mapperCommon, s3Service);
     }
 
     @Test
     @DisplayName("200 - Cập nhật với username có unicode")
-    void should_updateUsernameSuccessfully_when_usernameContainsUnicodeCharacters() throws Exception {
+    void should_updateUsernameSuccessfully_when_usernameContainsUnicodeCharacters() {
         String hasUnicode = "Nguyễn Văn A";
 
         UserEntity mockUnicode = new UserEntity(
@@ -289,42 +243,30 @@ public class UserUsecaseUpdateUsernameTest {
                 AVATAR_URL,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
-        CommonUserResponseDTO mockUnicodeCommon = new CommonUserResponseDTO(
-                USER_ID,
-                EMAIL,
-                hasUnicode,
-                "ROLE_TEACHER",
-                AVATAR_URL,
-                true,
-                "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
 
         when(repo.findById(USER_ID))
                 .thenReturn(mockOldUserEntity);
         when(repo.updateField(eq(USER_ID), any(UserUpdateFields.class)))
                 .thenReturn(mockUnicode);
-        when(mapper.toCommonDTO(mockUnicode))
-                .thenReturn(mockUnicodeCommon);
 
-        CommonUserResponseDTO result = userUsecase.updateUsername(USER_ID, hasUnicode);
+        boolean result = userUsecase.updateUsername(USER_ID, hasUnicode);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isEqualTo(hasUnicode);
+        assertThat(result).isTrue();
 
         verify(repo, times(1)).findById(anyString());
-        verify(repo, times(1)).updateField(anyString(), any(UserUpdateFields.class));
-        verify(mapper, times(1)).toCommonDTO(any(UserEntity.class));
+        ArgumentCaptor<UserUpdateFields> fieldsCaptor = ArgumentCaptor.forClass(UserUpdateFields.class);
+        verify(repo).updateField(eq(USER_ID), fieldsCaptor.capture());
+        assertThat(fieldsCaptor.getValue().getUsername()).isEqualTo(hasUnicode);
+        verifyNoInteractions(mapper, mapperCommon, s3Service);
     }
 
     @Test
     @DisplayName("500 - Lỗi trong quá trình cập nhật thông tin tài khoản")
-    void should_throwInternalServerError_when_updateAccountFails() throws Exception {
+    void should_throwInternalServerError_when_updateAccountFails() {
         when(repo.findById(USER_ID))
                 .thenReturn(mockOldUserEntity);
         when(repo.updateField(eq(USER_ID), any(UserUpdateFields.class)))

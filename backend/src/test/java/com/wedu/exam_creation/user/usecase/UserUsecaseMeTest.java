@@ -3,7 +3,7 @@ package com.wedu.exam_creation.user.usecase;
 import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
-import com.wedu.exam_creation.notification.service.TelegramNotificationService;
+import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
@@ -15,18 +15,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
-public class UserUsecaseMeTest {
+class UserUsecaseMeTest {
     private static final String USER_ID = "user-123";
     private static final String EMAIL = "user@gmail.com";
     private static final String RAW_AVATAR = "avatars/default-avatar-user.png";
     private static final String PRESIGNED_AVATAR = "https://s3.amazonaws.com/my-pic-presigned.png";
+    private static final Instant CREATED_AT = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant UPDATED_AT = Instant.parse("2026-01-02T00:00:00Z");
 
     @Mock
     private UserRepositoryImpl repo;
@@ -60,8 +62,8 @@ public class UserUsecaseMeTest {
                 RAW_AVATAR,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                CREATED_AT,
+                UPDATED_AT
         );
 
         mockUserRes = new CommonUserResponseDTO(
@@ -72,27 +74,34 @@ public class UserUsecaseMeTest {
                 RAW_AVATAR,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                CREATED_AT,
+                UPDATED_AT
         );
     }
 
     @Test
-    @DisplayName("Case 1: 200 - Chuyển đổi thành công thông tin tài khoản")
-    void success() throws Exception {
-        // Given
+    @DisplayName("Trả về thông tin tài khoản với presigned avatar URL")
+    void should_returnUserWithPresignedAvatar_when_userIsValid() {
         when(mapperCommon.commonAllToCommonDTO(mockUser)).thenReturn(mockUserRes);
         when(s3Service.generatePresignedUrl(RAW_AVATAR)).thenReturn(PRESIGNED_AVATAR);
 
-        // When
-        CommonUserResponseDTO result = userUsecase.getMe(any(CommonUserResponseAllDTO.class));
+        CommonUserResponseDTO result = userUsecase.getMe(mockUser);
 
-        // Then
-        assertThat(result).isNotNull();
+        assertThat(result).isSameAs(mockUserRes);
         assertThat(result.getId()).isEqualTo(USER_ID);
+        assertThat(result.getEmail()).isEqualTo(EMAIL);
+        assertThat(result.getUsername()).isEqualTo(mockUser.getUsername());
+        assertThat(result.getRole()).isEqualTo(mockUser.getRole());
         assertThat(result.getAvatarUrl()).isEqualTo(PRESIGNED_AVATAR);
+        assertThat(result.getIsActive()).isTrue();
+        assertThat(result.getAccountType()).isEqualTo(mockUser.getAccountType());
+        assertThat(result.getCreatedAt()).isEqualTo(CREATED_AT);
+        assertThat(result.getUpdatedAt()).isEqualTo(UPDATED_AT);
+        assertThat(mockUser.getAvatarUrl()).isEqualTo(RAW_AVATAR);
 
-        verify(mapperCommon, times(1)).commonAllToCommonDTO(any(CommonUserResponseAllDTO.class));
-        verify(s3Service, times(1)).generatePresignedUrl(anyString());
+        verify(mapperCommon).commonAllToCommonDTO(same(mockUser));
+        verify(s3Service).generatePresignedUrl(RAW_AVATAR);
+        verifyNoMoreInteractions(mapperCommon, s3Service);
+        verifyNoInteractions(repo, mapper, refreshTokenService, telegramNotificationService);
     }
 }
