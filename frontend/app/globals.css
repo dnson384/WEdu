@@ -25,11 +25,6 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-input::-ms-reveal,
-input::-ms-clear {
-  display: none;
-}
-
 /* HTML: <div class="loader"></div> */
 .loader {
   width: 50px;
@@ -44,7 +39,6 @@ input::-ms-clear {
   mask-composite: subtract;
   animation: l3 1s infinite linear;
 }
-
 @keyframes l3 {
   to {
     transform: rotate(1turn);
@@ -67,7 +61,6 @@ input::-ms-clear {
   mask-composite: subtract;
   animation: l3 1s infinite linear;
 }
-
 @keyframes l3 {
   to {
     transform: rotate(1turn);

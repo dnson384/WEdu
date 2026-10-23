@@ -2,7 +2,7 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 import { DeleteDraftUsecase } from "@/usecases/draft/DeleteDraftUsecase";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
 
 export async function DELETE(
   req: NextRequest,
