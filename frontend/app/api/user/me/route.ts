@@ -1,5 +1,5 @@
 import { GetMeUsecase } from "@/usecases/user/GetMeUsecase";
-import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
+import { UserRepositoryImpl } from "@/infrastructure/repositories/UserRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 

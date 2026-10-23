@@ -1,4 +1,4 @@
-import { UserResponseEntity } from "./user.entity";
+import { UserEntity } from "./user.entity";
 
 export interface LoginPayloadEntity {
   email: string;
@@ -14,7 +14,7 @@ export interface NewUserRequestEntity {
 }
 
 export interface AuthorizedResponseEntity {
-  user: UserResponseEntity;
+  user: UserEntity;
   accessToken: string;
   refreshToken: string;
 }
