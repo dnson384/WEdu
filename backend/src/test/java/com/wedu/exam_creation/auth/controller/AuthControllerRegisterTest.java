@@ -88,19 +88,19 @@ public class AuthControllerRegisterTest {
     @Test
     @DisplayName("200 - Email có ký tự đặc biệt")
     void should_registerSuccessfully_when_emailContainsValidSpecialCharacters() throws Exception {
-        NewUserRequestDTO newUserRequestDTO = new NewUserRequestDTO(
+        NewUserRequestDTO req = new NewUserRequestDTO(
                 "anv_@gmail.com",
                 "Password123@",
                 "Password123@",
                 "Nguyen Van A",
                 "LOCAL"
         );
-        when(authUsecase.register(any(newUserRequestDTO.getClass())))
+        when(authUsecase.register(any(req.getClass())))
                 .thenReturn(mockAuthorizedResponse);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-at"))
@@ -113,7 +113,7 @@ public class AuthControllerRegisterTest {
     @Test
     @DisplayName("400 - Email có ký tự đặc biệt không hợp lệ")
     void should_returnBadRequest_when_emailContainsInvalidSpecialCharacters() throws Exception {
-        NewUserRequestDTO invalidRequest = new NewUserRequestDTO(
+        NewUserRequestDTO req = new NewUserRequestDTO(
                 "anv@@gmail.com",
                 "Password123@",
                 "Password123@",
@@ -123,7 +123,7 @@ public class AuthControllerRegisterTest {
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
 
         verify(authUsecase, times(0)).register(any());
@@ -132,7 +132,7 @@ public class AuthControllerRegisterTest {
     @Test
     @DisplayName("200 - Email có \".\"  hợp lệ")
     void should_registerSuccessfully_when_emailContainsValidDots() throws Exception {
-        NewUserRequestDTO validDotReq = new NewUserRequestDTO(
+        NewUserRequestDTO req = new NewUserRequestDTO(
                 "anv.tlu@gmail.com",
                 "Password123@",
                 "Password123@",
@@ -140,12 +140,12 @@ public class AuthControllerRegisterTest {
                 "LOCAL"
         );
 
-        when(authUsecase.register(any(validDotReq.getClass())))
+        when(authUsecase.register(any(req.getClass())))
                 .thenReturn(mockAuthorizedResponse);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-at"))
@@ -158,7 +158,7 @@ public class AuthControllerRegisterTest {
     @Test
     @DisplayName("400 - Email có \".\"  không hợp lệ\n")
     void should_returnBadRequest_when_emailContainsInvalidDots() throws Exception {
-        NewUserRequestDTO invalidDotRequest = new NewUserRequestDTO(
+        NewUserRequestDTO req = new NewUserRequestDTO(
                 ".anv@gmail.com",
                 "Password123@",
                 "Password123@",
@@ -168,7 +168,7 @@ public class AuthControllerRegisterTest {
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDotRequest)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
 
         verify(authUsecase, times(0)).register(any());
@@ -177,7 +177,7 @@ public class AuthControllerRegisterTest {
     @Test
     @DisplayName("200 - Email viết hoa / thường")
     void should_registerSuccessfully_when_emailHasMixedCase() throws Exception {
-        NewUserRequestDTO upperRequest = new NewUserRequestDTO(
+        NewUserRequestDTO req = new NewUserRequestDTO(
                 "ANV@gmail.com",
                 "Password123@",
                 "Password123@",
@@ -185,12 +185,12 @@ public class AuthControllerRegisterTest {
                 "LOCAL"
         );
 
-        when(authUsecase.register(any(upperRequest.getClass())))
+        when(authUsecase.register(any(req.getClass())))
                 .thenReturn(mockAuthorizedResponse);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(upperRequest)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-at"))

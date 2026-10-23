@@ -11,6 +11,7 @@ import com.wedu.exam_creation.common.exception.ForbiddenException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.common.exception.UnAuthorizedException;
+import com.wedu.exam_creation.passwordResetToken.usecase.PasswordResetTokenService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.security.service.SecurityService;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
@@ -19,10 +20,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -38,6 +40,8 @@ public class AuthUsecaseLoginTest {
     @Mock
     private RefreshTokenService refreshTokenService;
     @Mock
+    private PasswordResetTokenService passwordResetTokenService;
+    @Mock
     private UserService userService;
 
     private AuthUsecase authUsecase;
@@ -48,7 +52,7 @@ public class AuthUsecaseLoginTest {
 
     @BeforeEach
     void setUp() {
-        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, mapperDTO);
+        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, passwordResetTokenService, mapperDTO);
 
         loginRequest = new LoginUserRequestDTO();
         loginRequest.setEmail("anv@gmail.com");
@@ -64,8 +68,8 @@ public class AuthUsecaseLoginTest {
                 "avatars/default-avatar-user.png",
                 true, // isActive
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         userResponseDTO = new UserResponseDTO(
@@ -78,16 +82,16 @@ public class AuthUsecaseLoginTest {
     }
 
     @Test
-    @DisplayName("200 - trả về AT/RT hợp lệ")
-    void login_Success() {
+    @DisplayName("200 - Đăng nhập thành công")
+    void should_returnTokens_when_credentialsAreValid() {
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(activeLocalUser));
         when(securityService.validatePassword("Password123@", "hashed-password")).thenReturn(true);
         when(mapperDTO.toUserResponseDTO(activeLocalUser)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
         when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
-        when(securityService.parseNewRefreshToken("refresh-token"))
-                .thenReturn(mock(NewRTRequestDTO.class));
-        when(refreshTokenService.save(any(NewRTRequestDTO.class))).thenReturn(true);
+        NewRTRequestDTO parsedToken = mock(NewRTRequestDTO.class);
+        when(securityService.parseNewRefreshToken("refresh-token")).thenReturn(parsedToken);
+        when(refreshTokenService.save(parsedToken)).thenReturn(true);
 
         AuthorizedResponseDTO result = authUsecase.login(loginRequest);
 
@@ -98,28 +102,43 @@ public class AuthUsecaseLoginTest {
 
         verify(userService, times(1)).findByEmail("anv@gmail.com");
         verify(securityService, times(1)).validatePassword("Password123@", "hashed-password");
-        verify(refreshTokenService, times(1)).save(any(NewRTRequestDTO.class));
+        verify(securityService).parseNewRefreshToken("refresh-token");
+        verify(refreshTokenService).save(same(parsedToken));
 
+        ArgumentCaptor<ATPayload> atCaptor = ArgumentCaptor.forClass(ATPayload.class);
+        ArgumentCaptor<RTPayload> rtCaptor = ArgumentCaptor.forClass(RTPayload.class);
+        verify(securityService).generateAccessToken(atCaptor.capture());
+        verify(securityService).generateRefreshToken(rtCaptor.capture());
+
+        ATPayload at = atCaptor.getValue();
+        RTPayload rt = rtCaptor.getValue();
+        assertThat(at.getUserId()).isEqualTo(activeLocalUser.getId());
+        assertThat(at.getEmail()).isEqualTo(activeLocalUser.getEmail());
+        assertThat(at.getRole()).isEqualTo(activeLocalUser.getRole());
+        assertThat(rt.getUserId()).isEqualTo(activeLocalUser.getId());
+        assertThat(rt.getEmail()).isEqualTo(activeLocalUser.getEmail());
+        assertThat(rt.getRole()).isEqualTo(activeLocalUser.getRole());
+        assertThat(rt.getJti()).isNotBlank();
+        assertThat(at.getParentJti()).isEqualTo(rt.getJti());
     }
 
 
     @Test
-    @DisplayName("404 - email không tồn tại")
-    void should_returnTokens_when_credentialsAreValid() {
+    @DisplayName("404 - Email không tồn tại")
+    void should_throwNotFound_when_emailDoesNotExist() {
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authUsecase.login(loginRequest))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Tài khoản chưa tồn tại");
 
-        verify(securityService, never()).validatePassword(anyString(), anyString());
-        verify(refreshTokenService, never()).save(any());
+        verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
 
     @Test
-    @DisplayName("401 - tài khoản đăng ký bằng GOOGLE cố gắng đăng nhập bằng LOCAL")
-    void should_returnNotFound_when_emailDoesNotExist() {
+    @DisplayName("401 - Tài khoản đăng ký bằng GOOGLE cố gắng đăng nhập bằng LOCAL")
+    void should_throwUnauthorized_when_loginMethodIsGoogle() {
         CommonUserResponseAllDTO googleUser = new CommonUserResponseAllDTO(
                 "user-456",
                 "anv@gmail.com",
@@ -130,8 +149,8 @@ public class AuthUsecaseLoginTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(googleUser));
 
@@ -139,15 +158,13 @@ public class AuthUsecaseLoginTest {
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("Sai phương thức đăng nhập");
 
-        // Không được check password hay tạo token khi loginMethod sai
-        verify(securityService, never()).validatePassword(anyString(), anyString());
-        verify(securityService, never()).generateAccessToken(any());
+        verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
 
     @Test
     @DisplayName("403 - tài khoản đã bị khóa")
-    void should_returnForbidden_when_googleRegisteredUserLogsInViaLocal() {
+    void should_throwForbidden_when_accountIsLocked() {
         CommonUserResponseAllDTO lockedUser = new CommonUserResponseAllDTO(
                 "user-789",
                 "anv@gmail.com",
@@ -158,8 +175,8 @@ public class AuthUsecaseLoginTest {
                 "avatars/default-avatar-user.png",
                 false,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(lockedUser));
 
@@ -167,13 +184,13 @@ public class AuthUsecaseLoginTest {
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessage("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
 
-        verify(securityService, never()).validatePassword(anyString(), anyString());
+        verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
 
     @Test
     @DisplayName("401 - mật khẩu không đúng")
-    void should_returnUnauthorized_when_accountIsLocked() {
+    void should_throwUnauthorized_when_passwordIsIncorrect() {
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(activeLocalUser));
         when(securityService.validatePassword("Password123@", "hashed-password")).thenReturn(false);
 
@@ -181,14 +198,14 @@ public class AuthUsecaseLoginTest {
                 .isInstanceOf(UnAuthorizedException.class)
                 .hasMessage("Mật khẩu không chính xác");
 
-        verify(mapperDTO, never()).toUserResponseDTO(any());
-        verify(securityService, never()).generateAccessToken(any());
-        verify(refreshTokenService, never()).save(any());
+        verify(securityService).validatePassword("Password123@", "hashed-password");
+        verifyNoMoreInteractions(securityService);
+        verifyNoInteractions(mapperDTO, refreshTokenService);
     }
 
     @Test
     @DisplayName("500 - lưu RT thất bại")
-    void should_returnInternalServerError_when_savingRefreshTokenFails() {
+    void should_throwInternalServer_when_savingRefreshTokenFails() {
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(activeLocalUser));
         when(securityService.validatePassword("Password123@", "hashed-password")).thenReturn(true);
         when(mapperDTO.toUserResponseDTO(activeLocalUser)).thenReturn(userResponseDTO);

@@ -97,7 +97,7 @@ public class AuthControllerLoginTest {
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-access-token"))
@@ -108,7 +108,7 @@ public class AuthControllerLoginTest {
     }
 
     @Test
-    @DisplayName("200 - Email có nhập tự đặc biệt hợp lệ")
+    @DisplayName("200 - Email có nhập ký tự đặc biệt hợp lệ")
     void should_loginSuccessfully_when_emailContainsValidSpecialCharacters() throws Exception {
         LoginUserRequestDTO req = new LoginUserRequestDTO(
                 "anv_@gmail.com",
@@ -120,7 +120,7 @@ public class AuthControllerLoginTest {
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-access-token"))
@@ -159,7 +159,7 @@ public class AuthControllerLoginTest {
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("accessToken"))
                 .andExpect(cookie().value("accessToken", "mock-access-token"))
@@ -254,6 +254,22 @@ public class AuthControllerLoginTest {
     void should_returnBadRequest_when_emailIsEmpty() throws Exception {
         LoginUserRequestDTO req = new LoginUserRequestDTO(
                 "",
+                "Password123@"
+        );
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+
+        verify(authUsecase, times(0)).login(any());
+    }
+
+    @Test
+    @DisplayName("400 - Email null")
+    void should_returnBadRequest_when_emailIsNull() throws Exception {
+        LoginUserRequestDTO req = new LoginUserRequestDTO(
+                null,
                 "Password123@"
         );
 
@@ -503,6 +519,22 @@ public class AuthControllerLoginTest {
         LoginUserRequestDTO req = new LoginUserRequestDTO(
                 "anv@gmail.com",
                 ""
+        );
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+
+        verify(authUsecase, times(0)).login(any());
+    }
+
+    @Test
+    @DisplayName("400 - Mật khẩu null")
+    void should_returnBadRequest_when_passwordIsNull() throws Exception {
+        LoginUserRequestDTO req = new LoginUserRequestDTO(
+                "anv@gmail.com",
+                null
         );
 
         mockMvc.perform(post("/auth/login")
