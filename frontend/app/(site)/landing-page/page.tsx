@@ -48,7 +48,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-5 max-w-7xl">
+          <div className="grid grid-cols-3 gap-5 max-w-6xl">
             <div className="flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition duration-300 ease-in-out">
               <div className="w-12 h-12 bg-blue-100 rounded-md flex items-center justify-center text-blue-500">
                 {icons.generate}
