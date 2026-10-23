@@ -4,7 +4,7 @@ import com.wedu.exam_creation.common.dto.user.mapper.UserCommonDTOMapper;
 import com.wedu.exam_creation.common.dto.user.request.UserUpdateFields;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
-import com.wedu.exam_creation.notification.service.TelegramNotificationService;
+import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -65,8 +65,8 @@ public class UserUsecaseUpdateAvatarTest {
                 OLD_S3KEY,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         mockNewUserEntity = new UserEntity(
@@ -79,8 +79,8 @@ public class UserUsecaseUpdateAvatarTest {
                 NEW_S3KEY,
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
     }
 
@@ -114,8 +114,8 @@ public class UserUsecaseUpdateAvatarTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         when(repo.findById(anyString()))
