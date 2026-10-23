@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { dehydrate, QueryClient, HydrationBoundary } from "@tanstack/react-query";
+import {
+  dehydrate,
+  QueryClient,
+  HydrationBoundary,
+} from "@tanstack/react-query";
 import { headers } from "next/headers";
-import { getMeService } from "@/presentation/services/user.service";
+import { UserService } from "@/presentation/services/UserService";
 import QueryProvider from "@/provider/QueryProvider";
 
 const geistSans = Geist({
@@ -26,16 +30,24 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const queryClient = new QueryClient();
-  const headersList = await headers();
+  const userService = new UserService();
 
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5,
+      },
+    },
+  });
+
+  const headersList = await headers();
   const hasAccountId = headersList.get("x-account-id");
 
   if (hasAccountId) {
     try {
       await queryClient.prefetchQuery({
         queryKey: ["user-profile"],
-        queryFn: async () => getMeService(),
+        queryFn: async () => userService.getMe(),
       });
     } catch (error) {
       console.error("Lỗi prefetch profile từ Spring Boot:", error);
