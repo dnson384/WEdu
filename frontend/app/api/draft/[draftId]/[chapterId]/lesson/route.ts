@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { UpdateDraftEntity } from "@/domain/entities/draft.entity";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
 import { UpdateDraftPayload } from "@/presentation/schemas/draft.schema";
 import UpdateLessonsDraftUsecase from "@/usecases/draft/UpdateLessonsDraftUsecase";
 

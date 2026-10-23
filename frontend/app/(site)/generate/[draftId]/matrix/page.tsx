@@ -4,7 +4,7 @@ import MatrixBlock from "@/presentation/components/Generate/MatrixBlock";
 import NavigationBTN from "@/presentation/components/layout/NavigationBTN";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useMatrix from "@/presentation/hooks/Generate/Child/useMatrix";
 import { transformMatrixToUI } from "@/presentation/utils/transformMatrixToUI";
 import Error from "@/presentation/components/layout/Error";

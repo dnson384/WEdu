@@ -2,7 +2,7 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 
 import GenerateMatrixDetailsUsecase from "@/usecases/draft/GenerateMatrixDetailsUsecase";
-import { DraftRepositoryImpl } from "@/infrastructure/repositories/draftRepositoryImpl";
+import { DraftRepositoryImpl } from "@/infrastructure/repositories/DraftRepositoryImpl";
 
 export async function PUT(
   req: NextRequest,

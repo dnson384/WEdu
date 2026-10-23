@@ -8,7 +8,7 @@ import Error from "@/presentation/components/layout/Error";
 import Loader from "@/presentation/components/layout/Loader";
 import NavBar from "@/presentation/components/layout/Navbar";
 // HOOK
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useSelectLessonPage from "@/presentation/hooks/Generate/Child/useSelectLessonPage";
 import useChapter from "@/presentation/hooks/Generate/useChapter";
 

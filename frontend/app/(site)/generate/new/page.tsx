@@ -1,7 +1,7 @@
 "use client";
 
 import NavBar from "@/presentation/components/layout/Navbar";
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useExamStructure from "@/presentation/hooks/Generate/Child/useExamStructure";
 
 export default function GenerateExam() {

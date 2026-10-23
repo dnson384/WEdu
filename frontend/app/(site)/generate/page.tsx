@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import NavBar from "@/presentation/components/layout/Navbar";
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useAllDraft from "@/presentation/hooks/Draft/useAllDraft";
 import DraftCard from "@/presentation/components/Draft/DraftCard";
 import Loader from "@/presentation/components/layout/Loader";
