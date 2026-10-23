@@ -1,5 +1,5 @@
 import { UpdateAvatarUsecase } from "@/usecases/user/UpdateAvatarUsecase";
-import { UserRepositoryImpl } from "@/infrastructure/repositories/UserRepositoryImpl";
+import { UserRepositoryImpl } from "@/infrastructure/repositories/userRepositoryImpl";
 import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 

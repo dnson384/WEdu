@@ -1,13 +1,13 @@
+import { ChangePasswordEntity } from "../entities/auth.entity";
 import {
+  AuthorizedResponseEntity,
   LoginPayloadEntity,
   NewUserRequestEntity,
-  AuthorizedResponseEntity,
 } from "../entities/auth.entity";
-import { ChangePasswordEntity } from "../entities/auth.entity";
 
 export interface IAuthRepository {
-  register(payload: NewUserRequestEntity): Promise<AuthorizedResponseEntity>;
   login(payload: LoginPayloadEntity): Promise<AuthorizedResponseEntity>;
+  register(payload: NewUserRequestEntity): Promise<AuthorizedResponseEntity>;
   logout(accessToken: string): Promise<boolean>;
   changePassword(
     payload: ChangePasswordEntity,

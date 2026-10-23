@@ -1,15 +1,9 @@
 import axios from "axios";
-import {
-  ChangePasswordPayload,
-  LoginPayload,
-  RegisterPayload,
-  ResetPasswordPayload,
-} from "../schemas/auth.schema";
+import { ChangePasswordPayload, LoginPayload, RegisterPayload, ResetPasswordPayload } from "../schemas/auth.schema";
+
 import { AuthorizedResponseEntity } from "@/domain/entities/auth.entity";
 
 export class AuthService {
-  constructor() {}
-
   async register(payload: RegisterPayload) {
     const { data } = await axios.post<AuthorizedResponseEntity>(
       "/api/auth/register",

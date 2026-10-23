@@ -1,4 +1,6 @@
-import { UserEntity } from "@/domain/entities/user.entity";
+import {
+  UserEntity,
+} from "@/domain/entities/user.entity";
 import { IUserRepository } from "@/domain/repositories/IUserRepository";
 import axios from "axios";
 
@@ -54,6 +56,51 @@ export class UserRepositoryImpl implements IUserRepository {
         },
         headers: {
           Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    return data;
+  }
+
+  public async lockAccount(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    const cookieHeaderParts: string[] = [];
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
+
+    const { data } = await axios.post<boolean>(
+      `${this.baseUrl}/user/lock`,
+      { refreshToken },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Cookie: customCookieHeader,
+        },
+      },
+    );
+
+    return data;
+  }
+  public async deleteAccount(
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    const cookieHeaderParts: string[] = [];
+    cookieHeaderParts.push(`accessToken=${accessToken}`);
+    cookieHeaderParts.push(`refreshToken=${refreshToken}`);
+
+    const customCookieHeader = cookieHeaderParts.join("; ");
+
+    const { data } = await axios.delete<boolean>(
+      `${this.baseUrl}/user/delete`,
+      {
+        headers: {
+          Cookie: customCookieHeader,
         },
       },
     );

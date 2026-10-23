@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { UserEntity } from "@/domain/entities/user.entity";
-import { useMemo } from "react";
 import { UserService } from "@/presentation/services/UserService";
+import { useMemo } from "react";
+import { UserEntity } from "@/domain/entities/user.entity";
 
-export default function useAuth() {
+export const useAuth = () => {
   const userService = useMemo(() => new UserService(), []);
 
   const initialUserData = (): UserEntity => ({
@@ -14,12 +14,11 @@ export default function useAuth() {
     username: "",
     role: "",
     avatarUrl: "",
-    isActived: true,
-    accountType: "",
+    accountType: ""
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["user"],
+    queryKey: ["user-profile"],
     queryFn: async () => userService.getMe(),
     staleTime: 5 * 60 * 1000,
   });
@@ -30,4 +29,4 @@ export default function useAuth() {
     user: user,
     isLoadingUser: isLoading,
   };
-}
+};
