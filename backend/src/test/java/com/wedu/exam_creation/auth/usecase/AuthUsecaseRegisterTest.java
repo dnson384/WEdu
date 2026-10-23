@@ -10,6 +10,7 @@ import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
+import com.wedu.exam_creation.passwordResetToken.usecase.PasswordResetTokenService;
 import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.security.service.SecurityService;
 import com.wedu.exam_creation.user.usecase.UserService;
@@ -21,7 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +39,8 @@ public class AuthUsecaseRegisterTest {
     @Mock
     private RefreshTokenService refreshTokenService;
     @Mock
+    private PasswordResetTokenService passwordResetTokenService;
+    @Mock
     private UserService userService;
 
     private AuthUsecase authUsecase;
@@ -48,7 +51,7 @@ public class AuthUsecaseRegisterTest {
 
     @BeforeEach
     void setUp() {
-        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, mapperDTO);
+        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, passwordResetTokenService, mapperDTO);
 
         newUserRequest = new NewUserRequestDTO(
                 "anv@gmail.com",
@@ -68,8 +71,8 @@ public class AuthUsecaseRegisterTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         userResponseDTO = new UserResponseDTO(
@@ -90,8 +93,8 @@ public class AuthUsecaseRegisterTest {
         when(mapperDTO.toUserResponseDTO(savedEntity)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
         when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
-        when(securityService.parseNewRefreshToken("refresh-token"))
-                .thenReturn(mock(NewRTRequestDTO.class));
+        NewRTRequestDTO parsedToken = mock(NewRTRequestDTO.class);
+        when(securityService.parseNewRefreshToken("refresh-token")).thenReturn(parsedToken);
         when(refreshTokenService.save(any(NewRTRequestDTO.class))).thenReturn(true);
 
         AuthorizedResponseDTO result = authUsecase.register(newUserRequest);
@@ -101,9 +104,6 @@ public class AuthUsecaseRegisterTest {
         assertThat(result.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(result.getUser()).isEqualTo(userResponseDTO);
 
-        verify(securityService, times(1)).hashPassword("Password123@");
-
-
         verify(userService, times(1)).findByEmail("anv@gmail.com");
         verify(securityService, times(1)).hashPassword("Password123@");
 
@@ -112,9 +112,10 @@ public class AuthUsecaseRegisterTest {
         verify(userService, times(1)).createNewUser(requestCaptor.capture(), passwordCaptor.capture());
 
         assertThat(passwordCaptor.getValue()).isEqualTo("hashed-password");
-        assertThat(requestCaptor.getValue().getEmail()).isEqualTo("anv@gmail.com");
+        assertThat(requestCaptor.getValue()).usingRecursiveComparison().isEqualTo(newUserRequest);
+        verify(mapperDTO).toUserResponseDTO(same(savedEntity));
 
-        verify(refreshTokenService, times(1)).save(any(NewRTRequestDTO.class));
+        verifyNoMoreInteractions(userService, securityService, mapperDTO, refreshTokenService);
     }
 
     @Test
@@ -132,10 +133,7 @@ public class AuthUsecaseRegisterTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Mật khẩu xác nhận không trùng khớp");
 
-        // Verify dừng lại NGAY, không có side-effect nào xảy ra
-        verify(securityService, never()).hashPassword(anyString());
-        verify(userService, never()).createNewUser(any(NewUserRequestDTO.class), anyString());
-        verify(refreshTokenService, never()).save(any());
+        verifyNoInteractions(userService, securityService, mapperDTO, refreshTokenService);
     }
 
     @Test
@@ -147,18 +145,25 @@ public class AuthUsecaseRegisterTest {
         when(mapperDTO.toUserResponseDTO(savedEntity)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
         when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
-        when(securityService.parseNewRefreshToken(anyString()))
-                .thenReturn(mock(NewRTRequestDTO.class));
+        NewRTRequestDTO parsedToken = mock(NewRTRequestDTO.class);
+        when(securityService.parseNewRefreshToken("refresh-token")).thenReturn(parsedToken);
         when(refreshTokenService.save(any(NewRTRequestDTO.class))).thenReturn(true);
 
-        authUsecase.register(newUserRequest);
+        AuthorizedResponseDTO result = authUsecase.register(newUserRequest);
+        assertThat(result.getUser()).isSameAs(userResponseDTO);
+        assertThat(result.getAccessToken()).isEqualTo("access-token");
+        assertThat(result.getRefreshToken()).isEqualTo("refresh-token");
 
         ArgumentCaptor<String> passwordCaptor = ArgumentCaptor.forClass(String.class);
-        verify(userService).createNewUser(any(NewUserRequestDTO.class), passwordCaptor.capture());
+        verify(userService).createNewUser(eq(newUserRequest), passwordCaptor.capture());
 
         assertThat(passwordCaptor.getValue())
                 .isNotEqualTo("Password123@")
                 .isEqualTo("hashed-password");
+        verify(userService).findByEmail(newUserRequest.getEmail());
+        verify(securityService).hashPassword(newUserRequest.getPlainPassword());
+        verify(mapperDTO).toUserResponseDTO(same(savedEntity));
+        verifyNoMoreInteractions(userService, securityService, mapperDTO, refreshTokenService);
     }
 
     @Test
@@ -170,10 +175,9 @@ public class AuthUsecaseRegisterTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Tài khoản đã tồn tại");
 
-        // Không được tạo user, hash password, hay sinh token
-        verify(securityService, never()).hashPassword(anyString());
-        verify(userService, never()).createNewUser(any(NewUserRequestDTO.class), anyString());
-        verify(refreshTokenService, never()).save(any());
+        verify(userService).findByEmail(newUserRequest.getEmail());
+        verifyNoMoreInteractions(userService);
+        verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
     @Test
@@ -187,9 +191,12 @@ public class AuthUsecaseRegisterTest {
                 .isInstanceOf(InternalServerException.class)
                 .hasMessage("Lỗi trong quá trình chuyển đổi dữ liệu");
 
-        verify(securityService, never()).generateAccessToken(any());
-        verify(securityService, never()).generateRefreshToken(any());
-        verify(refreshTokenService, never()).save(any());
+        verify(userService).findByEmail(newUserRequest.getEmail());
+        verify(userService).createNewUser(newUserRequest, "hashed-password");
+        verify(securityService).hashPassword(newUserRequest.getPlainPassword());
+        verify(mapperDTO).toUserResponseDTO(same(savedEntity));
+        verifyNoMoreInteractions(userService, securityService, mapperDTO);
+        verifyNoInteractions(refreshTokenService);
     }
 
     @Test
@@ -200,15 +207,19 @@ public class AuthUsecaseRegisterTest {
         when(mapperDTO.toUserResponseDTO(savedEntity)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
         when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
-        when(securityService.parseNewRefreshToken("refresh-token"))
-                .thenReturn(mock(NewRTRequestDTO.class));
+        NewRTRequestDTO parsedToken = mock(NewRTRequestDTO.class);
+        when(securityService.parseNewRefreshToken("refresh-token")).thenReturn(parsedToken);
         when(refreshTokenService.save(any(NewRTRequestDTO.class))).thenReturn(false);
 
         assertThatThrownBy(() -> authUsecase.register(newUserRequest))
                 .isInstanceOf(InternalServerException.class)
                 .hasMessage("Lỗi trong quá trình đăng ký");
 
-        verify(userService, times(1)).createNewUser(any(NewUserRequestDTO.class), anyString());
-        verify(refreshTokenService, times(1)).save(any(NewRTRequestDTO.class));
+        verify(userService).findByEmail(newUserRequest.getEmail());
+        verify(userService).createNewUser(newUserRequest, "hashed-password");
+        verify(securityService).hashPassword(newUserRequest.getPlainPassword());
+        verify(mapperDTO).toUserResponseDTO(same(savedEntity));
+        verifyNoMoreInteractions(userService, securityService, mapperDTO, refreshTokenService);
     }
+
 }
