@@ -7,12 +7,12 @@ import { icons } from "@/presentation/common/icons";
 import NavBar from "@/presentation/components/layout/Navbar";
 import Error from "@/presentation/components/layout/Error";
 
-import { useAuth } from "@/presentation/hooks/Auth/useAuth";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 import useUpdateAvatar from "@/presentation/hooks/Me/useUpdateAvatar";
 import useUpdateUsername from "@/presentation/hooks/Me/useUpdateUsername";
 import useChangePassword from "@/presentation/hooks/Me/useChangePassword";
 import Success from "@/presentation/components/layout/Success";
-import useAccount from "@/presentation/hooks/Me/useAccount";
+import Loader from "@/presentation/components/layout/Loader";
 
 const BLANK_IMAGE =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
@@ -54,40 +54,35 @@ export default function Me() {
     handleChangePasswordSubmit,
   } = useChangePassword();
 
-  const {
-    accountError,
-    accountSuccess,
-    handleLockAccountClick,
-    handleDeleteAccountClick,
-  } = useAccount();
-
   return (
     <>
       {isLoadingUser ? (
-        <div className="h-screen mx-auto my-15 px-20 flex justify-center items-center">
-          <div className="loader"></div>
-        </div>
+        <Loader />
       ) : (
-        <>
+        <div className="min-h-screen bg-blue-50/50">
           <NavBar avatarUrl={user.avatarUrl} username={user.username} />
-          <main className="lg:ml-60 py-15 px-20 mx-auto bg-blue-500/5 min-h-screen relative">
-            <div className="fixed inset-0 h-fit z-50 top-10 flex justify-center">
-              {updateAvatarError && <Error message={updateAvatarError} />}
-              {updateMeError && <Error message={updateMeError} />}
-              {changePasswordError && <Error message={changePasswordError} />}
-              {accountError && <Error message={accountError} />}
 
-              {updateAvatarSuccess && <Success message={updateAvatarSuccess} />}
-              {updateMeSuccess && <Success message={updateMeSuccess} />}
-              {changePasswordSuccess && (
-                <Success message={changePasswordSuccess} />
-              )}
-              {accountSuccess && <Success message={accountSuccess} />}
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-md px-4 pointer-events-none">
+            {updateAvatarError && <Error message={updateAvatarError} />}
+            {updateMeError && <Error message={updateMeError} />}
+            {changePasswordError && <Error message={changePasswordError} />}
+            {updateAvatarSuccess && <Success message={updateAvatarSuccess} />}
+            {updateMeSuccess && <Success message={updateMeSuccess} />}
+            {changePasswordSuccess && (
+              <Success message={changePasswordSuccess} />
+            )}
+          </div>
+
+          <main className="lg:ml-60 py-15 px-5 sm:px-10 md:px-15 lg:px-20 space-y-6">
+            {/* Header Trang */}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                Cài đặt tài khoản
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Quản lý thông tin hồ sơ cá nhân và bảo mật tài khoản của bạn
+              </p>
             </div>
-
-            <h2 className="text-2xl text-blue-500 font-bold">
-              Thông tin cá nhân
-            </h2>
 
             <div
               id="user-data"
@@ -298,67 +293,16 @@ export default function Me() {
 
                     <button
                       type="submit"
-                      className="w-lg bg-blue-500 text-white font-bold py-2.5 rounded-lg hover:bg-blue-600"
+                      className="w-lg bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700"
                     >
                       Cập nhật mật khẩu
                     </button>
                   </form>
                 </div>
               </section>
-
-              <section>
-                <div className="bg-white rounded-2xl border border-gray-200 py-6 shadow-sm">
-                  <div className="border-b border-gray-300">
-                    <h3 className="font-bold pb-6 px-8">Cài đặt tài khoản</h3>
-                  </div>
-
-                  <div className="pt-6 px-8 flex flex-col gap-3">
-                    {/* Khoá tài khoản */}
-                    <div className="flex justify-between items-center gap-5">
-                      <div>
-                        <h4 className="">Tạm khóa tài khoản</h4>
-                        <p className="text-sm text-gray-500">
-                          Tài khoản sẽ bị ẩn và bạn không thể đăng nhập cho đến
-                          khi mở lại. Dữ liệu của bạn vẫn được giữ nguyên.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleLockAccountClick}
-                        className="min-w-30 py-2.5 rounded-xl border border-gray-300 transition-colors hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600"
-                      >
-                        Tạm khoá
-                      </button>
-                    </div>
-
-                    {/* Xoá tài khoản */}
-                    <div className="flex justify-between items-center gap-5">
-                      <div>
-                        <h4 className="text-red-500">
-                          Xóa tài khoản vĩnh viễn
-                        </h4>
-                        <p className="text-sm text-gray-500">
-                          Hành động này không thể hoàn tác. Toàn bộ dữ liệu đề
-                          thi, ngân hàng câu hỏi và thông tin tài khoản sẽ bị
-                          xóa hoàn toàn.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleDeleteAccountClick}
-                        className="min-w-40 py-2.5 rounded-xl border border-red-300 bg-red-50 text-red-500 transition-colors hover:bg-red-100"
-                      >
-                        Xoá tài khoản
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </section>
             </div>
           </main>
-        </>
+        </div>
       )}
     </>
   );
