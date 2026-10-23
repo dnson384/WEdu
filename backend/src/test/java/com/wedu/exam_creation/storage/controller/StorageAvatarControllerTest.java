@@ -25,7 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,8 +76,8 @@ public class StorageAvatarControllerTest {
                 "avatars/default-avatar-user.png",
                 true,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         file = new MockMultipartFile(
@@ -100,82 +100,82 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(file, "avatars");
+        verify(s3Service, times(1)).uploadFile(file, "avatars", 5);
     }
 
     @Test
     @DisplayName("400 - không có Authentication")
     void should_returnBadRequest_when_notAuthenticated() throws Exception {
         // When
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
         // Then
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
     @DisplayName("400 - Header Authorization rỗng")
     void should_returnBadRequest_when_authorizationIsEmpty() throws Exception {
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
     @DisplayName("400 - Authorization thiếu \"Bearer \" prefix")
     void should_returnBadRequest_when_authorizationIsMissing() throws Exception {
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", VALID_AT)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
     @DisplayName("400 - Authorization chỉ có \"Bearer\"")
     void should_returnBadRequest_when_authorizationHeaderContainsOnlyBearer() throws Exception {
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
     @DisplayName("401 - Authorization có AT rỗng")
     void should_returnUnauthorized_when_accessTokenIsEmpty() throws Exception {
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer ")
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Không có AT"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -184,14 +184,14 @@ public class StorageAvatarControllerTest {
         doThrow(new UnAuthorizedException("Cấu trúc Access Token không hợp lệ"))
                 .when(jwtTokenProvider).validateAccessToken(INVALID_AT);
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + INVALID_AT)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Cấu trúc Access Token không hợp lệ"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -202,14 +202,14 @@ public class StorageAvatarControllerTest {
         doThrow(new UnAuthorizedException("Access Token đã hết hạn"))
                 .when(jwtTokenProvider).validateAccessToken(expiredAT);
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + expiredAT)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Access Token đã hết hạn"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -220,14 +220,14 @@ public class StorageAvatarControllerTest {
         doThrow(new UnAuthorizedException("Chữ ký Access Token không chính xác"))
                 .when(jwtTokenProvider).validateAccessToken(editedAT);
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + editedAT)
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Chữ ký Access Token không chính xác"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -242,14 +242,14 @@ public class StorageAvatarControllerTest {
         when(customUserDetailsService.loadUserByUsername("notexisted@gmail.com"))
                 .thenThrow(new UsernameNotFoundException("Tài khoản chưa tồn tại"));
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("message").value("Tài khoản chưa tồn tại"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -265,8 +265,8 @@ public class StorageAvatarControllerTest {
                 "avatars/userA.png",
                 false,
                 "FREE",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                Instant.now(),
+                Instant.now()
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);
@@ -278,14 +278,14 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername("usera@gmail.com")).thenReturn(principal);
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("message").value("Tài khoản đã bị khóa"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -301,13 +301,13 @@ public class StorageAvatarControllerTest {
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
 
         // When
-        mockMvc.perform(get("/storage/upload-avatar")
+        mockMvc.perform(get("/storage/avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("message").value("Phương thức HTTP không được hỗ trợ"));
 
-        verify(s3Service, never()).uploadFile(file, "avatars");
+        verify(s3Service, never()).uploadFile(file, "avatars", 5);
     }
 
     @Test
@@ -322,18 +322,18 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(eq(file), eq("avatars")))
+        when(s3Service.uploadFile(eq(file), eq("avatars"), eq(5)))
                 .thenThrow(new IOException("S3 connection timeout"));
 
         // When & Then
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(file)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Upload avatar thất bại: S3 connection timeout"));
 
-        verify(s3Service, times(1)).uploadFile(any(), anyString());
+        verify(s3Service, times(1)).uploadFile(any(), anyString(), eq(5));
     }
 
 
@@ -356,18 +356,18 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: Đầu vào là file trống"));
 
         // When & Then
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(emptyFile)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: Đầu vào là file trống"));
 
-        verify(s3Service, times(1)).uploadFile(emptyFile, "avatars");
+        verify(s3Service, times(1)).uploadFile(emptyFile, "avatars", 5);
     }
 
     @Test
@@ -390,18 +390,18 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: File lớn hơn 5MB"));
 
         // When & Then
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(moreThan5MB)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: File lớn hơn 5MB"));
 
-        verify(s3Service, times(1)).uploadFile(moreThan5MB, "avatars");
+        verify(s3Service, times(1)).uploadFile(moreThan5MB, "avatars", 5);
     }
 
     @Test
@@ -424,18 +424,18 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
         // When & Then
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(exact5MB)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(exact5MB, "avatars");
+        verify(s3Service, times(1)).uploadFile(exact5MB, "avatars", 5);
     }
 
     @Test
@@ -459,17 +459,17 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: File không đúng định dạng"));
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(fakeImageFile)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: File không đúng định dạng"));
 
-        verify(s3Service, times(1)).uploadFile(fakeImageFile, "avatars");
+        verify(s3Service, times(1)).uploadFile(fakeImageFile, "avatars", 5);
     }
 
     @Test
@@ -491,17 +491,17 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars")))
+        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
-        mockMvc.perform(multipart("/storage/upload-avatar")
+        mockMvc.perform(multipart("/storage/avatar")
                         .file(strangeExtensionFile)
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(strangeExtensionFile, "avatars");
+        verify(s3Service, times(1)).uploadFile(strangeExtensionFile, "avatars", 5);
     }
 
     @Test
@@ -516,12 +516,12 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
 
-        mockMvc.perform(post("/storage/upload-avatar")
+        mockMvc.perform(post("/storage/avatar")
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Thiếu file đầu vào"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString());
+        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
     }
 }

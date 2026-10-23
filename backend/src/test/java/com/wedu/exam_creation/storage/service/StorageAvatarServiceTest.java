@@ -66,7 +66,7 @@ public class StorageAvatarServiceTest {
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
 
-        String s3Key = s3Service.uploadFile(validFile, "avatars");
+        String s3Key = s3Service.uploadFile(validFile, "avatars", 5);
 
         assertNotNull(s3Key);
         assertTrue(s3Key.startsWith("avatars/"));
@@ -86,7 +86,7 @@ public class StorageAvatarServiceTest {
                 new byte[0]
         );
 
-        assertThatThrownBy(() -> s3Service.uploadFile(emptyFile, "avatars"))
+        assertThatThrownBy(() -> s3Service.uploadFile(emptyFile, "avatars", 5))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: Đầu vào là file trống");
 
@@ -105,7 +105,7 @@ public class StorageAvatarServiceTest {
                 new byte[largeSize]
         );
 
-        assertThatThrownBy(() -> s3Service.uploadFile(moreThan5MB, "avatars"))
+        assertThatThrownBy(() -> s3Service.uploadFile(moreThan5MB, "avatars", 5))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: File lớn hơn 5MB");
 
@@ -128,7 +128,7 @@ public class StorageAvatarServiceTest {
         when(tika.detect(any(InputStream.class)))
                 .thenReturn("application/x-msdownload");
 
-        assertThatThrownBy(() -> s3Service.uploadFile(fakeImageFile, "avatars"))
+        assertThatThrownBy(() -> s3Service.uploadFile(fakeImageFile, "avatars", 5))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Lỗi: File không đúng định dạng");
 
@@ -151,7 +151,7 @@ public class StorageAvatarServiceTest {
         when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenReturn(PutObjectResponse.builder().build());
 
-        String s3Key = s3Service.uploadFile(strangeExtensionFile, "avatars");
+        String s3Key = s3Service.uploadFile(strangeExtensionFile, "avatars", 5);
 
         assertNotNull(s3Key);
         assertTrue(s3Key.startsWith("avatars/"));
@@ -170,7 +170,7 @@ public class StorageAvatarServiceTest {
                 .thenThrow(new RuntimeException("S3 Connection Refused"));
 
         assertThrows(RuntimeException.class, () -> {
-            s3Service.uploadFile(validFile, "avatars");
+            s3Service.uploadFile(validFile, "avatars", 5);
         });
     }
 }
