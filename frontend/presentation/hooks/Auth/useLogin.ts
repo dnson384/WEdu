@@ -4,6 +4,8 @@ import { isAxiosError } from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { UserService } from "@/presentation/services/UserService";
 
 interface FormData {
   email: string;
@@ -12,7 +14,9 @@ interface FormData {
 
 export default function useLogin() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const authService = useMemo(() => new AuthService(), []);
+  const userService = useMemo(() => new UserService(), []);
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -54,7 +58,15 @@ export default function useLogin() {
     try {
       const authorized = await authService.login(payload);
       if (authorized) {
-        router.replace("/");
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        const user = await queryClient.fetchQuery({
+          queryKey: ["user"],
+          queryFn: () => userService.getMe(),
+          staleTime: 0,
+        });
+        router.replace(user.role === "ROLE_MODERATOR" ? "/moderator/question-files" : "/");
+        router.refresh();
       }
     } catch (err) {
       if (isAxiosError(err)) {

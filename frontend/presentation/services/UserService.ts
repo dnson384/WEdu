@@ -1,10 +1,11 @@
 import axios from "axios";
+import { UserEntity } from "@/domain/entities/user.entity";
 
 export class UserService {
   constructor() {}
 
-  async getMe() {
-    const { data } = await axios.get("/api/user/me");
+  async getMe(): Promise<UserEntity> {
+    const { data } = await axios.get<UserEntity>("/api/user/me");
     return data;
   }
 

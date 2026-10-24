@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { icons } from "@/presentation/common/icons";
 import NavBar from "@/presentation/components/layout/Navbar";
@@ -11,6 +13,16 @@ import DraftCard from "@/presentation/components/Draft/DraftCard";
 import Loader from "@/presentation/components/layout/Loader";
 
 export default function Home() {
+  const { user, isLoadingUser } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (user.role === "ROLE_MODERATOR") router.replace("/moderator/question-files");
+  }, [user.role, router]);
+  if (isLoadingUser || user.role === "ROLE_MODERATOR") return <Loader />;
+  return <TeacherHome />;
+}
+
+function TeacherHome() {
   const { user, isLoadingUser } = useAuth();
 
   const {

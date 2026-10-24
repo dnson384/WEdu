@@ -16,12 +16,11 @@ export class StorageRepositoryImpl implements IStorageRepository {
     accessToken: string,
   ): Promise<string> {
     const { data } = await axios.post<string>(
-      `${this.baseUrl}/storage/question-bank`,
+      `${this.baseUrl}/storage/question-file`,
       formData,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data",
         },
       },
     );

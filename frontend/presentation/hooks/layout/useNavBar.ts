@@ -3,13 +3,14 @@ import { AuthService } from "@/presentation/services/AuthService";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function useNavBar() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const authService = useMemo(() => new AuthService(), []);
 
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
-  const [isLoggedOut, setIsLoggedOut] = useState<boolean>(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
 
   const userSectionRef = useRef<HTMLDivElement>(null);
@@ -27,7 +28,10 @@ export default function useNavBar() {
     try {
       const data = await authService.logout();
       if (data) {
-        setIsLoggedOut(true);
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        router.replace("/auth/login");
+        router.refresh();
       } else {
         setIsLoggingOut(false);
       }
@@ -83,18 +87,6 @@ export default function useNavBar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserMenuOpen]);
-
-  useEffect(() => {
-    if (!isLoggedOut) return;
-
-    const timer = setTimeout(() => {
-      setIsLoggingOut(false);
-      router.replace("/auth/login");
-      router.refresh();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [isLoggedOut, router]);
 
   return {
     isLoggingOut,
