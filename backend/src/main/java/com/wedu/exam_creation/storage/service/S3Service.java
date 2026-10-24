@@ -4,6 +4,7 @@ import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -124,18 +127,25 @@ public class S3Service {
         }
     }
 
-    public List<S3ObjectInfo> listFiles(String prefix) {
+    public List<S3ObjectInfo> listQuestionFiles(String prefix) {
         ListObjectsV2Request request = ListObjectsV2Request.builder()
                 .bucket(bucketName)
                 .prefix(prefix + "/")
                 .build();
 
-        ListObjectsV2Response response = s3Client.listObjectsV2(request);
-
-        return response.contents().stream()
-                .filter(obj -> !obj.key().endsWith("/")) // bỏ "thư mục" rỗng
-                .map(this::toS3ObjectInfo)
-                .toList();
+        List<S3ObjectInfo> files = new ArrayList<>();
+        ListObjectsV2Response response;
+        do {
+            response = s3Client.listObjectsV2(request);
+            response.contents().stream()
+                    .filter(obj -> !obj.key().endsWith("/"))
+                    .map(this::toS3ObjectInfo)
+                    .forEach(files::add);
+            request = request.toBuilder()
+                    .continuationToken(response.nextContinuationToken())
+                    .build();
+        } while (Boolean.TRUE.equals(response.isTruncated()));
+        return files;
     }
 
     private S3ObjectInfo toS3ObjectInfo(S3Object obj) {
@@ -148,7 +158,20 @@ public class S3Service {
                 fileName,
                 obj.size(),
                 obj.lastModified(),
-                generatePresignedUrl(obj.key())
+                generateDownloadUrl(obj.key(), fileName)
         );
+    }
+
+    private String generateDownloadUrl(String objectKey, String fileName) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .responseContentDisposition(ContentDisposition.attachment()
+                        .filename(fileName, StandardCharsets.UTF_8).build().toString())
+                .build();
+        return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(60))
+                .getObjectRequest(request)
+                .build()).url().toString();
     }
 }
