@@ -100,7 +100,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
         mockMvc.perform(multipart("/storage/avatar")
@@ -110,7 +110,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(file, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(file, "avatars", 5);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
         // Then
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -162,7 +162,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Header Authorization sai định dạng"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Không có AT"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -191,7 +191,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Cấu trúc Access Token không hợp lệ"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -209,7 +209,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Access Token đã hết hạn"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -227,7 +227,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("message").value("Chữ ký Access Token không chính xác"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -249,7 +249,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("message").value("Tài khoản chưa tồn tại"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("message").value("Tài khoản đã bị khóa"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 
     @Test
@@ -307,7 +307,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("message").value("Phương thức HTTP không được hỗ trợ"));
 
-        verify(s3Service, never()).uploadFile(file, "avatars", 5);
+        verify(s3Service, never()).uploadImageFile(file, "avatars", 5);
     }
 
     @Test
@@ -322,7 +322,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(eq(file), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(eq(file), eq("avatars"), eq(5)))
                 .thenThrow(new IOException("S3 connection timeout"));
 
         // When & Then
@@ -331,9 +331,9 @@ public class StorageAvatarControllerTest {
                         .header("Authorization", "Bearer " + VALID_AT)
                 )
                 .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Upload avatar thất bại: S3 connection timeout"));
+                .andExpect(content().string("Upload avatar thất bại"));
 
-        verify(s3Service, times(1)).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, times(1)).uploadImageFile(any(), anyString(), eq(5));
     }
 
 
@@ -356,7 +356,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: Đầu vào là file trống"));
 
         // When & Then
@@ -367,7 +367,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: Đầu vào là file trống"));
 
-        verify(s3Service, times(1)).uploadFile(emptyFile, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(emptyFile, "avatars", 5);
     }
 
     @Test
@@ -390,7 +390,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: File lớn hơn 5MB"));
 
         // When & Then
@@ -401,7 +401,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: File lớn hơn 5MB"));
 
-        verify(s3Service, times(1)).uploadFile(moreThan5MB, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(moreThan5MB, "avatars", 5);
     }
 
     @Test
@@ -424,7 +424,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
         // When & Then
@@ -435,7 +435,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(exact5MB, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(exact5MB, "avatars", 5);
     }
 
     @Test
@@ -459,7 +459,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenThrow(new BadRequestException("Lỗi: File không đúng định dạng"));
 
         mockMvc.perform(multipart("/storage/avatar")
@@ -469,7 +469,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Lỗi: File không đúng định dạng"));
 
-        verify(s3Service, times(1)).uploadFile(fakeImageFile, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(fakeImageFile, "avatars", 5);
     }
 
     @Test
@@ -491,7 +491,7 @@ public class StorageAvatarControllerTest {
         when(jwtTokenProvider.getPayloadFromAccessToken(VALID_AT)).thenReturn(payload);
         when(customUserDetailsService.loadUserByUsername(EMAIL)).thenReturn(principal);
         // 2. Use case
-        when(s3Service.uploadFile(any(), eq("avatars"), eq(5)))
+        when(s3Service.uploadImageFile(any(), eq("avatars"), eq(5)))
                 .thenReturn("avatars/avatar-uuid.jpg");
 
         mockMvc.perform(multipart("/storage/avatar")
@@ -501,7 +501,7 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("avatars/avatar-uuid.jpg"));
 
-        verify(s3Service, times(1)).uploadFile(strangeExtensionFile, "avatars", 5);
+        verify(s3Service, times(1)).uploadImageFile(strangeExtensionFile, "avatars", 5);
     }
 
     @Test
@@ -522,6 +522,6 @@ public class StorageAvatarControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("message").value("Thiếu file đầu vào"));
 
-        verify(s3Service, never()).uploadFile(any(), anyString(), eq(5));
+        verify(s3Service, never()).uploadImageFile(any(), anyString(), eq(5));
     }
 }
