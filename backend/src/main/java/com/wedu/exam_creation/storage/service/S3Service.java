@@ -15,15 +15,24 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.text.Normalizer;
 import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
 
 @Service
 public class S3Service {
+    private static final String DOCX_CONTENT_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    private static final Duration URL_EXPIRATION = Duration.ofMinutes(60);
     private final Tika tika = new Tika();
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -39,16 +48,12 @@ public class S3Service {
         this.bucketName = bucketName;
     }
 
-    public String uploadFile(MultipartFile file, String folderName, Integer vol) throws IOException {
-        if (file.isEmpty()) {
-            throw new BadRequestException("Lỗi: Đầu vào là file trống");
+    public String uploadImageFile(MultipartFile file, String folderName, Integer maxSizeMb) throws IOException {
+        validateFileSize(file, maxSizeMb);
+        String detectedType;
+        try (InputStream input = file.getInputStream()) {
+            detectedType = tika.detect(input);
         }
-
-        if (file.getSize() > (long) vol * 1024 * 1024) {
-            throw new BadRequestException("Lỗi: File lớn hơn " + vol + "MB");
-        }
-
-        String detectedType = tika.detect(file.getInputStream());
         if (!ALLOWED_MIME_TYPES.contains(detectedType)) {
             throw new BadRequestException("Lỗi: File không đúng định dạng");
         }
@@ -60,16 +65,90 @@ public class S3Service {
         }
 
         String fileName = UUID.randomUUID() + extension;
-        String s3Key = folderName + "/" + fileName;
+        return uploadMultipartFile(file, folderName, fileName, detectedType);
+    }
 
+    public String updateDocumentFile(MultipartFile file, String folderName, Integer maxSizeMb,
+                                     String email) throws IOException {
+        validateFileSize(file, maxSizeMb);
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || !originalName.toLowerCase(Locale.ROOT).endsWith(".docx")
+                || !isWordDocument(file)) {
+            throw new BadRequestException("Lỗi: Chỉ chấp nhận tài liệu Word (.docx)");
+        }
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Lỗi: Thiếu email người tải lên");
+        }
+        return uploadMultipartFile(file, folderName,
+                email + "-" + normalizeDocumentFileName(originalName), DOCX_CONTENT_TYPE);
+    }
+
+    private void validateFileSize(MultipartFile file, Integer maxSizeMb) {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("Lỗi: Đầu vào là file trống");
+        }
+        if (maxSizeMb == null || maxSizeMb <= 0) {
+            throw new BadRequestException("Lỗi: Giới hạn dung lượng không hợp lệ");
+        }
+        if (file.getSize() > (long) maxSizeMb * 1024 * 1024) {
+            throw new BadRequestException("Lỗi: File lớn hơn " + maxSizeMb + "MB");
+        }
+    }
+
+    private boolean isWordDocument(MultipartFile file) throws IOException {
+        // Tika core may report DOCX as ZIP; check the Word package entries.
+        boolean hasContentTypes = false;
+        boolean hasDocument = false;
+        try (ZipInputStream zip = new ZipInputStream(file.getInputStream())) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    hasContentTypes |= "[Content_Types].xml".equals(entry.getName());
+                    hasDocument |= "word/document.xml".equals(entry.getName());
+                }
+                if (hasContentTypes && hasDocument) {
+                    return true;
+                }
+            }
+        } catch (ZipException e) {
+            return false;
+        }
+        return false;
+    }
+
+    private String normalizeDocumentFileName(String originalName) {
+        String baseName = originalName.substring(
+                Math.max(originalName.lastIndexOf('/'), originalName.lastIndexOf('\\')) + 1);
+        baseName = baseName.substring(0, baseName.lastIndexOf('.'));
+        String asciiName = Normalizer.normalize(baseName, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "").replace('đ', 'd').replace('Đ', 'D')
+                .replaceAll("([A-Z])([A-Z][a-z])", "$1 $2")
+                .replaceAll("([a-z0-9])([A-Z])", "$1 $2");
+        StringBuilder name = new StringBuilder();
+        for (String word : asciiName.split("[^A-Za-z0-9]+")) {
+            if (!word.isEmpty()) {
+                name.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1).toLowerCase(Locale.ROOT));
+            }
+        }
+        if (name.isEmpty()) {
+            throw new BadRequestException("Lỗi: Tên tài liệu phải chứa chữ cái Latin hoặc chữ số");
+        }
+        return name + ".docx";
+    }
+
+    private String uploadMultipartFile(MultipartFile file, String folderName, String fileName,
+                                       String contentType) throws IOException {
+        String s3Key = folderName + "/" + fileName;
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(s3Key)
-                .contentType(file.getContentType())
+                .contentType(contentType)
                 .build();
 
-        s3Client.putObject(putObjectRequest,
-                RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        try (InputStream input = file.getInputStream()) {
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(input, file.getSize()));
+        }
 
         return s3Key;
     }
@@ -98,33 +177,15 @@ public class S3Service {
                 .key(objectKey)
                 .build();
 
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(60))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        return s3Presigner.presignGetObject(presignRequest).url().toString();
+        return presign(getObjectRequest);
     }
 
     public void deleteFile(String objectKey) {
         if (objectKey == null || objectKey.trim().isEmpty()) {
-            System.out.println("Không có gì để xóa.");
             return;
         }
 
-        try {
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
-                    .build();
-
-            s3Client.deleteObject(deleteObjectRequest);
-            System.out.println("Đã xóa thành công file: " + objectKey);
-
-        } catch (Exception e) {
-            System.err.println("Lỗi khi xóa file trên S3: " + e.getMessage());
-            throw e;
-        }
+        s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(objectKey).build());
     }
 
     public List<S3ObjectInfo> listQuestionFiles(String prefix) {
@@ -169,8 +230,12 @@ public class S3Service {
                 .responseContentDisposition(ContentDisposition.attachment()
                         .filename(fileName, StandardCharsets.UTF_8).build().toString())
                 .build();
+        return presign(request);
+    }
+
+    private String presign(GetObjectRequest request) {
         return s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(60))
+                .signatureDuration(URL_EXPIRATION)
                 .getObjectRequest(request)
                 .build()).url().toString();
     }
