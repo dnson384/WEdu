@@ -188,6 +188,8 @@ Symbols mới cho xóa tệp: `ModeratorController.deleteQuestionFile(String key
 
 ### Backend `storage`
 
+Cập nhật 2026-10-25: [S3Service.updateDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) gọi helper private mới `uploadUniqueDocumentFile(MultipartFile, String folderName, String fileName)`. Helper thử tên chuẩn hóa rồi `(1)`, `(2)`… bằng `PutObjectRequest.ifNoneMatch("*")`; 412 chuyển tên, 409 retry có giới hạn, trả key đã ghi. `uploadMultipartFile` vẫn phục vụ ảnh. [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java) bổ sung kiểm tra giữ nội dung cũ, gap hậu tố, upload đồng thời nhiều instance, stream retry và phân biệt lỗi S3.
+
 | Layer / thư mục | Symbols / source |
 | --- | --- |
 | `controller` | [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java) |

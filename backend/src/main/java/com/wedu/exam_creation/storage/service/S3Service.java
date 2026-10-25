@@ -33,6 +33,7 @@ public class S3Service {
     private static final String DOCX_CONTENT_TYPE =
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final Duration URL_EXPIRATION = Duration.ofMinutes(60);
+    private static final int MAX_DOCUMENT_CONFLICT_RETRIES = 3;
     private final Tika tika = new Tika();
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -79,8 +80,41 @@ public class S3Service {
         if (email == null || email.isBlank()) {
             throw new BadRequestException("Lỗi: Thiếu email người tải lên");
         }
-        return uploadMultipartFile(file, folderName,
-                email + "-" + normalizeDocumentFileName(originalName), DOCX_CONTENT_TYPE);
+        return uploadUniqueDocumentFile(file, folderName,
+                email + "-" + normalizeDocumentFileName(originalName));
+    }
+
+    private String uploadUniqueDocumentFile(MultipartFile file, String folderName,
+                                            String fileName) throws IOException {
+        String baseName = fileName.substring(0, fileName.length() - ".docx".length());
+        long copyNumber = 0;
+        int conflictRetries = 0;
+        while (true) {
+            String suffix = copyNumber == 0 ? "" : "(" + copyNumber + ")";
+            String key = folderName + "/" + baseName + suffix + ".docx";
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(DOCX_CONTENT_TYPE)
+                    .ifNoneMatch("*")
+                    .build();
+
+            // Each attempt needs a fresh stream, including after S3 consumes a failed PUT.
+            try (InputStream input = file.getInputStream()) {
+                s3Client.putObject(request, RequestBody.fromInputStream(input, file.getSize()));
+                return key;
+            } catch (S3Exception e) {
+                if (e.statusCode() == 412) {
+                    // The conditional PUT, rather than a separate existence check, claims the name.
+                    copyNumber++;
+                    conflictRetries = 0;
+                } else if (e.statusCode() == 409 && conflictRetries < MAX_DOCUMENT_CONFLICT_RETRIES) {
+                    conflictRetries++;
+                } else {
+                    throw e;
+                }
+            }
+        }
     }
 
     private void validateFileSize(MultipartFile file, Integer maxSizeMb) {
