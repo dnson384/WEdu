@@ -35,16 +35,37 @@ public class ModeratorUsecase {
     }
 
     public void deleteQuestionFile(String key) {
+        validateQuestionFileKey(key);
+        try {
+            s3Service.deleteFile(key);
+        } catch (software.amazon.awssdk.core.exception.SdkException e) {
+            throw new InternalServerException("Không thể xóa tệp tin câu hỏi. Vui lòng thử lại");
+        }
+    }
+
+    private void validateQuestionFileKey(String key) {
         if (key == null || key.isBlank() || !key.startsWith("question-files/")
                 || key.endsWith("/")
                 || java.util.Arrays.stream(key.split("/", -1))
                         .anyMatch(segment -> segment.equals(".") || segment.equals(".."))) {
             throw new BadRequestException("Tệp tin câu hỏi không hợp lệ");
         }
+    }
+
+    public byte[] getQuestionFileContent(String key) {
+        validateQuestionFileKey(key);
+        if (!key.toLowerCase(java.util.Locale.ROOT).endsWith(".docx")) {
+            throw new BadRequestException("Chỉ hỗ trợ xem trước tệp DOCX");
+        }
         try {
-            s3Service.deleteFile(key);
+            return s3Service.readDocumentFile(key);
+        } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
+            if (e.statusCode() == 404) {
+                throw new com.wedu.exam_creation.common.exception.NotFoundException("Tệp tin không còn tồn tại");
+            }
+            throw new InternalServerException("Không thể tải nội dung tệp tin câu hỏi");
         } catch (software.amazon.awssdk.core.exception.SdkException e) {
-            throw new InternalServerException("Không thể xóa tệp tin câu hỏi. Vui lòng thử lại");
+            throw new InternalServerException("Không thể tải nội dung tệp tin câu hỏi");
         }
     }
 

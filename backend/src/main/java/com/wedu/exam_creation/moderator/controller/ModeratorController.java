@@ -32,6 +32,16 @@ public class ModeratorController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/question-files/content")
+    public ResponseEntity<byte[]> getQuestionFileContent(@RequestParam("key") String key) {
+        return ResponseEntity.ok()
+                .header("Cache-Control", "private, no-store")
+                .header("X-Content-Type-Options", "nosniff")
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .body(moderatorUsecase.getQuestionFileContent(key));
+    }
+
     @PostMapping("/parse")
     public ResponseEntity<List<String>> parseDocument(
             @AuthenticationPrincipal CustomUserDetails principal,
