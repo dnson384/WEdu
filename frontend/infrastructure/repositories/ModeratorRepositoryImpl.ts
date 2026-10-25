@@ -3,6 +3,15 @@ import { IModeratorRepository } from "@/domain/repositories/IModeratorRepository
 import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
 
 export class ModeratorRepositoryImpl implements IModeratorRepository {
+  async getQuestionFileContent(key: string, accessToken: string): Promise<ArrayBuffer> {
+    const { data } = await axios.get<ArrayBuffer>(`${this.baseUrl}/moderator/question-files/content`, {
+      params: { key },
+      responseType: "arraybuffer",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return data;
+  }
+
   private readonly baseUrl =
     process.env.NODE_ENV === "development"
       ? process.env.NEXT_PUBLIC_BACKEND_DEV_URL!

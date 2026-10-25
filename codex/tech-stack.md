@@ -109,3 +109,7 @@ Nguồn [application.yml](../backend/src/main/resources/application.yml), [S3Con
 | Frontend | `NEXT_PUBLIC_BACKEND_DEV_URL`, `NEXT_PUBLIC_BACKEND_PROD_URL`, `BACKEND_URL` | Repository và proxy dùng các nguồn URL khác nhau; không đặt secret vào NEXT_PUBLIC. |
 
 Không thấy loader `.env` backend trong source/config đã khảo sát. Cần cấp biến qua môi trường/IDE/deployment. Pandoc phải có trên PATH và backend cần quyền ghi workspace `static/uploads`; Dockerfile hiện chưa chuẩn bị hai phần đó. Không xác nhận kết nối dịch vụ hay secrets thực tế.
+
+## Dependency preview DOCX — 2026-10-25
+
+Frontend thêm docx-preview ^0.4.1 (lock 0.4.1), phụ thuộc JSZip (lock 3.10.2), import động tại [useQuestionFilePreview](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts). Render HTML/MathML chỉ đọc phía browser, không cài converter server và không dùng viewer bên thứ ba. [package.json](../frontend/package.json), [lockfile](../frontend/package-lock.json). Không thay lệnh build/test.

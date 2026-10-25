@@ -68,6 +68,10 @@ Danh mục tách theo chủ đề để tránh nạp toàn bộ source index m�
 - [source-catalog.md](source-catalog.md): toàn bộ backend domain/DTO/repository/usecase/controller/helpers, frontend pages/ports/adapters/hooks/services/components và exporter files.
 - [database-schema.md](database-schema.md): 7 collection declarations, 20 document classes (7 root, 13 embedded) và 99 field declarations.
 
+## Luồng xem trước DOCX — 2026-10-25
+
+QuestionFileRow.onPreview → useQuestionFiles.previewFile → [QuestionFilePreviewDialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx) → [useQuestionFilePreview](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts) → ModeratorService.getQuestionFileContent → [Next GET /api/moderator/question-files/content](../frontend/app/api/moderator/question-files/content/route.ts) → GetQuestionFileContentUsecase → IModeratorRepository/ModeratorRepositoryImpl → GET /moderator/question-files/content → ModeratorController/ModeratorUsecase.getQuestionFileContent → S3Service.readDocumentFile. Contract binary DOCX, key query, ROLE_MODERATOR; [API](api-reference.md). Không đổi model/database hoặc parse flow.
+
 ## Backend question-file content — 2026-10-25
 
 GET /moderator/question-files/content?key=... → [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → [ModeratorUsecase.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) → [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) → S3Client.getObjectAsBytes. ROLE_MODERATOR, binary DOCX no-store; không đổi DTO/schema. [Contract](api-reference.md).

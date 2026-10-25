@@ -112,6 +112,14 @@ Các câu hỏi này không ngăn hoàn tất tài liệu và không được bi
 
 Database/index/version MongoDB thực, nội dung bucket, Pandoc/Node version đã cài, production topology, CORS/proxy hosting, SMTP deliverability, bot/review bên ngoài, tình trạng test/build và mức độ sử dụng thực đều **unknown**. File config và dependency không đủ chứng minh triển khai thành công.
 
+## Preview DOCX chỉ đọc — 2026-10-25
+
+Implemented theo source: click dòng/tên file mở modal preview DOCX chỉ đọc, loading/error/retry, Đóng/Escape/Tải xuống; iframe sandbox/CSP cách ly. API content giới hạn moderator/key/prefix/.docx, trả binary từ S3; không đổi database hoặc triển khai approval. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [contract](api-reference.md), [backend test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
+
+Validation: mvn -q test đạt 207 tests (15 content tests mới); TypeScript, ESLint file liên quan và npm.cmd run build đạt. Kiểm tra tạm bằng React DOM/JSDOM và DOCX fixture thực render tiếng Việt/bảng/ảnh/MathML đạt; mở/đóng, Escape trong iframe, khôi phục focus, abort khi unmount, click dòng độc lập Tải xuống/Xóa, lỗi/retry và Next proxy binary/auth/key/error đạt. JSDOM dùng polyfill dialog và MathML style; chưa xác minh layout/focus trap/CSP thực thi trên browser thật hoặc đọc AWS thật. DOCX có thể khác Word về bố cục.
+
+npm install báo 7 vulnerabilities (1 low, 4 high, 2 critical) trong dependency tree; chưa audit nguồn hoặc tự nâng dependency ngoài scope.
+
 ## Backend API nội dung DOCX — 2026-10-25
 
 Implemented theo source: GET /moderator/question-files/content giới hạn ROLE_MODERATOR và key question-files/ có đuôi .docx, trả binary DOCX no-store, 404 khi object không tồn tại và lỗi storage chung. Không đổi schema hoặc triển khai approval/UI. [Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).

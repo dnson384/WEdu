@@ -4,10 +4,14 @@ import { FileText, FolderOpen, RefreshCw, AlertCircle } from "lucide-react";
 import useQuestionFiles from "@/presentation/hooks/Moderator/useQuestionFiles";
 import DeleteQuestionFileDialog from "@/presentation/components/Moderator/DeleteQuestionFileDialog";
 import QuestionFileRow from "@/presentation/components/Moderator/QuestionFileRow";
+import QuestionFilePreviewDialog from "@/presentation/components/Moderator/QuestionFilePreviewDialog";
 
 export default function QuestionFilesPage() {
   const {
     files,
+    previewFile,
+    handlePreviewClick,
+    handleClosePreview,
     isPending,
     isFetching,
     isError,
@@ -24,6 +28,7 @@ export default function QuestionFilesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
+      {previewFile && <QuestionFilePreviewDialog key={previewFile.key} file={previewFile} onClose={handleClosePreview} />}
       <DeleteQuestionFileDialog
         file={selectedFile}
         isDeleting={isDeleting}
@@ -129,6 +134,7 @@ export default function QuestionFilesPage() {
                     file={file}
                     isDeleting={isDeleting}
                     onDelete={handleDeleteClick}
+                    onPreview={handlePreviewClick}
                   />
                 ))}
               </tbody>

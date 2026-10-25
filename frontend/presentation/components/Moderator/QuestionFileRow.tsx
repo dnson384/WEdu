@@ -10,17 +10,20 @@ interface Props {
   };
   isDeleting: boolean;
   onDelete: (file: QuestionFileEntity) => void;
+  onPreview: (file: QuestionFileEntity) => void;
 }
 
-export default function QuestionFileRow({ file, isDeleting, onDelete }: Props) {
+export default function QuestionFileRow({ file, isDeleting, onDelete, onPreview }: Props) {
   return (
-    <tr className="hover:bg-blue-50/40">
+    <tr className="cursor-pointer hover:bg-blue-50/40" onClick={() => onPreview(file)}>
       <td className="px-6 py-5">
         <div className="flex items-center gap-3 min-w-64">
           <FileText size={22} className="shrink-0 text-blue-500" />
-          <span className="font-medium text-gray-900 break-all">
+          <button type="button" aria-label={`Xem trước ${file.fileName}`}
+            onClick={(event) => { event.stopPropagation(); onPreview(file); }}
+            className="text-left font-medium text-gray-900 break-all hover:text-blue-600">
             {file.fileName}
-          </span>
+          </button>
         </div>
       </td>
       <td className="px-4 py-5 text-gray-600 whitespace-nowrap">
@@ -29,7 +32,7 @@ export default function QuestionFileRow({ file, isDeleting, onDelete }: Props) {
       <td className="px-4 py-5 text-gray-600 whitespace-nowrap">
         {file.lastModifiedLabel}
       </td>
-      <td className="px-6 py-5 text-right whitespace-nowrap">
+      <td className="px-6 py-5 text-right whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
         <a
           href={file.presignedUrl}
           target="_blank"

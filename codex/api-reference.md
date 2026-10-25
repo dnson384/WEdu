@@ -99,6 +99,7 @@ Methods/paths có thể khác backend, ví dụ Next PUT profile đổi thành S
 | `POST /api/exporter/exam` | [app/api/exporter/exam/route.ts](../frontend/app/api/exporter/exam/route.ts) | `@/usecases/exporter/ExportExamUsecase`, `@/infrastructure/repositories/ExporterRepositoryImpl` |
 | `POST /api/moderator/parse` | [app/api/moderator/parse/route.ts](../frontend/app/api/moderator/parse/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/ParseUsecase` |
 | `GET /api/moderator/question-files` | [app/api/moderator/question-files/route.ts](../frontend/app/api/moderator/question-files/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/GetQuestionFilesUsecase` |
+| `GET /api/moderator/question-files/content` | [app/api/moderator/question-files/content/route.ts](../frontend/app/api/moderator/question-files/content/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/GetQuestionFileContentUsecase` |
 | `DELETE /api/moderator/question-files` | [app/api/moderator/question-files/route.ts](../frontend/app/api/moderator/question-files/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/DeleteQuestionFileUsecase` |
 | `POST /api/storage/avatar` | [app/api/storage/avatar/route.ts](../frontend/app/api/storage/avatar/route.ts) | `@/usecases/storage/UploadAvatarUsecase`, `@/infrastructure/repositories/StorageRepositoryImpl` |
 | `POST /api/storage/question-file` | [app/api/storage/question-file/route.ts](../frontend/app/api/storage/question-file/route.ts) | `@/usecases/storage/UploadFileToQuestionBankUsecase`, `@/infrastructure/repositories/StorageRepositoryImpl` |
@@ -109,6 +110,13 @@ Methods/paths có thể khác backend, ví dụ Next PUT profile đổi thành S
 ## Express endpoint
 
 POST /exporter/exam → exportAsWord → GenerateWordFileUsecase.execute; [app mount](../exporter-service/src/app.ts), [route](../exporter-service/src/routes/exporter/exporter.route.ts), [controller](../exporter-service/src/routes/exporter/controller/exporterController.ts). Input WordPayloadRequestDTO; output DOCX attachment; JSON limit 50 MB. Entry point không khai báo authentication middleware.
+
+## DOCX preview chỉ đọc — 2026-10-25
+
+- Backend `GET /moderator/question-files/content?key=<S3 key>`: ROLE_MODERATOR, `ModeratorController.getQuestionFileContent → ModeratorUsecase.getQuestionFileContent → S3Service.readDocumentFile`. Trả 200 binary MIME DOCX, `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`.
+- Key nguyên từ listing, thuộc `question-files/`, không thư mục/segment . hoặc .., đuôi .docx không phân biệt hoa/thường. Key sai/thiếu 400, object không còn 404, S3 lỗi khác 500 với message chung. Quyền JWT giữ nguyên.
+- Next `GET /api/moderator/question-files/content?key=...` yêu cầu access cookie; chuyển Bearer chỉ phía server qua [GetQuestionFileContentUsecase](../frontend/usecases/moderator/GetQuestionFileContentUsecase.ts) và adapter. Thiếu cookie 401, backend không kết nối 502; bảo toàn status backend, trả message chung và private/no-store cả lỗi. Không nhận URL do client cung cấp.
+- [Next route](../frontend/app/api/moderator/question-files/content/route.ts), [backend controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [tests](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java). Không đổi DTO listing hoặc schema.
 
 ## Backend question-file content — 2026-10-25
 
