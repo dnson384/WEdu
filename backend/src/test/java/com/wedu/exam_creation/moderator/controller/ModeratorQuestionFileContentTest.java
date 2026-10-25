@@ -46,6 +46,7 @@ class ModeratorQuestionFileContentTest {
     @MockitoBean private JwtTokenProvider tokens;
     @MockitoBean private CustomUserDetailsService users;
     @MockitoBean private ImporterService importer;
+    @MockitoBean private com.wedu.exam_creation.mail.service.MailService mail;
     @MockitoBean private S3Client s3;
     @MockitoBean private S3Presigner presigner;
 

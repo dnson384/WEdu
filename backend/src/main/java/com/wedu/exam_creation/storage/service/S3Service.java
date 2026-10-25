@@ -16,14 +16,10 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.Duration;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
@@ -71,17 +67,24 @@ public class S3Service {
 
     public String updateDocumentFile(MultipartFile file, String folderName, Integer maxSizeMb,
                                      String email) throws IOException {
+        validateDocumentFile(file, maxSizeMb);
+        String originalName = file.getOriginalFilename();
+        if (email == null || email.isBlank()) {
+            throw new BadRequestException("Lỗi: Thiếu email người tải lên");
+        }
+        assert originalName != null;
+        return uploadUniqueDocumentFile(file, folderName,
+                email + "-" + normalizeDocumentFileName(originalName));
+    }
+
+    public void validateDocumentFile(MultipartFile file, Integer maxSizeMb) throws IOException {
         validateFileSize(file, maxSizeMb);
         String originalName = file.getOriginalFilename();
+
         if (originalName == null || !originalName.toLowerCase(Locale.ROOT).endsWith(".docx")
                 || !isWordDocument(file)) {
             throw new BadRequestException("Lỗi: Chỉ chấp nhận tài liệu Word (.docx)");
         }
-        if (email == null || email.isBlank()) {
-            throw new BadRequestException("Lỗi: Thiếu email người tải lên");
-        }
-        return uploadUniqueDocumentFile(file, folderName,
-                email + "-" + normalizeDocumentFileName(originalName));
     }
 
     private String uploadUniqueDocumentFile(MultipartFile file, String folderName,

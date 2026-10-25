@@ -58,4 +58,18 @@ public class MailService {
                 """.formatted(resetLink);
     }
 
+    public void sendQuestionFileRejectionEmail(String toEmail, String fileName, String reason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromEmail, "WEdu Support");
+            helper.setTo(toEmail);
+            helper.setSubject("Tệp câu hỏi của bạn đã bị từ chối");
+            helper.setText("Tệp câu hỏi: " + fileName + "\n\nLý do từ chối:\n" + reason, false);
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new InternalServerException("Không thể gửi email từ chối tệp câu hỏi");
+        }
+    }
+
 }
