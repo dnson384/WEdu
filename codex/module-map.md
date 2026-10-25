@@ -4,6 +4,10 @@ Snapshot working tree 2026-10-24. Danh mục declaration/API lấy từ source, 
 
 ## 1. Entry points và ranh giới
 
+`QuestionFilesPage` render từng tệp qua [QuestionFileRow](../frontend/presentation/components/Moderator/QuestionFileRow.tsx). Component nhận dữ liệu đã định dạng, `isDeleting` và `onDelete`; chỉ hiển thị dòng bảng và chuyển sự kiện xóa về hook, không gọi API.
+
+Xóa question file: `QuestionFilesPage → useQuestionFiles → ModeratorService.deleteQuestionFile → Next DELETE → DeleteQuestionFileUsecase → IModeratorRepository.deleteQuestionFile → ModeratorRepositoryImpl → ModeratorController.deleteQuestionFile → ModeratorUsecase.deleteQuestionFile → S3Service.deleteFile → S3Client.deleteObject`. [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuestionFiles.ts) quản lý query/mutation, state/ref hộp thoại, cache, thông báo và handler; trả files có sizeLabel/lastModifiedLabel để page chỉ render. Chỉ moderator, chỉ prefix `question-files/`; không đổi database hoặc API. [Contract](api-reference.md), [hộp thoại](../frontend/presentation/components/Moderator/DeleteQuestionFileDialog.tsx), [usecase frontend](../frontend/usecases/moderator/DeleteQuestionFileUsecase.ts).
+
 | Module | Entry point | Cấu trúc/contract |
 | --- | --- | --- |
 | Frontend | [app/layout.tsx](../frontend/app/layout.tsx), [app/page.tsx](../frontend/app/page.tsx), [proxy.ts](../frontend/proxy.ts) | Pages/components → presentation hooks → presentation services → Next route handlers → usecases → domain repository → Axios adapters. Kiểm tra call site vì còn service/helper cũ. |

@@ -4,6 +4,8 @@ Snapshot source 2026-10-24; xem [current-status.md](current-status.md) để hi�
 
 ## 1. Đăng ký, đăng nhập và phiên
 
+Luồng xóa tệp moderator (2026-10-25): nút Xóa cạnh Tải xuống trong bảng → hộp thoại có tên tệp → Hủy/Escape đóng mà không gọi API; xác nhận khóa thao tác gửi lặp và gọi DELETE → backend kiểm role/key → S3 DeleteObject → 204. Thành công đóng hộp thoại, thông báo, bỏ dòng đã xóa khỏi cache rồi gọi lại API danh sách tại chỗ. DELETE lỗi giữ hộp thoại để thử lại/hủy; lỗi GET sau DELETE hiển thị như lỗi tải danh sách, không coi là xóa thất bại. Không reload toàn trình duyệt hoặc thêm submission/review state. [Trang files](../frontend/app/(site)/moderator/question-files/page.tsx), [dialog](../frontend/presentation/components/Moderator/DeleteQuestionFileDialog.tsx), [contract](api-reference.md).
+
 **implemented** ở mức local-auth handlers/services; tích hợp chạy thật **unknown**.
 
 1. UI/hooks gọi `AuthService` → Next `/api/auth/login|register`, schema kiểm tra input.

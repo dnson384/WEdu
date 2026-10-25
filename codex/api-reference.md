@@ -1,8 +1,14 @@
 # API reference WEdu
 
-Snapshot working tree 2026-10-24, bao gồm staged/unstaged/untracked source. Có 36 endpoint Spring, 35 handler Next và 1 endpoint Express theo declaration; không phải kết quả gọi server. [Module map](module-map.md), [business flows](business-flows.md), [current status](current-status.md).
+Snapshot working tree cập nhật 2026-10-25, bao gồm staged/unstaged/untracked source. Có 37 endpoint Spring, 36 handler Next và 1 endpoint Express theo declaration; không phải kết quả gọi server. [Module map](module-map.md), [business flows](business-flows.md), [current status](current-status.md).
 
 ## Contract cần lưu ý
+
+### Xóa tệp tin câu hỏi — 2026-10-25
+
+`DELETE /moderator/question-files?key=<S3 key>` yêu cầu ROLE_MODERATOR; Next proxy cùng query tại `DELETE /api/moderator/question-files`. Cookie access token chỉ chuyển thành Bearer tại adapter phía server. Key lấy nguyên từ danh sách, không lấy presigned URL hoặc suy từ fileName; Axios params encode key đúng một lần. Thành công `204 No Content`, kể cả object đã không còn; không gọi HEAD trước DELETE. `400` cho key rỗng/ngoài `question-files/`, key thư mục hoặc segment `.`/`..`; AWS lỗi trả `500` với message chung, không trả chi tiết AWS. Quyền JWT giữ nguyên (`403` sai role, `401` token rỗng/không hợp lệ; thiếu/sai định dạng header vẫn theo filter hiện có). Next thiếu cookie trả `401`, mất kết nối backend trả `502`.
+
+Nguồn: [ModeratorController.deleteQuestionFile](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [ModeratorUsecase.deleteQuestionFile](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [Next handler](../frontend/app/api/moderator/question-files/route.ts), [DeleteQuestionFileUsecase](../frontend/usecases/moderator/DeleteQuestionFileUsecase.ts). Không thay DTO danh sách, database hoặc API upload.
 
 - Moderator parse: multipart file/subject, HTTP 200 JSON string[] ID câu hỏi, đồng bộ List<String> Java với Promise<string[]> xuyên frontend. Không có parse-by-S3-key hoặc approval endpoint.
 - Question files: GET /moderator/question-files yêu cầu MODERATOR, trả S3ObjectInfo[]; Next GET /api/moderator/question-files dùng private/no-store, 401 thiếu access cookie, chuyển Bearer tới backend. Frontend QuestionFileEntity chứa key/fileName/size/lastModified/presignedUrl. URL tải ký hạn 60 phút với attachment.
@@ -48,6 +54,7 @@ Mặc định authenticated; public paths theo SecurityConstants, quyền class/
 | `DELETE /exam/{examId}` | [ExamController](../backend/src/main/java/com/wedu/exam_creation/exam/controller/ExamController.java) · `deleteExam` | `@AuthenticationPrincipal CustomUserDetails principal, @PathVariable String examId → ResponseEntity<Boolean>` |
 | `POST /exporter/exam` | [ExporterController](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java) · `exportExam` | `@AuthenticationPrincipal CustomUserDetails principal, @RequestBody ExportRequestDTO payload → ResponseEntity<Resource>` |
 | `GET /moderator/question-files` | [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) · `listQuestionFiles` | ` → ResponseEntity<List<S3ObjectInfo>>` |
+| `DELETE /moderator/question-files` | [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) · `deleteQuestionFile` | `@RequestParam("key") String key → ResponseEntity<Void>`, 204 |
 | `POST /moderator/parse` | [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) · `parseDocument` | `@AuthenticationPrincipal CustomUserDetails principal, @RequestParam("file") MultipartFile file, @RequestParam("subject") String subject → ResponseEntity<List<String>>` |
 | `POST /storage/avatar` | [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java) · `uploadAvatar` | `@RequestParam("file") MultipartFile file → ResponseEntity<String>` |
 | `POST /storage/question-file` | [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java) · `uploadDocumentToQuestionBank` | `@AuthenticationPrincipal CustomUserDetails principal, @RequestParam("file") MultipartFile file, @RequestParam("subject") String subject → ResponseEntity<String>` |
@@ -91,6 +98,7 @@ Methods/paths có thể khác backend, ví dụ Next PUT profile đổi thành S
 | `POST /api/exporter/exam` | [app/api/exporter/exam/route.ts](../frontend/app/api/exporter/exam/route.ts) | `@/usecases/exporter/ExportExamUsecase`, `@/infrastructure/repositories/ExporterRepositoryImpl` |
 | `POST /api/moderator/parse` | [app/api/moderator/parse/route.ts](../frontend/app/api/moderator/parse/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/ParseUsecase` |
 | `GET /api/moderator/question-files` | [app/api/moderator/question-files/route.ts](../frontend/app/api/moderator/question-files/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/GetQuestionFilesUsecase` |
+| `DELETE /api/moderator/question-files` | [app/api/moderator/question-files/route.ts](../frontend/app/api/moderator/question-files/route.ts) | `@/infrastructure/repositories/ModeratorRepositoryImpl`, `@/usecases/moderator/DeleteQuestionFileUsecase` |
 | `POST /api/storage/avatar` | [app/api/storage/avatar/route.ts](../frontend/app/api/storage/avatar/route.ts) | `@/usecases/storage/UploadAvatarUsecase`, `@/infrastructure/repositories/StorageRepositoryImpl` |
 | `POST /api/storage/question-file` | [app/api/storage/question-file/route.ts](../frontend/app/api/storage/question-file/route.ts) | `@/usecases/storage/UploadFileToQuestionBankUsecase`, `@/infrastructure/repositories/StorageRepositoryImpl` |
 | `GET /api/user/me` | [app/api/user/me/route.ts](../frontend/app/api/user/me/route.ts) | `@/usecases/user/GetMeUsecase`, `@/infrastructure/repositories/UserRepositoryImpl` |

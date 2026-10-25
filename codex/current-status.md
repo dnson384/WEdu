@@ -2,6 +2,10 @@
 
 ## Cách đọc kết luận
 
+Tách component 2026-10-25: JSX của từng dòng tệp trong `QuestionFilesPage` chuyển sang [QuestionFileRow](../frontend/presentation/components/Moderator/QuestionFileRow.tsx), giữ nguyên giao diện, liên kết tải và callback/trạng thái xóa. Không đổi API/schema hoặc logic hook. TypeScript, ESLint cho page/component và kiểm tra luồng xóa bằng React DOM + React Query trong JSDOM đều đạt; chưa kiểm tra trên trình duyệt thật.
+
+Refactor 2026-10-25: `QuestionFilesPage` chỉ render giao diện và truyền props; [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuestionFiles.ts) quản lý query/mutation, state, handler, cache/refetch và nhãn định dạng tệp. API và hành vi lấy/xóa tệp giữ nguyên. TypeScript, ESLint cho page/hook, production build và kiểm tra hành vi React Query + React DOM trong JSDOM đều đạt sau refactor; chưa kiểm tra trình duyệt hoặc AWS thật.
+
 Khảo sát source trong working tree ngày 2026-10-24, gồm thay đổi chưa commit; không chỉ dựa vào Git HEAD. Không thay application code/config/database, không đọc `.env`, không gọi dịch vụ ngoài. Không chạy build/test trong tác vụ phân tích này; vì vậy không chứng nhận ứng dụng chạy thành công.
 
 - **implemented:** có code xử lý cụ thể ở các lớp được nêu; không có nghĩa feature đã được nghiệm thu/runtime pass.

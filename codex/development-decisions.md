@@ -18,6 +18,8 @@ Nếu một vấn đề được ghi nhận trong các tài liệu kỹ thuật 
 
 ## Snapshot implementation đối chiếu 2026-10-24
 
+Bổ sung phạm vi theo yêu cầu 2026-10-25: moderator được xóa từng tệp trong `question-files/` sau xác nhận ở UI; API dùng S3 DeleteObject và danh sách refetch tại chỗ. Không mở rộng thành approve/reject, audit/submission hoặc purge version history; trạng thái PLANNED của workflow kiểm duyệt vẫn giữ nguyên. [Contract triển khai](api-reference.md), [validation](current-status.md).
+
 Đây là ghi nhận **implementation** từ working tree (gồm staged/unstaged/untracked), không tự thay đổi các quyết định PLANNED/FROZEN/DEFERRED bên dưới hoặc xác nhận nghiệm thu.
 
 - DOCX upload backend đã có `updateDocumentFile` 50 MiB, kiểm extension/ZIP entries, key dưới question-files; image uploader tách riêng. Frontend còn nhãn 25 MB và response type boolean lệch string key. [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [StorageService](../frontend/presentation/services/StorageService.ts).

@@ -208,6 +208,8 @@ Snapshot working tree 2026-10-24, gồm staged/unstaged/untracked files. Chỉ m
 
 ## Frontend App Router
 
+Handler DELETE nằm cùng [question-files route](../frontend/app/api/moderator/question-files/route.ts). Symbols mới: [DeleteQuestionFileUsecase.execute](../frontend/usecases/moderator/DeleteQuestionFileUsecase.ts), `ModeratorService.deleteQuestionFile`, `IModeratorRepository.deleteQuestionFile`, `ModeratorRepositoryImpl.deleteQuestionFile`. [DeleteQuestionFileDialog](../frontend/presentation/components/Moderator/DeleteQuestionFileDialog.tsx) được dùng bởi trang quản lý files; native dialog quản lý focus bàn phím, Hủy/Escape chỉ đóng khi không đang gửi request.
+
 | Route URL | Page source |
 | --- | --- |
 | `/auth/forgot-password` | [app/(site)/auth/forgot-password/page.tsx](../frontend/app/(site)/auth/forgot-password/page.tsx) |
@@ -263,6 +265,10 @@ Layouts/entry points: [root layout](../frontend/app/layout.tsx), [moderator layo
 | `repositories` | [AdminRepositoryImpl](../frontend/infrastructure/repositories/AdminRepositoryImpl.ts), [AuthRepositoryImpl](../frontend/infrastructure/repositories/AuthRepositoryImpl.ts), [ChapterRepositoryImpl](../frontend/infrastructure/repositories/ChapterRepositoryImpl.ts), [DraftRepositoryImpl](../frontend/infrastructure/repositories/DraftRepositoryImpl.ts), [ExamsRepositoryImpl](../frontend/infrastructure/repositories/ExamsRepositoryImpl.ts), [ExporterRepositoryImpl](../frontend/infrastructure/repositories/ExporterRepositoryImpl.ts), [ModeratorRepositoryImpl](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts), [StorageRepositoryImpl](../frontend/infrastructure/repositories/StorageRepositoryImpl.ts), [UserRepositoryImpl](../frontend/infrastructure/repositories/UserRepositoryImpl.ts) |
 
 ### Frontend `presentation`
+
+[QuestionFileRow](../frontend/presentation/components/Moderator/QuestionFileRow.tsx) tách JSX lặp trong danh sách tệp: props `file` (QuestionFileEntity kèm sizeLabel/lastModifiedLabel), `isDeleting`, `onDelete`. Hiển thị thông tin tệp, liên kết tải xuống và nút xóa; được dùng trong `QuestionFilesPage`.
+
+Hook mới [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuestionFiles.ts), được dùng bởi [QuestionFilesPage](../frontend/app/(site)/moderator/question-files/page.tsx), chứa toàn bộ logic danh sách/xóa. Trả `files` kèm `sizeLabel`/`lastModifiedLabel`, trạng thái query/xóa, lỗi/thông báo/tệp được chọn và các handler `handleRefresh`, `handleDeleteClick`, `handleCancelDelete`, `handleConfirmDelete`. Đây là dữ liệu trình bày nội bộ; không thay QuestionFileEntity hoặc DTO HTTP.
 
 | Thư mục | Files / symbols |
 | --- | --- |

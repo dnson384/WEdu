@@ -4,6 +4,10 @@ Khảo sát source, manifest và configuration trong working tree ngày 2026-10-
 
 ## Đọc cùng bộ context
 
+Refactor frontend 2026-10-25: [QuestionFilesPage](../frontend/app/(site)/moderator/question-files/page.tsx) chỉ render dữ liệu/props từ [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuestionFiles.ts). Hook giữ auth, query/mutation, state/ref chống gửi lặp, xử lý lỗi/thông báo, cache/refetch và định dạng dung lượng/thời gian; giao tiếp ModeratorService theo luồng phân lớp hiện có. Native dialog giữ logic focus/Escape riêng của component. Không đổi API, query key, quyền hoặc luồng xóa.
+
+Cập nhật 2026-10-25: xóa question file dùng DELETE qua BFF/port/adapter hiện có; backend moderator usecase giới hạn key trước khi gọi `S3Service.deleteFile`, giữ storage là ranh giới AWS. Chỉ xóa object hiện tại bằng DeleteObject; không purge version history hoặc xóa câu hỏi đã import. UI chỉ cập nhật cache sau khi DELETE thành công, sau đó refetch danh sách. [API](api-reference.md), [usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [UI](../frontend/app/(site)/moderator/question-files/page.tsx).
+
 [Tech stack](tech-stack.md): dependencies/lệnh/config. [Module map](module-map.md): controllers, usecases, ports/adapters, DTO/models và HTTP endpoints. [Business flows](business-flows.md): nghiệp vụ/auth/review/giao dịch. [Database schema](database-schema.md): document fields/references/states. [Current status](current-status.md): định nghĩa implemented/partial/missing/unknown và phân loại feature. Các mô tả bên dưới có nguồn đối chiếu tại mục Bằng chứng cuối file.
 
 ## 1. Module và tech stack
