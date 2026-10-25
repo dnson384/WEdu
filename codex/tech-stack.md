@@ -113,3 +113,7 @@ Không thấy loader `.env` backend trong source/config đã khảo sát. Cần 
 ## Dependency preview DOCX — 2026-10-25
 
 Frontend thêm docx-preview ^0.4.1 (lock 0.4.1), phụ thuộc JSZip (lock 3.10.2), import động tại [useQuestionFilePreview](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts). Render HTML/MathML chỉ đọc phía browser, không cài converter server và không dùng viewer bên thứ ba. [package.json](../frontend/package.json), [lockfile](../frontend/package-lock.json). Không thay lệnh build/test.
+
+## Kiểm tra kiểm duyệt tệp — 2026-10-25
+
+Không thêm dependency/config SMTP/Telegram. Tái sử dụng JavaMailSender gửi email text/plain; lỗi chỉ log, không retry. Backend chạy `mvn -q test`; frontend không còn bộ test sau khi xóa theo yêu cầu; không có npm test script. Không đổi dependency/lockfile vì không có dependency test riêng được thêm. `mvn -q test`: **244 tests**, 0 failures/errors, gồm **27** cases [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) và **1** [MailRejectionTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailRejectionTest.java) mới. Frontend từng đạt 9 kiểm tra BFF/hook/form/preview DOCX trong JSDOM trước khi bộ test được xóa theo yêu cầu; hiện không còn file test frontend trong dự án. TypeScript, ESLint các file liên quan và production build đã đạt cho phần application code không đổi. AWS/SMTP/Pandoc thật và trình duyệt thật chưa kiểm tra; JSDOM dùng polyfill dialog.

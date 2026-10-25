@@ -158,48 +158,15 @@ Việc sửa upload DOCX không đồng nghĩa được phép refactor:
 
 # 5. File Submission và Moderator Review
 
-**Trạng thái: `PLANNED`**
+**Trạng thái: `ACCEPTED_CURRENT_SCOPE` cho kiểm duyệt tệp chỉ dùng S3 — được duyệt 2026-10-25.**
 
-Luồng hiện tại:
+- Tệp trong `question-files/` là hàng chờ; không thêm submission/database, receipt S3 hoặc audit.
+- Duyệt bản gốc hoặc DOCX chỉnh sửa bằng `ModeratorUsecase.parseDocument`, subject từ key gốc; import thành công rồi xóa tệp gốc, không lưu bản chỉnh sửa lâu dài.
+- Từ chối bắt buộc lý do, email từ basename, xóa S3 rồi gửi email một lần. Email lỗi chỉ ghi log an toàn, vẫn thành công; không Telegram hoặc retry.
+- Chấp nhận không chống xử lý trùng xuyên moderator/restart/mất phản hồi. Import thành công nhưng xóa lỗi chỉ retry xóa trong phiên UI hiện tại; tải lại trang mất trạng thái cục bộ.
+- Giữ importer/Pandoc frozen, không mở rộng sang kiểm duyệt câu AI hoặc persisted audit.
 
-```text
-Teacher upload
-    ↓
-S3
-```
-
-và:
-
-```text
-Moderator upload multipart
-    ↓
-Pandoc
-    ↓
-Question Bank
-```
-
-là hai flow độc lập. Hiện đã có moderator list/download S3 và UI riêng, nhưng chưa nối sang parse bằng submission ID; listing không đồng nghĩa approval workflow implemented.
-
-UI có thể hiển thị trạng thái như “chờ duyệt”, nhưng source hiện tại chưa có persisted moderation workflow hoàn chỉnh.
-
-Các thành phần sau chưa được coi là implemented:
-
-- submission record;
-- `PENDING`;
-- `APPROVED`;
-- `REJECTED`;
-- reviewer;
-- reviewedAt;
-- rejection reason;
-- review audit;
-- approve/reject API;
-- liên kết persisted giữa teacher upload và moderator review.
-
-Moderator workflow sẽ được thiết kế và triển khai như một feature riêng.
-
-Không tự suy ra workflow từ text trên UI hoặc Telegram notification.
-
----
+Quyết định này thay thế PLANNED trước đây cho thao tác kiểm duyệt tệp. Các snapshot upload/list phía trên mô tả giai đoạn trước feature này. [Implementation/validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25), [API](api-reference.md#duyệttừ-chối-tệp--2026-10-25).
 
 # 6. AI Question Moderation
 

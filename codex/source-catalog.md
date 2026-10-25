@@ -1,5 +1,21 @@
 # Source catalogue WEdu
 
+## Symbols kiểm duyệt tệp — 2026-10-25
+
+| Nhóm | Symbols/files bổ sung hoặc mở rộng |
+| --- | --- |
+| Backend moderator | ModeratorController.approveQuestionFile/rejectQuestionFile; ModeratorUsecase.approveQuestionFile/rejectQuestionFile/reviewKeyParts |
+| Backend DTO/adapter | [ApproveQuestionFileResponseDTO](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/ApproveQuestionFileResponseDTO.java), [RejectQuestionFileDTO](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/RejectQuestionFileDTO.java), [StoredDocumentFile](../backend/src/main/java/com/wedu/exam_creation/moderator/infrastructure/StoredDocumentFile.java) implements MultipartFile |
+| Storage/mail | S3Service.validateDocumentFile dùng chung updateDocumentFile/approve; MailService.sendQuestionFileRejectionEmail |
+| Frontend types/ports | [ApproveQuestionFileResult/RejectQuestionFileInput](../frontend/domain/entities/questionFileReview.entity.ts); IModeratorRepository/ModeratorRepositoryImpl/ModeratorService.approveQuestionFile/rejectQuestionFile |
+| Frontend usecases | [ApproveQuestionFileUsecase](../frontend/usecases/moderator/ApproveQuestionFileUsecase.ts), [RejectQuestionFileUsecase](../frontend/usecases/moderator/RejectQuestionFileUsecase.ts) |
+| Next routes/helper | [approve POST](../frontend/app/api/moderator/question-files/approve/route.ts), [reject POST](../frontend/app/api/moderator/question-files/reject/route.ts), [reviewError/reviewHeaders](../frontend/app/api/moderator/question-files/reviewError.ts) |
+| UI | [useQuestionFileReview](../frontend/presentation/hooks/Moderator/useQuestionFileReview.ts) (ReviewComplete export), [QuestionFileReviewForm](../frontend/presentation/components/Moderator/QuestionFileReviewForm.tsx); QuestionFilePreviewDialog nối review; useQuestionFilePreview thêm localFile; useQuestionFiles thêm handleReviewComplete/previewNeedsCleanup |
+| Tests | [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java), [MailRejectionTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailRejectionTest.java); existing content/delete tests thêm mock MailService |
+
+[Contracts](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Không thêm model persistence hoặc đổi parser.
+
+
 Snapshot working tree 2026-10-24, gồm staged/unstaged/untracked files. Chỉ mục này xác nhận file tồn tại, không chứng nhận feature hoàn tất hoặc đã deploy. [Module map](module-map.md), [API reference](api-reference.md), [database schema](database-schema.md), [current status](current-status.md). Chỉ đọc feature cần sửa để giảm context.
 
 ## Backend theo feature/layer
@@ -294,7 +310,7 @@ Hook mới [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuesti
 | `hooks/Me` | [useChangePassword](../frontend/presentation/hooks/Me/useChangePassword.ts), [useUpdateAvatar](../frontend/presentation/hooks/Me/useUpdateAvatar.ts), [useUpdateUsername](../frontend/presentation/hooks/Me/useUpdateUsername.ts) |
 | `hooks/QuestionBank` | [useUploadToQuestionBank](../frontend/presentation/hooks/QuestionBank/useUploadToQuestionBank.ts) |
 | `schemas` | [auth.schema](../frontend/presentation/schemas/auth.schema.ts), [draft.schema](../frontend/presentation/schemas/draft.schema.ts), [export.schema](../frontend/presentation/schemas/export.schema.ts), [generate.schema](../frontend/presentation/schemas/generate.schema.ts) |
-| `services` | [AdminService](../frontend/presentation/services/AdminService.ts), [AuthService](../frontend/presentation/services/AuthService.ts), [ChapterService](../frontend/presentation/services/ChapterService.ts), [DraftService](../frontend/presentation/services/DraftService.ts), [ExamService](../frontend/presentation/services/ExamService.ts), [ExportService](../frontend/presentation/services/ExportService.ts), [MorderatorService](../frontend/presentation/services/MorderatorService.ts), [StorageService](../frontend/presentation/services/StorageService.ts), [user.service](../frontend/presentation/services/user.service.ts), [UserService](../frontend/presentation/services/UserService.ts) |
+| `services` | [AdminService](../frontend/presentation/services/AdminService.ts), [AuthService](../frontend/presentation/services/AuthService.ts), [ChapterService](../frontend/presentation/services/ChapterService.ts), [DraftService](../frontend/presentation/services/DraftService.ts), [ExamService](../frontend/presentation/services/ExamService.ts), [ExportService](../frontend/presentation/services/ExportService.ts), [ModeratorService](../frontend/presentation/services/ModeratorService.ts), [StorageService](../frontend/presentation/services/StorageService.ts), [UserService](../frontend/presentation/services/UserService.ts) |
 | `utils` | [transformExamResToUI](../frontend/presentation/utils/transformExamResToUI.ts), [transformMatrixDetailsToUI](../frontend/presentation/utils/transformMatrixDetailsToUI.ts), [transformMatrixToUI](../frontend/presentation/utils/transformMatrixToUI.ts) |
 
 ### Frontend `services`

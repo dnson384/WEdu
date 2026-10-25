@@ -1,5 +1,10 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Kiểm duyệt tệp không đổi schema — 2026-10-25
+
+Không thêm collection/field/index, submission, audit hoặc receipt S3. Sự hiện diện trong `question-files/` là hàng chờ; approve import rồi xóa, reject xóa rồi email. Không lưu APPROVED/REJECTED/reviewer/reason/email delivery. DTO approve {questionIds,fileDeleted,message} và reject {key,reason} là contract HTTP, không phải document. cleanupKeys frontend là bộ nhớ phiên, không bảo đảm idempotency xuyên moderator/restart/mất phản hồi. [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md#duyệttừ-chối-tệp--2026-10-25).
+
+
 ## Phạm vi
 
 Đây là schema suy ra trực tiếp từ **document classes và repository**, snapshot 2026-10-24, không phải dump database. Không kết nối MongoDB; dữ liệu/index/version thực đều **unknown**. Collection nằm trong [application.yml](../backend/src/main/resources/application.yml) với database cấu hình `test001`, MongoDB SRV. Repository dùng MongoTemplate; [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java) tạo MongoTransactionManager.

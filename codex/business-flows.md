@@ -51,11 +51,12 @@ Frontend avatar vẫn **partial**: [UserRepositoryImpl.updateAvatar](../frontend
 
 ## 5. Upload DOCX, danh sách file và kiểm duyệt
 
-**Backend upload/list và frontend list implemented ở mức source; workflow approval vẫn missing.** Hai đường xử lý chưa được nối bằng submission ID:
+**Upload/list/preview và duyệt/từ chối tệp implemented theo source; không có submission ID hoặc persisted audit.**
 
 1. Teacher UI `/upload` → `StorageService.uploadFileToQuestionBank` → `POST /api/storage/question-file` → `StorageRepositoryImpl` → `POST /storage/question-file` → `S3Service.updateDocumentFile(file, "question-files/" + subject, 50, principal.email)`.
 2. Moderator mở `/moderator/question-files` → `ModeratorService.getQuestionFiles` → Next GET `/api/moderator/question-files` → `GetQuestionFilesUsecase` → repository → Spring GET `/moderator/question-files` → `ModeratorUsecase.listQuestionFiles` → `S3Service.listQuestionFiles("question-files")`. Kết quả là `{key,fileName,size,lastModified,presignedUrl}[]`.
-3. Moderator parse vẫn nhận **file multipart mới** và subject tại `/moderator/parse`, trả `string[]` ID câu hỏi. Không thấy API parse theo S3 key hoặc nút approve/reject/parse trên màn hình danh sách file.
+3. Modal preview → POST `/moderator/question-files/approve` với key, file chỉnh sửa tùy chọn → [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java).approveQuestionFile → đọc bản gốc, validate DOCX → `parseDocument` với subject từ key. Không file chỉnh sửa thì dùng bytes S3 qua StoredDocumentFile; có file thì import bytes bản chỉnh sửa. Parse lỗi giữ tệp gốc; thành công xóa tệp gốc. Xóa lỗi trả IDs và fileDeleted=false; UI chỉ retry xóa trong phiên hiện tại. Không lưu bản chỉnh sửa. `/moderator/parse` cũ giữ multipart/subject và string[] IDs.
+4. Từ chối → form lý do trim 1–2000 ký tự → POST `/moderator/question-files/reject` → xác thực key/email → kiểm tra tệp tồn tại → xóa S3 → MailService.sendQuestionFileRejectionEmail. Email lấy trước dấu '-' cuối trong basename vì tên chuẩn hóa không chứa '-'; giữ được email có dấu '-'. Email không xác định thì không xóa. Xóa lỗi không gửi email. Email lỗi chỉ WARN loại exception, không retry/Telegram, vẫn 204. Email text/plain không diễn giải lý do thành HTML.
 
 Backend DOCX validation: file không rỗng, ≤50 MiB, đuôi `.docx` không phân biệt hoa/thường, ZIP có entry `[Content_Types].xml` và `word/document.xml`; đây chưa phải kiểm định toàn bộ OOXML hay antivirus. Tên file bỏ path gốc/dấu tiếng Việt/ký tự phân cách, ghép PascalCase, thêm `.docx`; key đầu tiên là `question-files/<subject>/<email>-<NormalizedName>.docx`. Cập nhật 2026-10-25: `S3Service.updateDocumentFile → uploadUniqueDocumentFile` ghi bằng `If-None-Match: *`; nếu S3 trả 412 thì thử `<NormalizedName>(1).docx`, `(2)`… theo thứ tự đến tên còn trống. S3 quyết định việc chiếm tên nguyên tử, không HEAD rồi PUT; upload đồng thời không ghi đè nhau. Lỗi 409 thử lại cùng key tối đa 3 lần sau lần đầu; lỗi khác hoặc hết lượt thử được ném lại, không coi là trùng tên. Mỗi lần PUT mở stream mới và API trả đúng key thành công. Subject chưa được chuẩn hóa trong controller. Avatar tách riêng `uploadImageFile(..., "avatars", 5)` dùng Tika JPEG/PNG và UUID.
 
@@ -69,7 +70,7 @@ UI list có loading/empty/error/retry/refetch và tải xuống. Query key `["mo
 
 Bằng chứng: [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [Next files GET](../frontend/app/api/moderator/question-files/route.ts), [upload route](../frontend/app/api/storage/question-file/route.ts), [questionFile.entity.ts](../frontend/domain/entities/questionFile.entity.ts), [files page](../frontend/app/(site)/moderator/question-files/page.tsx), [useLogin](../frontend/presentation/hooks/Auth/useLogin.ts), [useNavBar](../frontend/presentation/hooks/layout/useNavBar.ts), [upload UI](../frontend/app/(site)/upload/page.tsx), [StorageService](../frontend/presentation/services/StorageService.ts).
 
-**missing:** submission collection, pending/approved/rejected field, reviewer/audit, approve/reject API, liên kết persisted upload→parse. Email trong S3 filename không thay owner/audit record. AI moderation vẫn là thông báo Telegram và insert/use ngay như phần 8; không đổi quyết định PLANNED trong development-decisions.md.
+**Không có trong phạm vi đã duyệt:** submission collection, pending/approved/rejected field, reviewer/audit hoặc receipt S3. Email trong filename không thay owner/audit record. Không bảo đảm chống import trùng xuyên moderator/restart/mất phản hồi; tải lại trang mất trạng thái đã import nhưng chưa xóa. AI moderation vẫn là thông báo Telegram và insert/use ngay như phần 8.
 
 ## 6. Import DOCX/Pandoc vào ngân hàng
 
@@ -113,7 +114,7 @@ Bằng chứng: [Next export route](../frontend/app/api/exporter/exam/route.ts),
 
 Moderator click dòng/tên tệp ở /moderator/question-files → modal chỉ đọc → tải DOCX qua [API content](api-reference.md) → render bằng docx-preview trong iframe cách ly. Tải khi mở, có loading/error/Thử lại; Đóng hoặc Escape (kể cả khi focus ở iframe) đóng và khôi phục focus. Nút Tải xuống/Xóa ở danh sách không mở preview. Chuyển/đóng file hủy request, không dùng kết quả render cũ.
 
-Preview không có chỉnh sửa/lưu/toolbar soạn thảo, không import và không chuyển trạng thái duyệt. Bố cục/font/ngắt trang có thể khác Word; có Tải xuống file gốc. Trạng thái persisted submission/approval vẫn missing như trước. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [hook](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts).
+Preview không có toolbar soạn thảo trực tiếp; moderator tải xuống sửa ngoài hệ thống rồi chọn DOCX chỉnh sửa để xem trước và duyệt theo phần 5. Bố cục/font/ngắt trang có thể khác Word; có Tải xuống file gốc. Trạng thái persisted submission/approval vẫn missing như trước. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [hook](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts).
 
 ## Backend cung cấp nội dung xem trước — 2026-10-25
 

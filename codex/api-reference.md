@@ -1,6 +1,22 @@
 # API reference WEdu
 
-Snapshot working tree cập nhật 2026-10-25, bao gồm staged/unstaged/untracked source. Có 37 endpoint Spring, 36 handler Next và 1 endpoint Express theo declaration; không phải kết quả gọi server. [Module map](module-map.md), [business flows](business-flows.md), [current status](current-status.md).
+## Duyệt/từ chối tệp — 2026-10-25
+
+Backend `ROLE_MODERATOR`, Next BFF lấy cookie accessToken và chuyển Bearer chỉ phía server; cache private/no-store. Giữ list/content/delete/upload/parse cũ.
+
+| Backend → Next | Request | Response |
+| --- | --- | --- |
+| POST /moderator/question-files/approve → POST /api/moderator/question-files/approve | multipart key:string, file:DOCX tùy chọn; không nhận subject từ client | 200 ApproveQuestionFileResponseDTO {questionIds:string[], fileDeleted:boolean, message:string} |
+| POST /moderator/question-files/reject → POST /api/moderator/question-files/reject | JSON RejectQuestionFileDTO {key:string, reason:string} | 204, kể cả email gửi thất bại sau xóa |
+
+Key phải đúng `question-files/<subject>/<filename>.docx`, không segment ./.. hoặc subject rỗng. Approve xác nhận tệp gốc tồn tại; bytes bản gốc hoặc bản chỉnh sửa được validate không rỗng, ≤50 MiB, extension DOCX và ZIP entries, rồi gọi parseDocument với subject từ key. Parse lỗi 500 giữ gốc; parse thành công/xóa lỗi vẫn 200 với fileDeleted=false để client chỉ retry DELETE, không approve lại trong phiên hiện tại.
+
+Reject lý do trim 1–2000 ký tự; email từ basename trước dấu '-' cuối, validate địa chỉ trước khi xóa. Tên chuẩn hóa không chứa '-', email có '-' vẫn giữ. Key/email/reason không hợp lệ 400, sai role 403, token không hợp lệ 401, tệp mất 404, lỗi storage 500. Email lỗi chỉ WARN loại exception, không retry/Telegram và không đổi 204. Next thiếu cookie 401, mất kết nối 502, giữ status backend với message chung, không lộ chi tiết provider. Không có idempotency bền vững, lịch sử hoặc status database.
+
+[ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [approve DTO](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/ApproveQuestionFileResponseDTO.java), [reject DTO](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/RejectQuestionFileDTO.java), [Next approve](../frontend/app/api/moderator/question-files/approve/route.ts), [Next reject](../frontend/app/api/moderator/question-files/reject/route.ts).
+
+
+Snapshot source cập nhật 2026-10-25. Có 40 endpoint Spring, 39 handler Next và 1 endpoint Express theo declaration hiện tại; không phải kết quả gọi server. Backend/frontend kiểm duyệt tệp đã được merge vào main. [Module map](module-map.md), [business flows](business-flows.md), [current status](current-status.md).
 
 ## Contract cần lưu ý
 

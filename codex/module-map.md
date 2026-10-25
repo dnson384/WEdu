@@ -1,5 +1,15 @@
 # Bản đồ module, symbols và API
 
+## Kiểm duyệt S3 — bổ sung 2026-10-25
+
+- QuestionFilesPage → QuestionFilePreviewDialog/QuestionFileReviewForm → useQuestionFileReview → ModeratorService → Next approve/reject → ApproveQuestionFileUsecase/RejectQuestionFileUsecase → IModeratorRepository/ModeratorRepositoryImpl → ModeratorController → [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java).
+- Approve: S3Service.readDocumentFile → StoredDocumentFile hoặc multipart chỉnh sửa → S3Service.validateDocumentFile → ModeratorUsecase.parseDocument → importer frozen → deleteFile. DTO {questionIds,fileDeleted,message}; fileDeleted=false chỉ retry xóa trong phiên UI.
+- Reject: RejectQuestionFileDTO {key,reason} → validate email/lý do → kiểm tra tồn tại → deleteFile → MailService.sendQuestionFileRejectionEmail. Email lỗi chỉ log, không Telegram, vẫn 204.
+- useQuestionFilePreview dùng chung renderer/sandbox cho key S3 hoặc File cục bộ; useQuestionFiles quản lý refresh/cache và cleanupKeys trong bộ nhớ. Không đổi schema hoặc thêm receipt/audit.
+
+[API](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [kiểm tra](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Các dòng snapshot bên dưới mô tả trước khi bổ sung workflow này.
+
+
 Snapshot working tree 2026-10-24. Danh mục declaration/API lấy từ source, không từ endpoint server đang chạy. Endpoint tồn tại không chứng minh end-to-end pass; [current-status.md](current-status.md) ghi trạng thái và hạn chế. Links source dùng đường dẫn tương đối từ codex/.
 
 ## 1. Entry points và ranh giới

@@ -1,5 +1,14 @@
 # Kiến trúc WEdu hiện tại
 
+## Kiểm duyệt S3 — cập nhật 2026-10-25
+
+Frontend giữ ranh giới component → hook → service → Next BFF → usecase → repository/adapter. Backend ModeratorController mỏng; [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) điều phối storage/import/mail. StoredDocumentFile bọc bytes S3 thành MultipartFile, validateDocumentFile dùng chung với upload. Bản chỉnh sửa chỉ tồn tại trong request, không persist S3; subject lấy từ key gốc. Importer/Pandoc không thay đổi.
+
+Approve import xong mới xóa gốc; trả fileDeleted=false khi chỉ bước xóa lỗi. Reject validate email/lý do, xác nhận tồn tại, xóa rồi gửi email text/plain một lần; mail lỗi chỉ log loại exception, không Telegram/retry. Không transaction phân tán hoặc trạng thái moderation bền vững; UI chỉ giữ cleanupKeys trong phiên hiện tại, không chống race/restart/mất phản hồi. Preview sandbox dùng chung cho bản gốc và File cục bộ.
+
+[API](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Các nhận định list/parse độc lập trong snapshot cũ bên dưới được thay thế bởi phần này; thiếu persisted audit vẫn giữ.
+
+
 Khảo sát source, manifest và configuration trong working tree ngày 2026-10-24, gồm cả thay đổi chưa commit. Phiên bản dưới đây là khai báo dependency, không xác nhận môi trường triển khai. Không đọc nội dung `.env`; không chạy build/test hoặc gọi dịch vụ ngoài trong lần cập nhật tài liệu này.
 
 ## Đọc cùng bộ context
