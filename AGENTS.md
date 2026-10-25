@@ -39,6 +39,9 @@ Unix dùng `./mvnw`. Exporter thiếu `outDir` dù start cần `dist/app.js`. Ba
 - Giữ owner filter `userId` cho draft/exam, quyền `ROLE_*`, JWT/cookie/refresh contract. Backend quyết định quyền.
 - Đồng bộ schema, types, HTTP method/path, DTO và payload exporter khi đổi contract. Giữ placeholder `<math_N>`, `<img_N>` và S3 object key.
 - Theo style lân cận: TypeScript hai spaces, Java bốn; PascalCase cho class/component, camelCase cho hàm, `I*Repository`, `*RepositoryImpl`, `*Usecase`, `*DTO`. Frontend dùng `@/`; exporter ESM import `.js`. ESLint cấm unused imports.
+- Với frontend, tách code giao diện/presentation khỏi logic xử lý, state phức tạp, data fetching và business logic; page/component tập trung render và interaction, còn logic đặt trong
+hook/service/usecase phù hợp với kiến trúc hiện có.
+- Không lặp lại UI hoặc implementation giống nhau ở nhiều nơi. UI/pattern giao diện dùng lại phải tách thành reusable component; logic không thuộc UI bị lặp phải tách thành hook/service dùng chung phù hợp, không copy-paste giữa các component/page.
 - Không ghi/log secrets, password, token hoặc presigned URL; không đặt credentials trong `NEXT_PUBLIC_*`. Không mặc định Spring tự nạp `.env`.
 
 ## Commit và PR

@@ -124,6 +124,8 @@ Snapshot working tree 2026-10-24, gồm staged/unstaged/untracked files. Chỉ m
 
 ### Backend `moderator`
 
+Symbols mới cho xóa tệp: `ModeratorController.deleteQuestionFile(String key)` (DELETE), `ModeratorUsecase.deleteQuestionFile(String key)` (validate prefix/segment, gọi storage). [Test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java) đi qua JWT, method security, usecase và S3Service với S3Client mock.
+
 | Layer / thư mục | Symbols / source |
 | --- | --- |
 | `controller` | [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) |
