@@ -188,6 +188,11 @@ public class S3Service {
         s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(objectKey).build());
     }
 
+    public byte[] readDocumentFile(String objectKey) {
+        return s3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(bucketName).key(objectKey).build()).asByteArray();
+    }
+
     public List<S3ObjectInfo> listQuestionFiles(String prefix) {
         ListObjectsV2Request request = ListObjectsV2Request.builder()
                 .bucket(bucketName)
