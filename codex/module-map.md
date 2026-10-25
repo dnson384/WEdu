@@ -53,7 +53,7 @@ Danh mục source từng feature trong source-catalog.md là bằng chứng cho 
 | Contract | Source/behavior cần đọc cùng nhau |
 | --- | --- |
 | Question files | S3ObjectInfo ↔ QuestionFileEntity; GET /moderator/question-files ↔ Next /api/moderator/question-files; response key/fileName/size/lastModified/presignedUrl. ModeratorLayout chặn UI theo role, backend @PreAuthorize chặn API. |
-| DOCX upload | POST /storage/question-file ↔ Next /api/storage/question-file; multipart file/subject, response string key; StorageService.uploadFileToQuestionBank còn khai báo boolean. Backend dùng updateDocumentFile 50 MiB, UI text 25 MB. |
+| DOCX upload | POST /storage/question-file ↔ Next /api/storage/question-file; multipart file/subject, response string key thực tế; StorageService.uploadFileToQuestionBank hiện khai báo string. Backend dùng updateDocumentFile → uploadUniqueDocumentFile, 50 MiB; tên trùng thêm `(n)` bằng S3 conditional PUT; UI text 50 MB. |
 | Avatar | Upload image tách storage (5 MiB); user adapter hiện gọi sai /user/avatar/${s3Key} so với backend /user/update-avatar. Hook new QueryClient và key user-profile còn lệch useAuth user. |
 
 ## 4. API backend và Next.js

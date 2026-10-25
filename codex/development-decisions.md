@@ -18,6 +18,8 @@ Nếu một vấn đề được ghi nhận trong các tài liệu kỹ thuật 
 
 ## Snapshot implementation đối chiếu 2026-10-24
 
+Bổ sung phạm vi đã được duyệt 2026-10-25: chỉ triển khai chống ghi đè khi upload DOCX. Giữ tên chuẩn hóa nếu còn trống; nếu trùng trong cùng thư mục thì chọn hậu tố `(1)`, `(2)`… nhỏ nhất còn trống trước `.docx`, kể cả upload đồng thời. `S3Service.updateDocumentFile` dùng conditional PUT và trả key thực tế; không thay schema hoặc triển khai Approve/Reject trong thay đổi này. [Luồng](business-flows.md#5-upload-docx-danh-sách-file-và-kiểm-duyệt), [validation](current-status.md).
+
 Bổ sung phạm vi theo yêu cầu 2026-10-25: moderator được xóa từng tệp trong `question-files/` sau xác nhận ở UI; API dùng S3 DeleteObject và danh sách refetch tại chỗ. Không mở rộng thành approve/reject, audit/submission hoặc purge version history; trạng thái PLANNED của workflow kiểm duyệt vẫn giữ nguyên. [Contract triển khai](api-reference.md), [validation](current-status.md).
 
 Đây là ghi nhận **implementation** từ working tree (gồm staged/unstaged/untracked), không tự thay đổi các quyết định PLANNED/FROZEN/DEFERRED bên dưới hoặc xác nhận nghiệm thu.
