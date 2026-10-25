@@ -176,6 +176,12 @@ Nguồn: [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/m
 | 7: export/images/OMML/ZIP | [ExporterUsecase](../backend/src/main/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecase.java), [Java WordPayloadRequestDTO](../backend/src/main/java/com/wedu/exam_creation/exporter/dto/request/WordPayloadRequestDTO.java), [TS WordPayloadRequestDTO](../exporter-service/src/routes/exporter/dto/request/WordPayloadRequestDTO.ts), [GenerateWordFileUsecase](../exporter-service/src/routes/exporter/usecase/generateWordFile.ts), [latexToOmml](../exporter-service/src/routes/exporter/infrastructure/converter/latexToOmml.ts) |
 | 8–9: config/caveats | [application.yml](../backend/src/main/resources/application.yml), [exporter tsconfig](../exporter-service/tsconfig.json), [frontend UserService](../frontend/presentation/services/UserService.ts), [legacy helper](../frontend/services/userService.ts); từng finding được dẫn chứng trong current-status |
 
+## Ranh giới preview DOCX — 2026-10-25
+
+Preview chỉ đọc đi qua UI → hook → ModeratorService → Next GET content → frontend usecase/port/adapter → Spring moderator usecase → S3Service → S3. Backend kiểm ROLE_MODERATOR/prefix/key/extension; binary đi qua server, không cần CORS S3 và không đưa token vào browser request tới S3. Không dùng importer/Pandoc hoặc ghi database.
+
+[useQuestionFilePreview](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts) import động docx-preview, render vào container rời rồi gắn vào [dialog iframe](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx). Iframe sandbox chỉ allow-same-origin để parent gắn DOM, không allow-scripts; CSP default-src none, chỉ inline CSS và ảnh/font data URI. Tắt altChunks, bỏ href liên kết, chặn tài nguyên ngoài bằng CSP. Đóng/unmount hủy request và bỏ render cũ; không có editor/save.
+
 ## Backend đọc DOCX cho preview — 2026-10-25
 
 [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → ModeratorUsecase.getQuestionFileContent → S3Service.readDocumentFile → S3Client.getObjectAsBytes. Backend quyết định quyền MODERATOR, kiểm prefix/key/.docx rồi trả binary no-store. Storage giữ ranh giới AWS; không gọi importer/Pandoc hoặc ghi database. validateQuestionFileKey được dùng chung với xóa, giữ nguyên điều kiện xóa. [API](api-reference.md).

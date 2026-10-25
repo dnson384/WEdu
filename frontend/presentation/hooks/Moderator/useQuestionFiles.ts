@@ -22,6 +22,7 @@ export default function useQuestionFiles() {
     null,
   );
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<QuestionFileEntity | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const deleteInFlight = useRef(false);
 
@@ -99,6 +100,9 @@ export default function useQuestionFiles() {
   };
 
   return {
+    previewFile,
+    handlePreviewClick: (file: QuestionFileEntity) => setPreviewFile(file),
+    handleClosePreview: () => setPreviewFile(null),
     files,
     isPending,
     isFetching,

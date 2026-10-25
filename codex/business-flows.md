@@ -107,6 +107,12 @@ Bằng chứng: [Next export route](../frontend/app/api/exporter/exam/route.ts),
 - **Thanh toán missing**, UI **partial**: [Bill](../frontend/app/(site)/me/bill/page.tsx) chỉ hiển thị text; chưa thấy gateway, webhook, invoice/payment collection, trạng thái pending/paid/failed/refund hoặc API upgrade account. `accountType` chỉ được tạo FREE/đọc PLUS trong các luồng đã khảo sát. Không suy ra người dùng mua PLUS được bằng app hiện tại.
 - **unknown cần chủ dự án xác nhận:** file/câu AI phải được duyệt trước khi dùng hay sau khi dùng? Teacher và moderator liên kết submission ra sao? Admin có nên kiêm moderator? Ai cấp PLUS, thời hạn/quota thế nào? Sinh thiếu có được coi thành công? Chính sách matrix mặc định và hỗ trợ Tự luận có chủ đích gì? Reset password có cần thu hồi toàn bộ phiên? Chapter name có duy nhất xuyên môn không? “Giao dịch” mong muốn là thanh toán hay transaction dữ liệu?
 
+## Xem trước tệp câu hỏi chỉ đọc — 2026-10-25
+
+Moderator click dòng/tên tệp ở /moderator/question-files → modal chỉ đọc → tải DOCX qua [API content](api-reference.md) → render bằng docx-preview trong iframe cách ly. Tải khi mở, có loading/error/Thử lại; Đóng hoặc Escape (kể cả khi focus ở iframe) đóng và khôi phục focus. Nút Tải xuống/Xóa ở danh sách không mở preview. Chuyển/đóng file hủy request, không dùng kết quả render cũ.
+
+Preview không có chỉnh sửa/lưu/toolbar soạn thảo, không import và không chuyển trạng thái duyệt. Bố cục/font/ngắt trang có thể khác Word; có Tải xuống file gốc. Trạng thái persisted submission/approval vẫn missing như trước. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [hook](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts).
+
 ## Backend cung cấp nội dung xem trước — 2026-10-25
 
 Moderator gọi GET /moderator/question-files/content với key từ danh sách → backend kiểm role/key/prefix/.docx → đọc object S3 → trả binary DOCX no-store. Object không còn trả 404; lỗi storage khác trả 500 chung. Đây là đọc nội dung, không sửa/lưu/import tài liệu hoặc chuyển trạng thái duyệt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md).
