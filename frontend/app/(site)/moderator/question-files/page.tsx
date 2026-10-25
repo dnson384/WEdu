@@ -10,6 +10,8 @@ export default function QuestionFilesPage() {
   const {
     files,
     previewFile,
+    previewNeedsCleanup,
+    handleReviewComplete,
     handlePreviewClick,
     handleClosePreview,
     isPending,
@@ -28,7 +30,8 @@ export default function QuestionFilesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      {previewFile && <QuestionFilePreviewDialog key={previewFile.key} file={previewFile} onClose={handleClosePreview} />}
+      {previewFile && <QuestionFilePreviewDialog key={previewFile.key} file={previewFile} onClose={handleClosePreview}
+        onComplete={handleReviewComplete} needsCleanup={previewNeedsCleanup} />}
       <DeleteQuestionFileDialog
         file={selectedFile}
         isDeleting={isDeleting}
@@ -53,7 +56,7 @@ export default function QuestionFilesPage() {
             Quản lý tệp tin câu hỏi
           </h1>
           <p className="mt-3 text-gray-500">
-            Xem và tải xuống các tài liệu câu hỏi đã được gửi lên hệ thống.
+            Xem trước, duyệt hoặc từ chối các tài liệu câu hỏi đang chờ kiểm duyệt.
           </p>
         </div>
         <button
