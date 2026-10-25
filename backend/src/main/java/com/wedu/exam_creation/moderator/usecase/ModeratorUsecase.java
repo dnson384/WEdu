@@ -2,6 +2,7 @@ package com.wedu.exam_creation.moderator.usecase;
 
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
+import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.InternalServerException;
 import com.wedu.exam_creation.importer.service.ImporterService;
 import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
@@ -30,6 +31,20 @@ public class ModeratorUsecase {
         } catch (software.amazon.awssdk.core.exception.SdkException e) {
             log.error("Lỗi xảy ra khi lấy danh sách tệp tin câu hỏi từ S3", e);
             throw new InternalServerException("Không thể lấy danh sách tệp tin câu hỏi");
+        }
+    }
+
+    public void deleteQuestionFile(String key) {
+        if (key == null || key.isBlank() || !key.startsWith("question-files/")
+                || key.endsWith("/")
+                || java.util.Arrays.stream(key.split("/", -1))
+                        .anyMatch(segment -> segment.equals(".") || segment.equals(".."))) {
+            throw new BadRequestException("Tệp tin câu hỏi không hợp lệ");
+        }
+        try {
+            s3Service.deleteFile(key);
+        } catch (software.amazon.awssdk.core.exception.SdkException e) {
+            throw new InternalServerException("Không thể xóa tệp tin câu hỏi. Vui lòng thử lại");
         }
     }
 

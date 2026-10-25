@@ -26,6 +26,12 @@ public class ModeratorController {
         return ResponseEntity.ok(moderatorUsecase.listQuestionFiles());
     }
 
+    @DeleteMapping("/question-files")
+    public ResponseEntity<Void> deleteQuestionFile(@RequestParam("key") String key) {
+        moderatorUsecase.deleteQuestionFile(key);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/parse")
     public ResponseEntity<List<String>> parseDocument(
             @AuthenticationPrincipal CustomUserDetails principal,
