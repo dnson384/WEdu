@@ -9,13 +9,15 @@ export const previewDocument = `<!doctype html><html><head><meta charset="utf-8"
 <style>body{margin:0;background:#f3f4f6} .docx-wrapper{padding:16px!important} a{pointer-events:none}</style>
 </head><body></body></html>`;
 
-export default function useQuestionFilePreview(fileKey: string) {
+export default function useQuestionFilePreview(fileKey: string, localFile: File | null = null) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const service = useMemo(() => new ModeratorService(), []);
   const [attempt, setAttempt] = useState(0);
   const [frameReady, setFrameReady] = useState(false);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [error, setError] = useState("");
+  const source = localFile ?? fileKey;
+  const [result, setResult] = useState<{ source: string | File | null; status: "loading" | "ready" | "error"; error: string }>({ source: null, status: "loading", error: "" });
+  const status = result.source === source ? result.status : "loading";
+  const error = result.source === source ? result.error : "";
 
   useEffect(() => {
     if (!frameReady) return;
@@ -28,7 +30,7 @@ export default function useQuestionFilePreview(fileKey: string) {
     async function load() {
       try {
         const [data, { renderAsync }] = await Promise.all([
-          service.getQuestionFileContent(fileKey, controller.signal),
+          localFile ? localFile.arrayBuffer() : service.getQuestionFileContent(fileKey, controller.signal),
           import("docx-preview"),
         ]);
         if (controller.signal.aborted) return;
@@ -41,7 +43,7 @@ export default function useQuestionFilePreview(fileKey: string) {
         if (controller.signal.aborted) return;
         container.querySelectorAll("a").forEach((link) => link.removeAttribute("href"));
         document!.body.replaceChildren(styles, container);
-        setStatus("ready");
+        setResult({ source, status: "ready", error: "" });
       } catch (cause) {
         if (controller.signal.aborted) return;
         let message = "Không thể xem trước tệp DOCX. Bạn có thể thử lại hoặc tải file gốc.";
@@ -51,8 +53,7 @@ export default function useQuestionFilePreview(fileKey: string) {
             if (typeof response.message === "string") message = response.message;
           } catch { /* Keep the generic message for non-JSON responses. */ }
         }
-        setError(message);
-        setStatus("error");
+        setResult({ source, status: "error", error: message });
       }
     }
     void load();
@@ -60,14 +61,13 @@ export default function useQuestionFilePreview(fileKey: string) {
       controller.abort();
       document.body.replaceChildren();
     };
-  }, [fileKey, service, frameReady, attempt]);
+  }, [fileKey, localFile, source, service, frameReady, attempt]);
 
   return {
     frameRef, status, error,
     handleFrameLoad: () => setFrameReady(true),
     handleRetry: () => {
-      setStatus("loading");
-      setError("");
+      setResult({ source, status: "loading", error: "" });
       setAttempt((value) => value + 1);
     },
   };

@@ -24,12 +24,18 @@ export default function useQuestionFiles() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<QuestionFileEntity | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [cleanupKeys, setCleanupKeys] = useState<Set<string>>(new Set());
   const deleteInFlight = useRef(false);
 
   const deletion = useMutation({
     mutationFn: (key: string) => service.deleteQuestionFile(key),
     retry: false,
     onSuccess: async (_, key) => {
+      setCleanupKeys((previous) => {
+        const next = new Set(previous);
+        next.delete(key);
+        return next;
+      });
       setSelectedFile(null);
       setNotification("Đã xóa tệp tin câu hỏi thành công");
       await queryClient.cancelQueries({ queryKey, exact: true });
@@ -100,6 +106,23 @@ export default function useQuestionFiles() {
   };
 
   return {
+    previewNeedsCleanup: previewFile !== null && cleanupKeys.has(previewFile.key),
+    handleReviewComplete: (key: string, message: string, needsCleanup: boolean) => {
+      setCleanupKeys((previous) => {
+        const next = new Set(previous);
+        if (needsCleanup) next.add(key);
+        else next.delete(key);
+        return next;
+      });
+      setNotification(message);
+      setPreviewFile(null);
+      void (async () => {
+        await queryClient.cancelQueries({ queryKey, exact: true });
+        if (!needsCleanup) queryClient.setQueryData<QuestionFileEntity[]>(queryKey, (previous) =>
+          previous?.filter((file) => file.key !== key));
+        await queryClient.invalidateQueries({ queryKey, exact: true });
+      })();
+    },
     previewFile,
     handlePreviewClick: (file: QuestionFileEntity) => setPreviewFile(file),
     handleClosePreview: () => setPreviewFile(null),
