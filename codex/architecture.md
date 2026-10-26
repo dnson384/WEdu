@@ -1,5 +1,11 @@
 # Kiến trúc WEdu hiện tại
 
+## Trạng thái câu hỏi — 2026-10-26
+
+QuestionService quyết định trạng thái ban đầu trước persistence: public insertFromDocx cho parse gán APPROVED; nhánh AI gọi method private với PENDING_REVIEW. QuestionEntity ↔ QuestionMapper ↔ QuestionDocument giữ String status. Không đổi ranh giới service, HTTP DTO hoặc quyền; không lọc status khi sinh đề.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Kiểm duyệt S3 — cập nhật 2026-10-25
 
 Frontend giữ ranh giới component → hook → service → Next BFF → usecase → repository/adapter. Backend ModeratorController mỏng; [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) điều phối storage/import/mail. StoredDocumentFile bọc bytes S3 thành MultipartFile, validateDocumentFile dùng chung với upload. Bản chỉnh sửa chỉ tồn tại trong request, không persist S3; subject lấy từ key gốc. Importer/Pandoc không thay đổi.
@@ -111,7 +117,7 @@ KaTeX hiển thị công thức. Template `<math_N>`/`<img_N>` cùng variables m
 
 - **S3:** [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) tách uploadImageFile (JPEG/PNG, UUID, avatar 5 MiB) và updateDocumentFile (DOCX ZIP entries, key email-PascalCase filename, 50 MiB). Từ 2026-10-25, uploadUniqueDocumentFile dùng conditional PUT `If-None-Match: *`, thử hậu tố `(n)` khi trùng; chống ghi đè tại S3 kể cả nhiều instance, không cần khóa trong JVM hoặc schema MongoDB. POST `/storage/question-file` lưu `question-files/<subject>/...` và trả key thực tế; GET `/moderator/question-files` list tất cả trang và tạo attachment download URL 60 phút qua ModeratorUsecase. Next `/api/moderator/question-files` no-store và UI `/moderator/question-files` xử lý loading/empty/error/download. UI upload hiện ghi 50 MB và StorageService typed string; chưa có approval state. [Luồng đầy đủ](business-flows.md#5-upload-docx-danh-sách-file-và-kiểm-duyệt).
 - **Import:** `/moderator/parse` chạy executable `pandoc` trên PATH, ghi workspace `static/uploads/pandoc_<uuid>`, chuyển DOCX thành JSON AST, extract media lên S3 `media/`, parse rồi lưu MongoDB. Code dọn workspace. Docker runtime chưa cài Pandoc hoặc chuẩn bị thư mục ghi này.
-- **Sinh đề:** chọn ngẫu nhiên theo lesson, dạng bài, độ khó, learning outcome, loại câu; loại câu đã chọn khỏi pool tránh lặp. Khi thiếu, trả thông tin thiếu; chỉ `accountType == "PLUS"` gọi AI bù. Câu AI được lưu và Telegram báo cần review; chưa thấy field trạng thái duyệt trong QuestionDocument hoặc bộ lọc approved trong luồng chọn này.
+- **Sinh đề:** chọn ngẫu nhiên theo lesson, dạng bài, độ khó, learning outcome, loại câu; loại câu đã chọn khỏi pool tránh lặp. Khi thiếu, trả thông tin thiếu; chỉ `accountType == "PLUS"` gọi AI bù. Câu AI được lưu và Telegram báo cần review; QuestionDocument.status lưu PENDING_REVIEW cho AI, APPROVED cho parse; chưa có bộ lọc approved trong luồng chọn này.
 - **DeepSeek:** RestClient gọi `/chat/completions`, model cấu hình `deepseek-flash`, yêu cầu JSON object, parse `choices[0].message.content`. Property timeout 30 giây chưa nối vào HTTP client. Kết quả được gán theo thứ tự/số lượng request; cần giữ hoặc kiểm tra contract đó khi thay đổi.
 - **Telegram:** RestTemplate gửi thông báo câu AI và lỗi xóa ảnh qua hai bot; HTTP đồng bộ, không thấy queue/outbox.
 - **Export:** backend lấy đề theo owner, tải ảnh presigned song song thành Base64, nhóm/sắp loại câu rồi POST JSON. URL ghép bằng `EXPRESS_EXPORTER_URL + "exam"`, nên base cần `/exporter/` và dấu slash cuối theo route hiện tại. Express nhận `POST /exporter/exam`; builders tạo DOCX; LaTeX → MathJax MathML → OMML; JSZip sửa `word/document.xml`. Giữ contract Java/TypeScript `examName`, `questionsSorted`, `imageCache`. Express hiện không có authentication middleware.

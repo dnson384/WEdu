@@ -1,5 +1,11 @@
 # Bản đồ module, symbols và API
 
+## Trạng thái câu hỏi — 2026-10-26
+
+QuestionService.insertFromDocx(List<NewQuestionDTO>) → private insert(List<NewQuestionDTO>, String status) → IQuestionRepository.saveQuestions → QuestionMapper.toDocument → Questions.status. Parse dùng APPROVED, generateExamQuestions truyền PENDING_REVIEW cho AI. toEntity giữ status; legacy null. Không enum/route/HTTP DTO mới.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Kiểm duyệt S3 — bổ sung 2026-10-25
 
 - QuestionFilesPage → QuestionFilePreviewDialog/QuestionFileReviewForm → useQuestionFileReview → ModeratorService → Next approve/reject → ApproveQuestionFileUsecase/RejectQuestionFileUsecase → IModeratorRepository/ModeratorRepositoryImpl → ModeratorController → [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java).

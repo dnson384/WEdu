@@ -1,5 +1,11 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Trạng thái câu hỏi — 2026-10-26
+
+ImporterService.parseDocument → QuestionService.insertFromDocx(List<NewQuestionDTO>) gán APPROVED trước khi lưu. Nhánh generateExamQuestions dùng method private insert(questions, "PENDING_REVIEW") cho AI; vẫn gửi Telegram và dùng IDs ngay trong đề. Không lọc status khi chọn lại câu, không thêm API/UI duyệt câu hỏi.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 Snapshot source 2026-10-24; xem [current-status.md](current-status.md) để hiểu nhãn trạng thái. “Có code” không đồng nghĩa đã xác nhận end-to-end. Đường dẫn backend dưới đây là source thật trong `backend/src/main/java/com/wedu/exam_creation`.
 
 ## 1. Đăng ký, đăng nhập và phiên

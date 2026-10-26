@@ -69,7 +69,7 @@ public class ImporterService {
         List<NewQuestionDTO> newQuestionDTOS = parsedData.getQuestions().stream()
                 .map(question -> mapQuestionToDTO(question, subject, categoryResponse)).toList();
 
-        return questionService.insert(newQuestionDTOS);
+        return questionService.insertFromDocx(newQuestionDTOS);
     }
 
     private NewQuestionDTO mapQuestionToDTO(NewQuestionImporterDTO question, String subject, SavedChapterResponse categoryResponse) {

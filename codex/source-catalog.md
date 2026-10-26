@@ -1,5 +1,11 @@
 # Source catalogue WEdu
 
+## Trạng thái câu hỏi — 2026-10-26
+
+Symbols cập nhật: QuestionDocument.status và QuestionEntity.status (String); QuestionService.insertFromDocx(List<NewQuestionDTO>) mặc định APPROVED, method private insert(List<NewQuestionDTO>, String) nhận PENDING_REVIEW từ generateExamQuestions. Không thêm QuestionStatus.java. QuestionStatusTest.java đã được xóa theo yêu cầu; không thêm test mới.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Symbols kiểm duyệt tệp — 2026-10-25
 
 | Nhóm | Symbols/files bổ sung hoặc mở rộng |
