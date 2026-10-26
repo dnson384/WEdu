@@ -1,5 +1,11 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Trạng thái câu hỏi — 2026-10-26
+
+Collection Questions thêm status: String, không default/index. Parse = APPROVED; AI = PENDING_REVIEW. QuestionMapper ánh xạ QuestionEntity ↔ QuestionDocument; legacy thiếu field đọc là null (chưa xác định), không migration/backfill.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Kiểm duyệt tệp không đổi schema — 2026-10-25
 
 Không thêm collection/field/index, submission, audit hoặc receipt S3. Sự hiện diện trong `question-files/` là hàng chờ; approve import rồi xóa, reject xóa rồi email. Không lưu APPROVED/REJECTED/reviewer/reason/email delivery. DTO approve {questionIds,fileDeleted,message} và reject {key,reason} là contract HTTP, không phải document. cleanupKeys frontend là bộ nhớ phiên, không bảo đảm idempotency xuyên moderator/restart/mất phản hồi. [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md#duyệttừ-chối-tệp--2026-10-25).
@@ -45,7 +51,7 @@ erDiagram
 | Reset token | used=false → used=true; expiryDate now+15m; request mới xóa token cũ của user | Cleanup TTL không phải logic expiry; chưa atomic consume. |
 | Refresh metadata | save khi local auth → delete lúc logout/thu hồi | Không thấy refresh rotation hoặc access blacklist. |
 | Draft/exam | Suy ra giai đoạn từ cấu trúc chapters/matrix/details hoặc document có tồn tại | Không có status DRAFT/FINAL/PUBLISHED/PROCESSING. |
-| File/câu hỏi/AI | File là S3 object; Question không status field; AI lưu giống question thường | Không có persisted pending/approved/rejected, source=AI, reviewer, submittedBy hoặc review audit trong schema đã khảo sát. |
+| File/câu hỏi/AI | File là S3 object; Question.status: parse APPROVED, AI PENDING_REVIEW | Có trạng thái ban đầu APPROVED/PENDING_REVIEW; chưa có REJECTED, source, reviewer, submittedBy hoặc review audit. |
 | Giao dịch tiền | Không thấy collection/model payment/transaction | Không tự tạo pending/paid/refund hoặc suy ra PLUS đã được mua. |
 
 Bằng chứng: [UserUsecase](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [CustomOAuth2UserService](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java), [PasswordResetTokenUsecase](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/usecase/PasswordResetTokenUsecase.java), [AuthUsecase](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), document catalogue bên dưới.
@@ -268,6 +274,7 @@ Source: [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/quest
 | `difficultyLevel` | `String` | `@Indexed` |
 | `learningOutcomes` | `List<String>` | `@Builder.Default` |
 | `questionType` | `String` | `@Indexed` |
+| `status` | `String` | APPROVED/PENDING_REVIEW; legacy null |
 | `question` | `ContentDocument` | — |
 | `options` | `List<ContentDocument>` | `@Builder.Default` |
 | `createdAt` | `Instant` | `@CreatedDate` |

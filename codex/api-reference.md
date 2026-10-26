@@ -1,5 +1,11 @@
 # API reference WEdu
 
+## Trạng thái câu hỏi — 2026-10-26
+
+Không thêm/đổi endpoint hoặc HTTP request/response DTO. QuestionService.insertFromDocx mặc định APPROVED cho câu parse; nhánh AI truyền PENDING_REVIEW qua method private. status chỉ lưu trong QuestionEntity/QuestionDocument, không đưa vào QuestionDTO hay payload frontend/exporter. Parse/approve file vẫn trả IDs theo contract cũ.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Duyệt/từ chối tệp — 2026-10-25
 
 Backend `ROLE_MODERATOR`, Next BFF lấy cookie accessToken và chuyển Bearer chỉ phía server; cache private/no-store. Giữ list/content/delete/upload/parse cũ.

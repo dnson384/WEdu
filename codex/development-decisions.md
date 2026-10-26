@@ -1,5 +1,11 @@
 # WEdu Development Decisions
 
+## Trạng thái câu hỏi — 2026-10-26
+
+Phạm vi được duyệt 2026-10-26: thêm String status vào QuestionDocument/QuestionEntity. Parse = APPROVED, AI = PENDING_REVIEW; không tạo QuestionStatus.java. Giữ việc dùng ngay và chọn lại câu AI trong đề; không lọc status. Legacy thiếu field là null, không backfill vì chưa xác định nguồn. Đây là ngoại lệ chỉ cho trạng thái ban đầu; workflow duyệt đầy đủ, REJECTED, audit và regenerate vẫn ngoài scope.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 Tài liệu này ghi lại các quyết định phát triển hiện hành của dự án WEdu.
 
 Mục đích của file là phân biệt giữa:
@@ -188,7 +194,7 @@ Moderator review
 APPROVED   REJECTED
 ```
 
-Đây mới là hướng thiết kế, chưa phải persisted schema hiện tại.
+Đây là hướng thiết kế workflow đầy đủ; schema hiện chỉ lưu trạng thái ban đầu theo cập nhật 2026-10-26 ở đầu tài liệu.
 
 ### Quyết định còn phải chốt trước implementation
 

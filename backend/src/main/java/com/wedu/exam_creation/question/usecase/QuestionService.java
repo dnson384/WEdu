@@ -33,8 +33,18 @@ public class QuestionService {
         this.telegramNotificationService = telegramNotificationService;
     }
 
-    public List<String> insert(List<NewQuestionDTO> questions) {
-        List<QuestionEntity> newQuestionsEntity = questions.stream().map(mapper::newQuestionDTOToEntity).toList();
+    public List<String> insertFromDocx(List<NewQuestionDTO> questions) {
+        return insert(questions, "APPROVED");
+    }
+
+    private List<String> insert(List<NewQuestionDTO> questions, String status) {
+        List<QuestionEntity> newQuestionsEntity = questions.stream()
+                .map(question -> {
+                    QuestionEntity entity = mapper.newQuestionDTOToEntity(question);
+                    entity.setStatus(status);
+                    return entity;
+                })
+                .toList();
         return repo.saveQuestions(newQuestionsEntity);
     }
 
@@ -165,7 +175,7 @@ public class QuestionService {
             List<AIQuestionResponseDTO> generatedQuestions = aiQuestionGenerationService.generateQuestions(aiRequests);
 
             List<NewQuestionDTO> aiQuestions = toNewQuestionDTO(generatedQuestions);
-            List<String> newQuestionIds = this.insert(aiQuestions);
+            List<String> newQuestionIds = this.insert(aiQuestions, "PENDING_REVIEW");
 
             telegramNotificationService.notifyPendingReview(newQuestionIds);
 

@@ -21,6 +21,7 @@ public class QuestionEntity {
     private String difficultyLevel;
     private List<String> learningOutcomes;
     private String questionType;
+    private String status;
 
     @Builder.Default
     private ContentEntity question = new ContentEntity();

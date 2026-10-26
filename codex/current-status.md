@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Trạng thái câu hỏi — 2026-10-26
+
+Implemented trạng thái ban đầu: String status, parse APPROVED, AI PENDING_REVIEW. Legacy thiếu field đọc null, không backfill; không filter hoặc workflow duyệt câu hỏi. Public method đổi thành insertFromDocx, ImporterService đã cập nhật nơi gọi. QuestionStatusTest.java đã xóa theo yêu cầu. Validation sau rename/xóa test: mvn -q clean test đạt 244 tests, 0 failures/errors; git diff --check đạt; chưa chạy MongoDB/Pandoc/AI thật. Không đổi HTTP API. Các snapshot cũ ghi chưa có status được thay thế bởi cập nhật này.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
 ## Kiểm duyệt tệp S3 — 2026-10-25
 
 Implemented theo source: modal preview hỗ trợ duyệt ngay, chọn/xem trước DOCX chỉnh sửa rồi duyệt, hoặc nhập lý do từ chối. [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java).approveQuestionFile nối key S3 tới `parseDocument`; import thành công xóa tệp gốc. Xóa sau import lỗi trả `fileDeleted=false`, UI ghi nhớ key và chỉ cho xóa lại trong phiên hiện tại. Không database/receipt/audit; không bảo đảm idempotency xuyên moderator/restart/mất phản hồi.
