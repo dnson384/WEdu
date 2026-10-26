@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Implemented snapshot riêng trong questionReview: RegeneratedQuestion, Content, Variables ở cả domain/entity và infrastructure/document. Root regeneratedQuestions dùng các kiểu nội bộ; QuestionReviewMapper tự map, không import từ question. Giữ source hiện tại: collection QuestionsReview, service → QuestionReviewUsecase → repository, transaction tại QuestionService. Chưa regenerate/append/API/approve/reject hoặc backfill. Validation: mvn -q clean test đạt 244 tests, 0 failures/errors; git diff --check đạt. Java harness tạm ngoài repo với Spring context, MongoTemplate mock và transaction manager giả lập đạt wiring có QuestionReviewUsecase, DOCX không tạo review, AI ID, danh sách rỗng, nested model/entity/BSON roundtrip đầy đủ metadata/status/content/options/math/image/timestamps, collection QuestionsReview, snapshot không @Document, commit và rollback interception khi review lỗi. Source và MapStruct generated code của questionReview không import từ question. Không tạo file test trong repo. Chưa kiểm chứng MongoDB thật.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 Implemented trạng thái ban đầu: String status, parse APPROVED, AI PENDING_REVIEW. Legacy thiếu field đọc null, không backfill; không filter hoặc workflow duyệt câu hỏi. Public method đổi thành insertFromDocx, ImporterService đã cập nhật nơi gọi. QuestionStatusTest.java đã xóa theo yêu cầu. Validation sau rename/xóa test: mvn -q clean test đạt 244 tests, 0 failures/errors; git diff --check đạt; chưa chạy MongoDB/Pandoc/AI thật. Không đổi HTTP API. Các snapshot cũ ghi chưa có status được thay thế bởi cập nhật này.

@@ -1,5 +1,11 @@
 # Bản đồ module, symbols và API
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+QuestionService.generateExamQuestions → QuestionReviewService.createForQuestions → QuestionReviewUsecase.createForQuestions → QuestionReviewEntity → IQuestionReviewRepository.saveReviews → QuestionReviewRepositoryImpl → QuestionReviewMapper → QuestionReviewDocument → QuestionsReview. regeneratedQuestions dùng RegeneratedQuestionEntity/RegeneratedQuestionDocument; ContentRegeneratedEntity/VariablesRegeneratedEntity và ContentDocument/VariablesDocument nằm trong questionReview. Mapper không uses QuestionMapper, không có import từ package question trong module review.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 QuestionService.insertFromDocx(List<NewQuestionDTO>) → private insert(List<NewQuestionDTO>, String status) → IQuestionRepository.saveQuestions → QuestionMapper.toDocument → Questions.status. Parse dùng APPROVED, generateExamQuestions truyền PENDING_REVIEW cho AI. toEntity giữ status; legacy null. Không enum/route/HTTP DTO mới.

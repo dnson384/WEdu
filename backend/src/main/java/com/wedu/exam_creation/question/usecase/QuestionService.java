@@ -15,7 +15,9 @@ import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
 import com.wedu.exam_creation.question.dto.mapper.QuestionDTOMapper;
 import com.wedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
+import com.wedu.exam_creation.questionReview.usecase.QuestionReviewService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -25,12 +27,14 @@ public class QuestionService {
     private final QuestionDTOMapper mapper;
     private final AIQuestionGenerationService aiQuestionGenerationService;
     private final TelegramNotificationService telegramNotificationService;
+    private final QuestionReviewService questionReviewService;
 
-    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService, TelegramNotificationService telegramNotificationService) {
+    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService, TelegramNotificationService telegramNotificationService, QuestionReviewService questionReviewService) {
         this.repo = repo;
         this.mapper = mapper;
         this.aiQuestionGenerationService = aiQuestionGenerationService;
         this.telegramNotificationService = telegramNotificationService;
+        this.questionReviewService = questionReviewService;
     }
 
     public List<String> insertFromDocx(List<NewQuestionDTO> questions) {
@@ -55,6 +59,7 @@ public class QuestionService {
                 .toList();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public ExamGeneratedDTO generateExamQuestions(String accountType, List<ChapterResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) throws JsonProcessingException {
         List<String> errors = new ArrayList<>();
 
@@ -176,6 +181,7 @@ public class QuestionService {
 
             List<NewQuestionDTO> aiQuestions = toNewQuestionDTO(generatedQuestions);
             List<String> newQuestionIds = this.insert(aiQuestions, "PENDING_REVIEW");
+            questionReviewService.createForQuestions(newQuestionIds);
 
             telegramNotificationService.notifyPendingReview(newQuestionIds);
 

@@ -1,5 +1,11 @@
 # Source catalogue WEdu
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+questionReview bổ sung 6 model snapshot riêng: domain/entity RegeneratedQuestionEntity, ContentRegeneratedEntity, VariablesRegeneratedEntity; infrastructure/document RegeneratedQuestionDocument, ContentDocument, VariablesDocument. QuestionReviewEntity và QuestionReviewDocument đổi kiểu regeneratedQuestions sang model nội bộ; QuestionReviewMapper bỏ uses QuestionMapper. QuestionReviewService gọi QuestionReviewUsecase; collection hiện tại QuestionsReview. Không import model/mapper từ question.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 Symbols cập nhật: QuestionDocument.status và QuestionEntity.status (String); QuestionService.insertFromDocx(List<NewQuestionDTO>) mặc định APPROVED, method private insert(List<NewQuestionDTO>, String) nhận PENDING_REVIEW từ generateExamQuestions. Không thêm QuestionStatus.java. QuestionStatusTest.java đã được xóa theo yêu cầu; không thêm test mới.
@@ -182,6 +188,25 @@ Symbols mới cho xóa tệp: `ModeratorController.deleteQuestionFile(String key
 | `infrastructure/mapper` | [QuestionMapper](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/mapper/QuestionMapper.java) |
 | `infrastructure/repository` | [QuestionRepositoryImpl](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java) |
 | `usecase` | [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java) |
+
+### Backend `questionReview`
+
+| Layer / thư mục | Symbols / source |
+| --- | --- |
+| `domain/entity` | [QuestionReviewEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/QuestionReviewEntity.java) |
+| `domain/repository` | [IQuestionReviewRepository](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/repository/IQuestionReviewRepository.java) |
+| `infrastructure/document` | [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java) |
+| `infrastructure/mapper` | [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java) |
+| `infrastructure/repository` | [QuestionReviewRepositoryImpl](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java) |
+| `usecase` | [QuestionReviewService](../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewService.java) |
+
+Các model snapshot nội bộ:
+
+| Layer | Source |
+| --- | --- |
+| domain/entity | [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [ContentRegeneratedEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/ContentRegeneratedEntity.java), [VariablesRegeneratedEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/VariablesRegeneratedEntity.java) |
+| infrastructure/document | [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [ContentDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/ContentDocument.java), [VariablesDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/VariablesDocument.java) |
+| usecase | [QuestionReviewUsecase](../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java) |
 
 ### Backend `refreshToken`
 

@@ -1,5 +1,11 @@
 # WEdu Development Decisions
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Module questionReview dùng model riêng cho toàn bộ snapshot: RegeneratedQuestionEntity/RegeneratedQuestionDocument, ContentRegeneratedEntity/ContentDocument, VariablesRegeneratedEntity/VariablesDocument. Không import entity/document/mapper từ question. QuestionReviewMapper tự map các kiểu nội bộ. Giữ collection QuestionsReview theo source hiện tại, cùng _id với câu gốc và regeneratedQuestions rỗng khi tạo. Giữ service → usecase → repository và transaction tại QuestionService; không thêm API, regenerate, approve/reject hoặc backfill.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 Phạm vi được duyệt 2026-10-26: thêm String status vào QuestionDocument/QuestionEntity. Parse = APPROVED, AI = PENDING_REVIEW; không tạo QuestionStatus.java. Giữ việc dùng ngay và chọn lại câu AI trong đề; không lọc status. Legacy thiếu field là null, không backfill vì chưa xác định nguồn. Đây là ngoại lệ chỉ cho trạng thái ban đầu; workflow duyệt đầy đủ, REJECTED, audit và regenerate vẫn ngoài scope.
