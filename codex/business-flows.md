@@ -1,5 +1,11 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Câu AI PENDING_REVIEW được lưu trong Questions; IDs chuyển vào QuestionReviewService → QuestionReviewUsecase → entity → repository → QuestionsReview. regeneratedQuestions mặc định rỗng; kiểu phần tử mới RegeneratedQuestionEntity/RegeneratedQuestionDocument cùng cấu trúc Question nhưng hoàn toàn thuộc questionReview, kể cả Content/Variables. Giữ transaction, Telegram và việc dùng câu AI trong đề; không regenerate/append hoặc đổi approve/reject.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 ImporterService.parseDocument → QuestionService.insertFromDocx(List<NewQuestionDTO>) gán APPROVED trước khi lưu. Nhánh generateExamQuestions dùng method private insert(questions, "PENDING_REVIEW") cho AI; vẫn gửi Telegram và dùng IDs ngay trong đề. Không lọc status khi chọn lại câu, không thêm API/UI duyệt câu hỏi.

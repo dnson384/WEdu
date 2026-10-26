@@ -1,5 +1,11 @@
 # API reference WEdu
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Module questionReview dùng QuestionReviewDocument và RegeneratedQuestionDocument cùng ContentDocument/VariablesDocument nội bộ cho collection QuestionsReview theo source hiện tại. Không dùng entity/document/mapper từ question. Snapshot giữ cùng cấu trúc dữ liệu và placeholders; không thêm/đổi endpoint hoặc HTTP DTO, chưa có API regenerate hoặc review.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 Không thêm/đổi endpoint hoặc HTTP request/response DTO. QuestionService.insertFromDocx mặc định APPROVED cho câu parse; nhánh AI truyền PENDING_REVIEW qua method private. status chỉ lưu trong QuestionEntity/QuestionDocument, không đưa vào QuestionDTO hay payload frontend/exporter. Parse/approve file vẫn trả IDs theo contract cũ.

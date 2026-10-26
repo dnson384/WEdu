@@ -1,5 +1,11 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Collection QuestionsReview (tên hiện tại trong @Document của source) dùng QuestionReviewDocument: id:String @Id trùng Questions._id; regeneratedQuestions:List<RegeneratedQuestionDocument> embedded, mặc định []. Domain QuestionReviewEntity dùng List<RegeneratedQuestionEntity>. Snapshot có đầy đủ fields như Question: id, chapterId, lessonId, exerciseType, difficultyLevel, learningOutcomes, questionType, status, question, options, createdAt, updatedAt. Content/Variables có model riêng trong questionReview, giữ template và math/image maps cùng placeholders. chapterId/lessonId snapshot giữ FieldType.OBJECT_ID, id giữ @Id; snapshot không @Document, @Indexed hoặc @CompoundIndex. Không collection/index mới cho snapshot. QuestionReviewMapper tự map nội bộ; không phụ thuộc model question.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 Collection Questions thêm status: String, không default/index. Parse = APPROVED; AI = PENDING_REVIEW. QuestionMapper ánh xạ QuestionEntity ↔ QuestionDocument; legacy thiếu field đọc là null (chưa xác định), không migration/backfill.
@@ -24,6 +30,7 @@ Các mục field phía dưới trích tên/Java type, không đưa dữ liệu n
 | Users | [UserDocument](../backend/src/main/java/com/wedu/exam_creation/user/infrastructure/document/UserDocument.java) / UserEntity | Avatar local là S3 key; Google service ghi URL. role, loginMethod, accountType là String, isActive là Boolean. |
 | Chapters | [ChapterDocument](../backend/src/main/java/com/wedu/exam_creation/chapter/infrastructure/document/ChapterDocument.java) / ChapterEntity | Embedded lessons[].bankStats[]; lesson ID do code tạo. Field timestamp thực tên `createAt`, không đổi thành createdAt trong docs. |
 | Questions | [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java) / QuestionEntity | chapterId→Chapters, lessonId→embedded lesson. Hai ref annotated OBJECT_ID. Embedded content/options/variables. |
+| QuestionsReview | [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java) | _id→Questions._id (cùng kiểu @Id String); regeneratedQuestions[] embedded RegeneratedQuestionDocument thuộc questionReview, ban đầu rỗng. Chỉ tạo khi insert PENDING_REVIEW. |
 | Drafts | [DraftDocument](../backend/src/main/java/com/wedu/exam_creation/draft/infrastructure/document/DraftDocument.java) / DraftEntity | userId annotated OBJECT_ID→Users; chapter/lesson snapshot chứa ID, name và matrix/details. |
 | Exams | [ExamDocument](../backend/src/main/java/com/wedu/exam_creation/exam/infrastructure/document/ExamDocument.java) / ExamEntity | userId→Users; chapter/lesson snapshot; groups questionType/difficultyLevel/questionIds. questionIds annotated OBJECT_ID→Questions. |
 | RefreshTokens | [RefreshTokenDocument](../backend/src/main/java/com/wedu/exam_creation/refreshToken/infrastructure/document/RefreshTokenDocument.java) / RefreshTokenEntity | jti, userId OBJECT_ID→Users, expiresAt/issuedAt. Lưu metadata, không lưu refresh JWT plaintext trong document. |
@@ -37,6 +44,7 @@ erDiagram
   Users ||--o{ PasswordResetToken : userId
   Chapters ||--o{ Questions : chapterId_lessonId
   Questions }o--o{ Exams : questionIds
+  Questions ||--o| QuestionsReview : same_id
 ```
 
 Đây là quan hệ logic do code sử dụng, **không phải foreign-key constraint MongoDB**. Lesson/matrix/content là embedded. Exam snapshot không copy body câu hỏi; đọc đề phụ thuộc Questions còn tồn tại. Bằng chứng: [ExamUsecase.getExamById/generateExam](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java), [ExamResponseDTOMapper](../backend/src/main/java/com/wedu/exam_creation/exam/dto/mapper/ExamResponseDTOMapper.java).

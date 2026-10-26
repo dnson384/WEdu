@@ -1,5 +1,11 @@
 # Kiến trúc WEdu hiện tại
 
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+questionReview có entity/document snapshot và Content/Variables nội bộ; không import model hoặc mapper từ question. QuestionReviewMapper componentModel=spring tự ánh xạ nested models. Luồng vẫn QuestionService.generateExamQuestions (@Transactional) → lưu Questions → QuestionReviewService → QuestionReviewUsecase → IQuestionReviewRepository → QuestionReviewRepositoryImpl → QuestionsReview. Liên module chỉ truyền List<String> IDs tới service; transaction/schema fields/API giữ nguyên. Collection name QuestionsReview theo chỉnh sửa source hiện tại; không đổi lại QuestionsToReview.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
 ## Trạng thái câu hỏi — 2026-10-26
 
 QuestionService quyết định trạng thái ban đầu trước persistence: public insertFromDocx cho parse gán APPROVED; nhánh AI gọi method private với PENDING_REVIEW. QuestionEntity ↔ QuestionMapper ↔ QuestionDocument giữ String status. Không đổi ranh giới service, HTTP DTO hoặc quyền; không lọc status khi sinh đề.
