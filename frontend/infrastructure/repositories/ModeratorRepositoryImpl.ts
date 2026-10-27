@@ -1,27 +1,62 @@
 import axios from "axios";
+import {
+  PendingQuestionFilters,
+  PendingQuestionPage,
+} from "@/domain/entities/pendingQuestion.entity";
 import { IModeratorRepository } from "@/domain/repositories/IModeratorRepository";
 import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
-import { ApproveQuestionFileResult, RejectQuestionFileInput } from "@/domain/entities/questionFileReview.entity";
+import {
+  ApproveQuestionFileResult,
+  RejectQuestionFileInput,
+} from "@/domain/entities/questionFileReview.entity";
 
 export class ModeratorRepositoryImpl implements IModeratorRepository {
-  async approveQuestionFile(formData: FormData, accessToken: string): Promise<ApproveQuestionFileResult> {
+  async getPendingQuestions(
+    filters: PendingQuestionFilters,
+    accessToken: string,
+  ): Promise<PendingQuestionPage> {
+    const { data } = await axios.get<PendingQuestionPage>(
+      `${this.baseUrl}/moderator/questions/pending`,
+      {
+        params: filters,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    return data;
+  }
+
+  async approveQuestionFile(
+    formData: FormData,
+    accessToken: string,
+  ): Promise<ApproveQuestionFileResult> {
     const { data } = await axios.post<ApproveQuestionFileResult>(
-      `${this.baseUrl}/moderator/question-files/approve`, formData,
+      `${this.baseUrl}/moderator/question-files/approve`,
+      formData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
     return data;
   }
 
-  async rejectQuestionFile(data: RejectQuestionFileInput, accessToken: string): Promise<void> {
-    await axios.post(`${this.baseUrl}/moderator/question-files/reject`, data,
-      { headers: { Authorization: `Bearer ${accessToken}` } });
-  }
-  async getQuestionFileContent(key: string, accessToken: string): Promise<ArrayBuffer> {
-    const { data } = await axios.get<ArrayBuffer>(`${this.baseUrl}/moderator/question-files/content`, {
-      params: { key },
-      responseType: "arraybuffer",
+  async rejectQuestionFile(
+    data: RejectQuestionFileInput,
+    accessToken: string,
+  ): Promise<void> {
+    await axios.post(`${this.baseUrl}/moderator/question-files/reject`, data, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+  }
+  async getQuestionFileContent(
+    key: string,
+    accessToken: string,
+  ): Promise<ArrayBuffer> {
+    const { data } = await axios.get<ArrayBuffer>(
+      `${this.baseUrl}/moderator/question-files/content`,
+      {
+        params: { key },
+        responseType: "arraybuffer",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
     return data;
   }
 
