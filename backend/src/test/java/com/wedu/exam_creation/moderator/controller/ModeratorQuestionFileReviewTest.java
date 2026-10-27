@@ -50,6 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, ModeratorUsecase.class, S3Service.class})
 @TestPropertySource(properties = "aws.bucketName=test-question-bucket")
 class ModeratorQuestionFileReviewTest {
+    @MockitoBean private com.wedu.exam_creation.chapter.usecase.ChapterService chapters;
+    @MockitoBean private com.wedu.exam_creation.question.usecase.QuestionService questions;
     private static final String KEY = "question-files/physics/teacher-name@example-domain.com-DeThi(1).docx";
     @Autowired private MockMvc mvc;
     @Autowired private WebApplicationContext context;

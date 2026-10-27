@@ -39,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, ModeratorUsecase.class, S3Service.class})
 @TestPropertySource(properties = "aws.bucketName=test-question-bucket")
 class ModeratorQuestionFileContentTest {
+    @MockitoBean private com.wedu.exam_creation.chapter.usecase.ChapterService chapters;
+    @MockitoBean private com.wedu.exam_creation.question.usecase.QuestionService questions;
     @Autowired private MockMvc mvc;
     @Autowired private WebApplicationContext context;
     @MockitoBean private CustomOAuth2UserService oauthService;
