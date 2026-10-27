@@ -10,6 +10,7 @@ import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.NewQuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
@@ -39,6 +40,15 @@ public class QuestionService {
 
     public List<String> insertFromDocx(List<NewQuestionDTO> questions) {
         return insert(questions, "APPROVED");
+    }
+
+    public PendingQuestionPageDTO findPending(
+            int page, String search, String questionType, List<String> chapterIds, List<String> lessonIds) {
+        long total = repo.countPending(search, questionType, chapterIds, lessonIds);
+        List<QuestionEntity> questions = repo.findPending(page, search, questionType, chapterIds, lessonIds);
+        return new PendingQuestionPageDTO(
+                questions.stream().map(mapper::entityToPendingDTO).toList(), page, 10,
+                total, (total + 9) / 10);
     }
 
     private List<String> insert(List<NewQuestionDTO> questions, String status) {

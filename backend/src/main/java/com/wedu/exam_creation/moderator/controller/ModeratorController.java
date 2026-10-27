@@ -3,6 +3,7 @@ package com.wedu.exam_creation.moderator.controller;
 import com.wedu.exam_creation.moderator.usecase.ModeratorUsecase;
 import com.wedu.exam_creation.moderator.dto.ApproveQuestionFileResponseDTO;
 import com.wedu.exam_creation.moderator.dto.RejectQuestionFileDTO;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,15 @@ public class ModeratorController {
     @GetMapping("/question-files")
     public ResponseEntity<List<S3ObjectInfo>> listQuestionFiles() {
         return ResponseEntity.ok(moderatorUsecase.listQuestionFiles());
+    }
+
+    @GetMapping("/questions/pending")
+    public ResponseEntity<PendingQuestionPageDTO> listPendingQuestions(
+            @RequestParam(name = "page", required = false) String page,
+            @RequestParam(name = "search", defaultValue = "") String search,
+            @RequestParam(name = "questionType", defaultValue = "") String questionType) {
+        return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+                .body(moderatorUsecase.listPendingQuestions(page == null ? "0" : page, search, questionType));
     }
 
     @DeleteMapping("/question-files")
