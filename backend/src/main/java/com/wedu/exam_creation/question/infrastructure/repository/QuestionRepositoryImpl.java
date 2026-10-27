@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+import org.springframework.data.domain.Sort;
 
 @Repository
 public class QuestionRepositoryImpl implements IQuestionRepository {
@@ -21,6 +24,36 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
     public QuestionRepositoryImpl(MongoTemplate mongoTemplate, QuestionMapper questionMapper) {
         this.mongoTemplate = mongoTemplate;
         this.questionMapper = questionMapper;
+    }
+
+    @Override
+    public List<QuestionEntity> findPending(int page, String search, String questionType,
+                                            List<String> chapterIds, List<String> lessonIds) {
+        Query query = pendingQuery(search, questionType, chapterIds, lessonIds)
+                .with(Sort.by(Sort.Direction.DESC, "createdAt", "_id"))
+                .skip((long) page * 10).limit(10);
+        return mongoTemplate.find(query, QuestionDocument.class).stream()
+                .map(questionMapper::toEntity).toList();
+    }
+
+    @Override
+    public long countPending(String search, String questionType, List<String> chapterIds, List<String> lessonIds) {
+        return mongoTemplate.count(pendingQuery(search, questionType, chapterIds, lessonIds), QuestionDocument.class);
+    }
+
+    private Query pendingQuery(String search, String questionType, List<String> chapterIds, List<String> lessonIds) {
+        List<Criteria> filters = new ArrayList<>();
+        filters.add(Criteria.where("status").is("PENDING_REVIEW"));
+        if (!questionType.isEmpty()) {
+            filters.add(Criteria.where("questionType").is(questionType));
+        }
+        if (!search.isEmpty()) {
+            filters.add(new Criteria().orOperator(
+                    Criteria.where("question.template").regex(Pattern.compile(Pattern.quote(search), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)),
+                    Criteria.where("chapterId").in(chapterIds),
+                    Criteria.where("lessonId").in(lessonIds)));
+        }
+        return new Query(new Criteria().andOperator(filters.toArray(Criteria[]::new)));
     }
 
     @Override

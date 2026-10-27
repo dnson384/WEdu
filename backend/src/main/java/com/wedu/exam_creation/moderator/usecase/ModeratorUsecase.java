@@ -19,6 +19,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.ArrayList;
+import com.wedu.exam_creation.chapter.usecase.ChapterService;
+import com.wedu.exam_creation.question.usecase.QuestionService;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
+import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.dto.question.response.VariablesDTO;
 
 @Service
 public class ModeratorUsecase {
@@ -26,11 +33,74 @@ public class ModeratorUsecase {
     private final ImporterService importerService;
     private final S3Service s3Service;
     private final MailService mailService;
+    private final ChapterService chapterService;
+    private final QuestionService questionService;
 
-    public ModeratorUsecase(ImporterService importerService, S3Service s3Service, MailService mailService) {
+    public ModeratorUsecase(ImporterService importerService, S3Service s3Service, MailService mailService,
+                            ChapterService chapterService, QuestionService questionService) {
         this.importerService = importerService;
         this.s3Service = s3Service;
         this.mailService = mailService;
+        this.chapterService = chapterService;
+        this.questionService = questionService;
+    }
+
+    public PendingQuestionPageDTO listPendingQuestions(String rawPage, String search, String questionType) {
+        int page;
+        try {
+            if (!rawPage.matches("[0-9]+")) throw new NumberFormatException();
+            page = Integer.parseInt(rawPage);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("Trang phải là số nguyên không âm");
+        }
+        search = search.trim();
+        questionType = questionType.trim();
+        if (search.length() > 200 || questionType.length() > 100) {
+            throw new BadRequestException("Bộ lọc vượt quá độ dài cho phép");
+        }
+        var chapters = chapterService.getAll();
+        List<String> chapterIds = new ArrayList<>();
+        List<String> lessonIds = new ArrayList<>();
+        String term = search.toLowerCase(Locale.ROOT);
+        if (!term.isEmpty()) {
+            for (var chapter : chapters) {
+                if (chapter.getName() != null && chapter.getName().toLowerCase(Locale.ROOT).contains(term)) chapterIds.add(chapter.getId());
+                if (chapter.getLessons() != null) {
+                    chapter.getLessons().stream()
+                            .filter(lesson -> lesson.getName() != null && lesson.getName().toLowerCase(Locale.ROOT).contains(term))
+                            .forEach(lesson -> lessonIds.add(lesson.getId()));
+                }
+            }
+        }
+        var result = questionService.findPending(page, search, questionType, chapterIds, lessonIds);
+        for (var question : result.getItems()) {
+            question.setChapter("Chương không còn tồn tại");
+            question.setLesson("Bài học không còn tồn tại");
+            chapters.stream().filter(chapter -> chapter.getId().equals(question.getChapterId())).findFirst().ifPresent(chapter -> {
+                question.setChapter(chapter.getName());
+                if (chapter.getLessons() != null) chapter.getLessons().stream()
+                        .filter(lesson -> lesson.getId().equals(question.getLessonId())).findFirst()
+                        .ifPresent(lesson -> question.setLesson(lesson.getName()));
+            });
+            question.setQuestion(signContent(question.getQuestion()));
+            question.setOptions(question.getOptions() == null ? List.of() : question.getOptions().stream().map(this::signContent).toList());
+            if (question.getLearningOutcomes() == null) question.setLearningOutcomes(List.of());
+        }
+        return result;
+    }
+
+    private ContentDTO signContent(ContentDTO content) {
+        if (content == null) content = new ContentDTO("", new VariablesDTO());
+        if (content.getTemplate() == null) content.setTemplate("");
+        if (content.getVariables() == null) content.setVariables(new VariablesDTO());
+        var variables = content.getVariables();
+        if (variables.getMath() == null) variables.setMath(new java.util.HashMap<>());
+        var images = new java.util.HashMap<String, String>();
+        if (variables.getImage() != null) variables.getImage().forEach((key, value) -> {
+            if (value != null && !value.isBlank()) images.put(key, s3Service.generatePresignedUrl(value));
+        });
+        variables.setImage(images);
+        return content;
     }
 
     public ApproveQuestionFileResponseDTO approveQuestionFile(CommonUserResponseAllDTO moderator, String key, MultipartFile editedFile) throws Exception {
