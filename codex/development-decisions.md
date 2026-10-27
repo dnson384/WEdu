@@ -1,5 +1,9 @@
 # WEdu Development Decisions
 
+## Danh sách câu hỏi chờ duyệt — 2026-10-27
+
+Phạm vi người dùng đã duyệt: API chỉ đọc danh sách Questions.status=PENDING_REVIEW, cố định 10 câu/trang, tìm kiếm/lọc trước phân trang và nối frontend thay dữ liệu mẫu. ROLE_MODERATOR, chưa triển khai write API duyệt/sửa/từ chối/regenerate. Không sửa schema/index hoặc khả năng dùng câu AI trong đề. Đây là ngoại lệ bổ sung API đọc so với quyết định 2026-10-26; các phần approve/reject/regenerate/audit/backfill vẫn ngoài scope. [Contract](api-reference.md), [implementation/validation](current-status.md).
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 Module questionReview dùng model riêng cho toàn bộ snapshot: RegeneratedQuestionEntity/RegeneratedQuestionDocument, ContentRegeneratedEntity/ContentDocument, VariablesRegeneratedEntity/VariablesDocument. Không import entity/document/mapper từ question. QuestionReviewMapper tự map các kiểu nội bộ. Giữ collection QuestionsReview theo source hiện tại, cùng _id với câu gốc và regeneratedQuestions rỗng khi tạo. Giữ service → usecase → repository và transaction tại QuestionService; không thêm API, regenerate, approve/reject hoặc backfill.

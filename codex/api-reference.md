@@ -1,5 +1,15 @@
 # API reference WEdu
 
+## Danh sách câu hỏi chờ duyệt — 2026-10-27
+
+`GET /moderator/questions/pending` ↔ `GET /api/moderator/questions/pending`; ROLE_MODERATOR. Query `page` mặc định 0 khi không truyền (zero-based, tối đa Java int), `search` tùy chọn tối đa 200 ký tự, `questionType` tùy chọn tối đa 100 ký tự. Filter trim; search literal không phân biệt hoa thường trên nội dung/chương/bài, loại câu khớp chính xác. Page rỗng không hợp lệ. Size cố định 10, không nhận tùy chỉnh từ client.
+
+Response 200 `{items: PendingQuestionDTO[], page, size:10, totalElements, totalPages}`. Item có fields QuestionDTO (id/chapterId/lessonId/exerciseType/difficultyLevel/learningOutcomes/questionType/question/options) cộng `chapter`, `lesson`, `status`, `createdAt`. Nội dung giữ template/math/image placeholders; image values trong response là URL ký từ S3 key, không persist. Fallback khi chương/bài mất. Lọc Questions.status=PENDING_REVIEW trước count/skip/limit; sort createdAt DESC, _id DESC. Không có kết quả hoặc page vượt phạm vi trả items=[], total theo filter, không 404. Legacy status=null và APPROVED không được lấy. QuestionsReview không là nguồn nội dung danh sách.
+
+Page âm/không phải integer/overflow hoặc filter quá dài: 400. Sai role: 403; token sai: theo JWT hiện có. Next thiếu cookie: 401, backend không kết nối: 502, chuyển status với message chung; Bearer chỉ phía server. Cache-Control private, no-store. Không log presigned URL/token, không thêm write API duyệt/sửa/regenerate.
+
+Bằng chứng: [controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [repository](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java), [Next route](../frontend/app/api/moderator/questions/pending/route.ts), [types](../frontend/domain/entities/pendingQuestion.entity.ts).
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 Module questionReview dùng QuestionReviewDocument và RegeneratedQuestionDocument cùng ContentDocument/VariablesDocument nội bộ cho collection QuestionsReview theo source hiện tại. Không dùng entity/document/mapper từ question. Snapshot giữ cùng cấu trúc dữ liệu và placeholders; không thêm/đổi endpoint hoặc HTTP DTO, chưa có API regenerate hoặc review.
