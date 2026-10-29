@@ -1,5 +1,15 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chỉnh sửa câu hỏi, công thức và upload ảnh — 2026-10-29
+
+Implemented theo source đã merge tại main `7bdb65d`: backend `a55ce65`, tests `fa7ca22`, frontend `55c9193`. Form editor thật cho template/LaTeX/mô tả ảnh của câu và từng phương án; input theo unique reference, chèn tham chiếu, preview, Hủy không upload và Lưu multipart. Backend PATCH moderator chỉ sửa PENDING_REVIEW đúng phiên bản, giữ số phương án/status/metadata, map DTO tại usecase và update entity tại repository. Mô tả AI không bị presign như key nữa; mỗi ảnh thiếu phải upload, sau thành công database lưu S3 key thay mô tả. Không lưu mô tả riêng. updatedAt bổ sung response để chống ghi đè. Approve/regenerate vẫn chỉ UI; các nhận định edit chưa nối API ở snapshot cũ bên dưới đã được thay thế.
+
+Validation: `mvn -q test` đạt **279 tests, 0 failures/errors** (22 cases mới); TypeScript `--noEmit --incremental false`, ESLint 17 file frontend liên quan và production build đạt. Harness tạm React DOM/JSDOM/Next proxy đạt 33 kiểm tra: unique refs, LaTeX, mô tả không thành ảnh, Hủy khôi phục draft, thiếu upload, namespaces multipart, conflict giữ draft, revoke blob URLs và proxy auth/validation. Không thêm frontend test script/dependency. Build sandbox đầu tiên lỗi tải Google Fonts; chạy lại có mạng đạt. Sau khi phát hiện Next proxy mặc định truncate body tại 10 MiB, đã đặt 65 MiB đồng bộ Spring, lint/build cấu hình mới đạt.
+
+Chưa kiểm chứng layout trên browser thật, MongoDB/S3 thật hoặc production. Cleanup ảnh mới best-effort; DB acknowledgement không rõ thì giữ ảnh để tránh xóa media đã commit, ảnh cũ không bị xóa vì có thể dùng trong đề. Backend kiểm tra binding/nonblank/limits, cú pháp LaTeX do KaTeX phía frontend kiểm tra; không thêm Java parser. [Contract](api-reference.md), [file/symbol inventory](source-catalog.md).
+
+Lượt đồng bộ context trên main chỉ thay đổi 9 file codex: kiểm tra diff whitespace và links local bổ sung; không chạy lại application tests vì source ứng dụng không đổi so với snapshot đã kiểm tra ở trên.
+
 ## Giao diện câu hỏi chờ duyệt — 2026-10-27
 
 Snapshot sau merge vào main `e149d9f`: backend `87cf507`, tests `9b8595b`, frontend `031c64b`. Các mức implemented dưới đây đối chiếu source đã merge, không xác nhận production hoặc MongoDB/S3 thật. Kiểm tra lần chuẩn bị commit tài liệu: chỉ 7 file codex thay đổi, diff whitespace và links bổ sung được kiểm tra; không chạy lại application tests cho thay đổi chỉ tài liệu.

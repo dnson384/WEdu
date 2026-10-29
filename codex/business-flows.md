@@ -1,5 +1,15 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Moderator sửa câu hỏi với LaTeX và mô tả ảnh — 2026-10-29
+
+1. Mở Chỉnh sửa: clone nội dung/phương án và updatedAt. Template hiển thị nguyên placeholders; mỗi key math/image duy nhất trong mỗi content có input riêng. `<img_0>` ở câu hỏi độc lập với `<img_0>` ở phương án.
+2. Nhập LaTeX, xem trước KaTeX. Ảnh AI giữ trường mô tả; moderator chọn ảnh JPEG/PNG để thay thế. Ảnh đã có hiển thị preview và có thể giữ nguyên hoặc chọn thay. Thêm tham chiếu bằng nút chèn hoặc nhập template; xóa tham chiếu thì bỏ biến/file tương ứng khỏi payload. Hủy bỏ toàn bộ draft, không gọi API/upload.
+3. Lưu: frontend kiểm tra nội dung/tham chiếu/LaTeX/ảnh, gửi payload JSON + files có namespace; backend xác thực moderator, câu còn pending, phiên bản khớp và binding đầy đủ. Mô tả chưa có ảnh không cho lưu; giữ ảnh cũ chỉ từ database.
+4. Upload ảnh mới vào S3, thay giá trị mô tả trong map chuẩn bị lưu bằng object key. Conditional update MongoDB lưu câu/options và updatedAt, giữ PENDING_REVIEW; chỉ sau thành công dữ liệu persisted mới thay mô tả. Không lưu mô tả riêng, không lưu presigned URL, không sửa QuestionsReview.
+5. Thành công 204: đóng form, refetch danh sách; GET trả URL ký cho key ảnh, công thức theo map. Conflict 409: giữ draft, yêu cầu tải lại; upload/validation lỗi không ghi DB. Cleanup media mới best-effort, không xóa media cũ; outcome DB không xác định giữ media mới và kiểm tra lại qua GET trước retry.
+
+Luồng chỉ chỉnh sửa, không approve hoặc regenerate. [Editor](../frontend/presentation/components/Moderator/PendingQuestionEditForm.tsx), [backend usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java), [API](api-reference.md).
+
 ## Moderator xem câu hỏi chờ duyệt — 2026-10-27
 
 Moderator mở `/moderator/review`, UI gọi GET pending qua Next proxy access cookie → Bearer. Backend kiểm tra ROLE_MODERATOR; chỉ đọc Questions.status=PENDING_REVIEW, filter nội dung/chương/bài/loại câu trước count/phân trang cố định 10. Trả mới nhất trước, tên chương/bài và ảnh presigned; không có chương/bài dùng nhãn dự phòng. UI có tổng số, Trang trước/sau, loading/error/retry/empty; đổi bộ lọc trở lại trang 0, tìm kiếm debounce 300 ms. Không lấy từ QuestionsReview.regeneratedQuestions; không backfill legacy null, không thay việc dùng câu AI trong đề.

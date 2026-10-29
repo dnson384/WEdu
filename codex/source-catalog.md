@@ -1,5 +1,67 @@
 # Source catalogue WEdu
 
+## Editor câu hỏi, LaTeX và ảnh — 2026-10-29
+
+Inventory toàn bộ file thay đổi trong tính năng editor (không gồm các file tạm validation ngoài repository):
+
+| File backend | Thay đổi |
+| --- | --- |
+| [PendingQuestionDTO.java](../backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/PendingQuestionDTO.java) | Bổ sung updatedAt trong response để xác định phiên bản editor. |
+| [ConflictException.java](../backend/src/main/java/com/wedu/exam_creation/common/exception/ConflictException.java) | Exception cho trạng thái/phiên bản đã đổi. |
+| [GlobalExceptionHandler.java](../backend/src/main/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandler.java) | Map ConflictException thành HTTP 409. |
+| [ModeratorController.java](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) | PATCH multipart editPendingQuestion, gọi edit usecase riêng. |
+| [ModeratorUsecase.java](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) | GET pending giữ mô tả ảnh, chỉ ký URL cho media keys. |
+| [EditPendingQuestionDTO.java](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/EditPendingQuestionDTO.java) | Class Lombok payload updatedAt/question/options. |
+| [EditPendingQuestionUsecase.java](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java) | Validate references, lấy key cũ từ DB, upload/cleanup, điều phối conditional update. |
+| [QuestionImageReference.java](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java) | Convention phân biệt media/ key với mô tả AI. |
+| [IQuestionRepository.java](../backend/src/main/java/com/wedu/exam_creation/question/domain/repository/IQuestionRepository.java) | Thêm findById và updatePendingContent nhận entity/scalar. |
+| [QuestionDTOMapper.java](../backend/src/main/java/com/wedu/exam_creation/question/dto/mapper/QuestionDTOMapper.java) | Thêm contentDTOToEntity. |
+| [QuestionRepositoryImpl.java](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java) | Find entity; atomic update question/options/updatedAt theo _id/status/version. |
+| [QuestionService.java](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java) | getPendingForEdit và updatePendingContent: DTO tại usecase, chặn non-pending/conflict. |
+
+| File frontend | Thay đổi |
+| --- | --- |
+| [ReviewPage](../frontend/app/(site)/moderator/review/page.tsx) | Nối onSaved, banner phản ánh edit đã hoạt động. |
+| [Next PATCH route](../frontend/app/api/moderator/questions/[id]/route.ts) | Validate cookie/id/payload/file parts, proxy multipart, 204/no-store và lỗi chung. |
+| [next.config.ts](../frontend/next.config.ts) | Giới hạn proxy body 65 MiB đồng bộ Spring, tránh cắt multipart nhiều ảnh. |
+| [pendingQuestion.entity.ts](../frontend/domain/entities/pendingQuestion.entity.ts) | updatedAt trong entity HTTP. |
+| [IModeratorRepository.ts](../frontend/domain/repositories/IModeratorRepository.ts) | Contract editPendingQuestion. |
+| [ModeratorRepositoryImpl.ts](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts) | PATCH backend, chuyển Bearer phía server. |
+| [ModeratorService.ts](../frontend/presentation/services/ModeratorService.ts) | PATCH BFF khi lưu form. |
+| [EditPendingQuestionUsecase.ts](../frontend/usecases/moderator/EditPendingQuestionUsecase.ts) | Port call cho PATCH. |
+| [usePendingQuestions.ts](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts) | onSaved thông báo/invalidate cache; chỉ approve/regenerate còn preview. |
+| [usePendingQuestionEdit.ts](../frontend/presentation/hooks/Moderator/usePendingQuestionEdit.ts) | Draft/ref state, LaTeX/file validation, multipart, mutation/error và blob URL lifecycle. |
+| [questionContentEditor.ts](../frontend/presentation/utils/questionContentEditor.ts) | Unique refs, draft, parser, validation LaTeX, serialize và preview content. |
+| [PendingQuestionCard.tsx](../frontend/presentation/components/Moderator/PendingQuestionCard.tsx) | Bỏ form sửa mẫu, dùng edit form thật. |
+| [PendingQuestionEditForm.tsx](../frontend/presentation/components/Moderator/PendingQuestionEditForm.tsx) | Form dùng hook, Lưu/Hủy/loading/error. |
+| [QuestionContentEditor.tsx](../frontend/presentation/components/Moderator/QuestionContentEditor.tsx) | Editor dùng lại: template, input math, mô tả/upload ảnh, chèn ref và preview. |
+| [ReferencedContent.tsx](../frontend/presentation/components/Exam/ReferencedContent.tsx) | Renderer dùng chung math/image/description, trust=false. |
+| [QuestionContent.tsx](../frontend/presentation/components/Exam/QuestionContent.tsx) | Dùng ReferencedContent, giữ numbering và wrapper. |
+| [MultipleChoiceContent.tsx](../frontend/presentation/components/Exam/MultipleChoiceContent.tsx) | Dùng renderer chung, không lặp logic math/image. |
+
+| File test backend | Thay đổi |
+| --- | --- |
+| [EditPendingQuestionUsecaseTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java) | Upload/replace description, refs lặp, giữ key cũ, cleanup/conflict/unknown acknowledgement, namespaces. |
+| [ModeratorEditPendingQuestionTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java) | PATCH multipart thực qua MockMvc, quyền/token/JSON/ID/status. |
+| [PendingQuestionUpdateRepositoryTest.java](../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java) | Query guard và giới hạn fields update, kết quả no-match. |
+| [QuestionServicePendingQuestionsTest.java](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java) | Chặn sửa câu approved và chuyển no-match thành conflict. |
+| [ModeratorPendingQuestionsTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java) | Mô tả không bị ký URL, fixture media key và mock editor dependency. |
+| [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java) | Mock editor dependency mới của controller. |
+| [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) | Mock editor dependency mới của controller. |
+| [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) | Mock editor dependency mới của controller. |
+
+| Tài liệu thay đổi | Nội dung |
+| --- | --- |
+| [development-decisions.md](development-decisions.md) | Phạm vi edit được duyệt, thay mô tả bằng key, giới hạn approve/regenerate. |
+| [api-reference.md](api-reference.md) | PATCH multipart, updatedAt, response/error/limits và image semantics. |
+| [architecture.md](architecture.md) | Editor/hook/BFF/usecase/repository, DTO boundary và media cleanup. |
+| [business-flows.md](business-flows.md) | Luồng sửa/Hủy/Lưu, ảnh cũ/mới, version/conflict. |
+| [database-schema.md](database-schema.md) | Không field mới; semantics image description → key, conditional update. |
+| [module-map.md](module-map.md) | Wiring, symbols/routes mới và renderer dùng lại. |
+| [current-status.md](current-status.md) | Implementation, validation và giới hạn chưa kiểm chứng. |
+| [tech-stack.md](tech-stack.md) | Cấu hình giới hạn multipart của Next proxy, không thêm dependency. |
+| `codex/source-catalog.md` | Inventory đầy đủ file/symbol của thay đổi này. |
+
 ## Giao diện review — 2026-10-27
 
 - [ReviewPage](../frontend/app/(site)/moderator/review/page.tsx): danh sách API thật, tìm kiếm, lọc loại câu, loading/error/retry/empty và phân trang 10 câu.

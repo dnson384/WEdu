@@ -1,5 +1,11 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Cập nhật nội dung câu hỏi chờ duyệt — 2026-10-29
+
+Không thêm collection/field/index. Questions.question và options vẫn ContentDocument `{template, variables:{math,image}}`; updatedAt đã có. AI sinh mô tả text trong image map; khi moderator lưu với file hợp lệ, chỉ sau conditional update thành công mô tả được thay bằng `media/questions/{questionId}/<uuid>.<extension>`. Ảnh cũ theo media/ convention giữ nguyên nếu không thay. Không lưu mô tả vào field riêng hoặc presigned URL. Variables không còn tham chiếu bị loại khỏi content khi lưu. Status vẫn PENDING_REVIEW, không thay metadata/createdAt, không append QuestionsReview snapshot. Query guard `_id + status + updatedAt` chống editor cũ ghi đè; timestamp mới ít nhất tăng 1 ms khi cần. Các đề có thể dùng lại media nên không xóa object cũ.
+
+Bằng chứng: [repository updatePendingContent](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java), [edit usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java), [reference convention](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java). GET pending bổ sung updatedAt là DTO HTTP, không thêm field DB.
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 Collection QuestionsReview (tên hiện tại trong @Document của source) dùng QuestionReviewDocument: id:String @Id trùng Questions._id; regeneratedQuestions:List<RegeneratedQuestionDocument> embedded, mặc định []. Domain QuestionReviewEntity dùng List<RegeneratedQuestionEntity>. Snapshot có đầy đủ fields như Question: id, chapterId, lessonId, exerciseType, difficultyLevel, learningOutcomes, questionType, status, question, options, createdAt, updatedAt. Content/Variables có model riêng trong questionReview, giữ template và math/image maps cùng placeholders. chapterId/lessonId snapshot giữ FieldType.OBJECT_ID, id giữ @Id; snapshot không @Document, @Indexed hoặc @CompoundIndex. Không collection/index mới cho snapshot. QuestionReviewMapper tự map nội bộ; không phụ thuộc model question.

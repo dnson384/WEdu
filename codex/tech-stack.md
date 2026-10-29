@@ -1,5 +1,9 @@
 # Tech stack và môi trường WEdu
 
+## Upload ảnh trong editor câu hỏi — 2026-10-29
+
+Không thêm dependency. Editor dùng KaTeX/React Query hiện có. [next.config.ts](../frontend/next.config.ts) đặt experimental.proxyClientMaxBodySize = 65 MiB, đồng bộ Spring max-request-size 65 MB để proxy không cắt multipart nhiều ảnh ở mặc định 10 MiB (đối chiếu source Next cài trong node_modules). Giới hạn nghiệp vụ vẫn 5 MiB/ảnh JPEG/PNG, tối đa 10 ảnh/upload request; Next PATCH giới hạn payload JSON 1 MiB. Backend tái sử dụng S3Service.uploadImageFile, không đổi cấu hình Spring. [API](api-reference.md).
+
 ## Phạm vi bằng chứng
 
 Snapshot source ngày 2026-10-24. Phiên bản trong bảng là range/giá trị **khai báo**, không phải phiên bản runtime đã triển khai. Trạng thái `implemented/partial/missing/unknown` được định nghĩa tại [current-status.md](current-status.md). Không truy cập production, `.env` hoặc secrets.

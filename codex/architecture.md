@@ -1,5 +1,13 @@
 # Kiến trúc WEdu hiện tại
 
+## Editor câu hỏi và lưu ảnh — 2026-10-29
+
+PendingQuestionCard chỉ giữ trạng thái mở form; PendingQuestionEditForm/QuestionContentEditor render editor dùng lại cho câu và phương án. usePendingQuestionEdit giữ draft/LaTeX/image descriptions/File/blob URL, validation, multipart và mutation; questionContentEditor utils phân tích/serialize references. ReferencedContent dùng lại cho QuestionContent/MultipleChoiceContent và preview, render mô tả như text thay vì src ảnh. Hủy không upload, unmount revoke object URLs. Lưu thành công gọi cache invalidation danh sách, câu vẫn PENDING_REVIEW.
+
+Form → ModeratorService → Next PATCH → EditPendingQuestionUsecase frontend → IModeratorRepository/adapter → ModeratorController → EditPendingQuestionUsecase backend → QuestionService → IQuestionRepository/QuestionRepositoryImpl. Moderator edit usecase validate phiên bản/nội dung, điều phối upload/cleanup; QuestionService nhận/trả common DTO và map ContentEntity, repository nhận entity và dùng MongoTemplate conditional update (_id/status/updatedAt). Chỉ set question/options/updatedAt; không thay quyền, status, metadata, questionReview hoặc exam generation.
+
+QuestionImageReference nhận diện media/ keys theo convention storage hiện có. GET pending không ký URL cho mô tả AI. S3 upload không nằm trong Mongo transaction; cleanup chỉ cho media mới khi chưa thử update hoặc conflict xác định không ghi. Outcome DB không rõ thì giữ ảnh mới; ảnh cũ luôn giữ để tránh ảnh hưởng đề đã có. updatedAt chống stale editor/concurrent update, không thêm field/index persisted. [Contract](api-reference.md), [flow](business-flows.md).
+
 ## Đọc hàng chờ câu hỏi — 2026-10-27
 
 Ranh giới phân trang: `IQuestionRepository.findPending`/adapter chỉ trả `List<QuestionEntity>`; `countPending` trả long. Cả hai dùng chung private `pendingQuery` để giữ bộ lọc nhất quán. `QuestionService.findPending` ở tầng usecase điều phối count/list, chuyển entity qua mapper và tạo `PendingQuestionPageDTO` với metadata phân trang. Không wrapper entity/DTO phân trang trong infrastructure; đã xóa QuestionPageEntity. HTTP contract giữ nguyên.

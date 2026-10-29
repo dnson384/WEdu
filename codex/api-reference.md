@@ -1,5 +1,19 @@
 # API reference WEdu
 
+## Chỉnh sửa câu hỏi chờ duyệt — 2026-10-29
+
+`PATCH /moderator/questions/{id}` ↔ `PATCH /api/moderator/questions/{id}`; ROLE_MODERATOR, multipart/form-data, thành công 204/no-store. ID là 24 ký tự hex. Part `payload` là JSON application/json: `{updatedAt: ISO instant|null, question: ContentDTO, options: ContentDTO[]}`. updatedAt lấy từ response danh sách, kiểm tra phiên bản trước upload và trong conditional update. Giữ số phương án, không nhận thay đổi metadata/status. ContentDTO giữ `{template, variables:{math:{math_N:latex}, image:{img_N:description}}}`; image trong request chỉ là mô tả, không được tin làm URL/key. Part ảnh tên `question.img_N` hoặc `options.<index>.img_N`; mỗi tên một file, JPEG/PNG tối đa 5 MiB, tối đa 10 ảnh thay thế/request. Next giới hạn JSON part 1 MiB; backend giữ multipart limits hiện có.
+
+Backend chỉ giữ variables đang được template tham chiếu; key lặp dùng chung một giá trị trong cùng content. Thiếu LaTeX, placeholder sai dạng, thiếu ảnh cho mô tả AI, thừa/duplicate file, số phương án sai hoặc giới hạn không hợp lệ: 400. UI kiểm tra cú pháp LaTeX bằng KaTeX; backend kiểm tra binding/nonblank/độ dài, không thêm LaTeX parser Java. Template tối đa 50000 ký tự/content; công thức tối đa 10000 ký tự; options tối đa 50 và số lượng phải bằng bản gốc.
+
+Next proxy đặt request body limit 65 MiB khớp giới hạn multipart Spring để không truncate nhiều ảnh; cấu hình này không bỏ kiểm tra 5 MiB/file hoặc 10 ảnh/request ở route/usecase. [Config](../frontend/next.config.ts).
+
+Không upload mới thì backend lấy key ảnh cũ từ database cho đúng section/key; không nhận key từ client. Giá trị theo convention `media/` là key ảnh, còn lại là mô tả AI; API đọc chỉ presign key, giữ mô tả dạng text. Upload vào `media/questions/{id}/<uuid>.<extension>` bằng S3Service hiện có, sau đó atomic update question/options/updatedAt khi status vẫn PENDING_REVIEW và version còn khớp. Thiếu câu trả 404; trạng thái/version đã đổi trả 409; sai role 403; token theo JWT. Next thiếu cookie 401, mất kết nối backend 502, message chung không lộ URL/token. GET pending bổ sung `updatedAt`; `variables.image` có thể là mô tả AI hoặc URL ký của ảnh đã có. JSON persisted image là S3 key, không presigned URL.
+
+Upload lỗi hoặc conditional conflict: cố gắng xóa ảnh mới đã upload, giữ dữ liệu cũ và ảnh cũ. Không xóa media cũ vì có thể được đề khác tham chiếu. Nếu DB mất acknowledgement, chưa xác định đã commit hay chưa: giữ ảnh mới để tránh xóa nhầm media đã được lưu; UI yêu cầu tải lại trước thử lại. Cleanup lỗi có thể để lại orphan, chỉ log thông báo chung. Không transaction phân tán hoặc retry tự động.
+
+[Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java), [request DTO](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/EditPendingQuestionDTO.java), [Next route](../frontend/app/api/moderator/questions/[id]/route.ts), [tests](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java). Section này thay thế nhận định chưa có edit API trong snapshot 2026-10-27 bên dưới; approve/regenerate vẫn chưa có.
+
 ## Danh sách câu hỏi chờ duyệt — 2026-10-27
 
 `GET /moderator/questions/pending` ↔ `GET /api/moderator/questions/pending`; ROLE_MODERATOR. Query `page` mặc định 0 khi không truyền (zero-based, tối đa Java int), `search` tùy chọn tối đa 200 ký tự, `questionType` tùy chọn tối đa 100 ký tự. Filter trim; search literal không phân biệt hoa thường trên nội dung/chương/bài, loại câu khớp chính xác. Page rỗng không hợp lệ. Size cố định 10, không nhận tùy chỉnh từ client.

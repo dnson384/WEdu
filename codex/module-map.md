@@ -1,5 +1,11 @@
 # Bản đồ module, symbols và API
 
+## Chỉnh sửa câu hỏi — 2026-10-29
+
+ReviewPage → PendingQuestionCard → PendingQuestionEditForm → QuestionContentEditor/usePendingQuestionEdit → ModeratorService.editPendingQuestion → Next PATCH `/api/moderator/questions/[id]` → frontend EditPendingQuestionUsecase → IModeratorRepository/ModeratorRepositoryImpl.editPendingQuestion → ModeratorController.editPendingQuestion → backend EditPendingQuestionUsecase.execute → QuestionService.getPendingForEdit/updatePendingContent → IQuestionRepository.findById/updatePendingContent → QuestionRepositoryImpl. DTO request EditPendingQuestionDTO; common PendingQuestionDTO bổ sung updatedAt; QuestionDTOMapper.contentDTOToEntity map vào domain trước adapter.
+
+Edit usecase phối hợp S3Service.uploadImageFile/deleteFile. QuestionImageReference.isStoredKey dùng chung với ModeratorUsecase.signContent để phân biệt mô tả và key. ReferencedContent render math/image/description dùng lại từ QuestionContent, MultipleChoiceContent và preview editor; utils questionContentEditor tách parser/serialization/validation khỏi component. ConflictException → GlobalExceptionHandler trả 409. Các endpoint cũ và phân trang 10 câu giữ nguyên. [API](api-reference.md), [inventory](source-catalog.md).
+
 ## Giao diện review — 2026-10-27
 
 `ReviewPage` → `usePendingQuestions` → `ModeratorService.getPendingQuestions` → Next GET `/api/moderator/questions/pending` → `GetPendingQuestionsUsecase` → `IModeratorRepository/ModeratorRepositoryImpl` → `ModeratorController.listPendingQuestions` → `ModeratorUsecase.listPendingQuestions` → `QuestionService.findPending` → `IQuestionRepository.findPending/countPending` → `QuestionRepositoryImpl` → Questions. Repository trả `List<QuestionEntity>` và long riêng, hai query dùng chung `pendingQuery`; QuestionService gọi mapper chuyển `PendingQuestionDTO`, tạo `PendingQuestionPageDTO` và tính totalPages. Không QuestionPageEntity hoặc DTO trong kết quả infrastructure. ModeratorUsecase dùng `ChapterService.getAll` map tên/tìm chương-bài và S3Service ký ảnh trên DTO. Hook quản lý filters/debounce/page/query/cache theo user và thông báo; card giữ form sửa thử. Ba thao tác write chưa nối API.

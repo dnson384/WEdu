@@ -1,5 +1,9 @@
 # WEdu Development Decisions
 
+## Chỉnh sửa câu hỏi, công thức và ảnh — 2026-10-29
+
+Người dùng đã duyệt triển khai editor và lưu thật cho câu PENDING_REVIEW. Template giữ `<math_N>`/`<img_N>`; mỗi key duy nhất có input riêng trong câu hỏi hoặc từng phương án. Công thức nhập LaTeX; ảnh có mô tả AI và upload JPEG/PNG. Chỉ khi Lưu mới upload và thay mô tả bằng S3 object key; mô tả không được lưu riêng. Không đổi số phương án/metadata, không tự duyệt, regenerate, snapshot/audit hoặc sửa importer/exam generation. API PATCH là ngoại lệ bổ sung so với phạm vi read-only 2026-10-27; approve/regenerate vẫn ngoài scope. Repository chỉ nhận/trả entity hoặc scalar, usecase map DTO; class Lombok, không record. [Contract](api-reference.md), [trạng thái](current-status.md).
+
 ## Danh sách câu hỏi chờ duyệt — 2026-10-27
 
 Phạm vi người dùng đã duyệt: API chỉ đọc danh sách Questions.status=PENDING_REVIEW, cố định 10 câu/trang, tìm kiếm/lọc trước phân trang và nối frontend thay dữ liệu mẫu. ROLE_MODERATOR, chưa triển khai write API duyệt/sửa/từ chối/regenerate. Không sửa schema/index hoặc khả năng dùng câu AI trong đề. Đây là ngoại lệ bổ sung API đọc so với quyết định 2026-10-26; các phần approve/reject/regenerate/audit/backfill vẫn ngoài scope. [Contract](api-reference.md), [implementation/validation](current-status.md).
