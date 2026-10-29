@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, ModeratorUsecase.class, S3Service.class})
 @TestPropertySource(properties = "aws.bucketName=test-question-bucket")
 class ModeratorDeleteQuestionFileTest {
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase editor;
     @MockitoBean private com.wedu.exam_creation.chapter.usecase.ChapterService chapters;
     @MockitoBean private com.wedu.exam_creation.question.usecase.QuestionService questions;
     @Autowired private MockMvc mvc;

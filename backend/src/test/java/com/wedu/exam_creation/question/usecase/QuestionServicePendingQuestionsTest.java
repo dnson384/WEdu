@@ -2,6 +2,9 @@ package com.wedu.exam_creation.question.usecase;
 
 import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
 import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.exception.ConflictException;
+import java.time.Instant;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
@@ -12,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class QuestionServicePendingQuestionsTest {
@@ -19,6 +23,21 @@ class QuestionServicePendingQuestionsTest {
     private final QuestionDTOMapper mapper = mock(QuestionDTOMapper.class);
     private final QuestionService service = new QuestionService(repository, mapper,
             mock(AIQuestionGenerationService.class), mock(TelegramNotificationService.class), mock(QuestionReviewService.class));
+
+    @Test
+    void approvedQuestionCannotBeEdited() {
+        when(repository.findById("id")).thenReturn(QuestionEntity.builder().status("APPROVED").build());
+        assertThatThrownBy(() -> service.getPendingForEdit("id")).isInstanceOf(ConflictException.class);
+        verifyNoInteractions(mapper);
+    }
+
+    @Test
+    void conditionalUpdateFailureBecomesConflict() {
+        var version = Instant.parse("2026-10-29T00:00:00Z");
+        var content = new ContentDTO();
+        assertThatThrownBy(() -> service.updatePendingContent("id", content, List.of(), version)).isInstanceOf(ConflictException.class);
+        verify(repository).updatePendingContent(eq("id"), isNull(), eq(List.of()), eq(version));
+    }
 
     @Test
     void mapsEntitiesAndBuildsPaginationInUsecase() {
