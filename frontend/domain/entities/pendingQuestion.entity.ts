@@ -5,6 +5,7 @@ export interface PendingQuestionEntity extends QuestionEntity {
   lessonId: string;
   status: string;
   createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface PendingQuestionPage {

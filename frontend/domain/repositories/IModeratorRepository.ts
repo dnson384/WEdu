@@ -9,6 +9,7 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export interface IModeratorRepository {
+  editPendingQuestion(id: string, data: FormData, accessToken: string): Promise<void>;
   getPendingQuestions(
     filters: PendingQuestionFilters,
     accessToken: string,

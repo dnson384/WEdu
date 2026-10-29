@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import useAuth from "@/presentation/hooks/Auth/useAuth";
 import { ModeratorService } from "@/presentation/services/ModeratorService";
 
-export type ReviewPreviewAction = "approve" | "edit" | "regenerate";
+export type ReviewPreviewAction = "approve" | "regenerate";
 const service = new ModeratorService();
 const types = ["Nhiều lựa chọn", "Đúng sai", "Tự luận"];
 
 export default function usePendingQuestions() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState({
     page: 0,
@@ -45,7 +46,6 @@ export default function usePendingQuestions() {
   const handleAction = (action: ReviewPreviewAction) => {
     const labels = {
       approve: "Duyệt thẳng",
-      edit: "Lưu chỉnh sửa",
       regenerate: "Từ chối duyệt – yêu cầu regenerate",
     };
     setNotice(
@@ -60,6 +60,10 @@ export default function usePendingQuestions() {
     types,
     notice,
     handleAction,
+    handleSaved: () => {
+      setNotice("Đã lưu chỉnh sửa. Câu hỏi vẫn đang chờ duyệt.");
+      void queryClient.invalidateQueries({ queryKey: ["moderator-pending-questions", user.id] });
+    },
     questionType: filters.questionType,
     setQuestionType: (questionType: string) =>
       setFilters((previous) => ({ ...previous, page: 0, questionType })),

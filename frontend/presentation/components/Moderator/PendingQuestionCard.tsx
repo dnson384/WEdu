@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PendingQuestionEditForm from "./PendingQuestionEditForm";
 import { Check, Pencil, RefreshCw } from "lucide-react";
 import { PendingQuestionEntity } from "@/domain/entities/pendingQuestion.entity";
 import QuestionContent from "@/presentation/components/Exam/QuestionContent";
@@ -11,23 +12,16 @@ interface Props {
   question: PendingQuestionEntity;
   order: number;
   onAction: (action: ReviewPreviewAction) => void;
+  onSaved: () => void;
 }
 
 export default function PendingQuestionCard({
   question,
   order,
   onAction,
+  onSaved,
 }: Props) {
   const [editing, setEditing] = useState(false);
-  const [template, setTemplate] = useState(question.question.template);
-  const [options, setOptions] = useState(
-    question.options.map((option) => option.template),
-  );
-  const cancelEdit = () => {
-    setTemplate(question.question.template);
-    setOptions(question.options.map((option) => option.template));
-    setEditing(false);
-  };
   return (
     <article
       className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
@@ -57,66 +51,8 @@ export default function PendingQuestionCard({
           {question.chapter} / {question.lesson}
         </p>
         {editing ? (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              onAction("edit");
-            }}
-            className="space-y-4"
-          >
-            <p className="text-sm text-blue-700">
-              Chỉnh sửa thử trên giao diện, chưa lưu vào hệ thống. Giữ nguyên
-              các placeholder công thức/ảnh.
-            </p>
-            <label className="block text-sm font-medium text-gray-700">
-              Nội dung câu hỏi
-              <textarea
-                required
-                value={template}
-                onChange={(event) => setTemplate(event.target.value)}
-                rows={4}
-                className="mt-2 w-full rounded-xl border border-gray-300 p-3"
-              />
-            </label>
-
-            {options.map((option, index) => (
-              <label
-                key={index}
-                className="block text-sm font-medium text-gray-700"
-              >
-                Phương án {index + 1}
-                <textarea
-                  required
-                  value={option}
-                  onChange={(event) =>
-                    setOptions(
-                      options.map((text, optionIndex) =>
-                        optionIndex === index ? event.target.value : text,
-                      ),
-                    )
-                  }
-                  rows={2}
-                  className="mt-2 w-full rounded-xl border border-gray-300 p-3"
-                />
-              </label>
-            ))}
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Lưu chỉnh sửa (xem trước)
-              </button>
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700"
-              >
-                Hủy chỉnh sửa
-              </button>
-            </div>
-          </form>
+          <PendingQuestionEditForm question={question} onCancel={() => setEditing(false)}
+            onSaved={() => { setEditing(false); onSaved(); }} />
         ) : (
           <>
             <QuestionContent order={order} {...question.question} />
