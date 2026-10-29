@@ -10,6 +10,10 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export class ModeratorService {
+  async editPendingQuestion(id: string, data: FormData): Promise<void> {
+    await axios.patch(`/api/moderator/questions/${id}`, data);
+  }
+
   async getPendingQuestions(
     filters: PendingQuestionFilters,
     signal?: AbortSignal,

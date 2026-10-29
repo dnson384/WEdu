@@ -11,6 +11,12 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export class ModeratorRepositoryImpl implements IModeratorRepository {
+  async editPendingQuestion(id: string, data: FormData, accessToken: string): Promise<void> {
+    await axios.patch(`${this.baseUrl}/moderator/questions/${id}`, data, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  }
+
   async getPendingQuestions(
     filters: PendingQuestionFilters,
     accessToken: string,
