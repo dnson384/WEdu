@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ModeratorController.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, ModeratorUsecase.class})
 class ModeratorPendingQuestionsTest {
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase editor;
     @Autowired private MockMvc mvc;
     @MockitoBean private CustomOAuth2UserService oauth;
     @MockitoBean private OAuth2AuthenticationSuccessHandler oauthHandler;
@@ -52,13 +53,25 @@ class ModeratorPendingQuestionsTest {
     }
 
     @Test
+    void keepsAiImageDescriptionAsTextWithoutSigningIt() throws Exception {
+        var question = new PendingQuestionDTO();
+        question.setQuestion(new ContentDTO("<img_0>", new VariablesDTO(Map.of(), Map.of("img_0", "Đồ thị dao động"))));
+        when(questions.findPending(0, "", "", List.of(), List.of()))
+                .thenReturn(new PendingQuestionPageDTO(List.of(question), 0, 10, 1, 1));
+        mvc.perform(get("/moderator/questions/pending").header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].question.variables.image.img_0").value("Đồ thị dao động"));
+        verifyNoInteractions(storage);
+    }
+
+    @Test
     void returnsNinePendingQuestionsOnOnePageAndSignsImages() throws Exception {
-        when(storage.generatePresignedUrl("image-key")).thenReturn("https://example.test/image");
+        when(storage.generatePresignedUrl("media/image-key.png")).thenReturn("https://example.test/image");
         var items = java.util.stream.IntStream.range(0, 9).mapToObj(index -> {
             var entry = new PendingQuestionDTO();
             entry.setId("id-" + index);
             entry.setStatus("PENDING_REVIEW");
-            entry.setQuestion(new ContentDTO("<img_1>", new VariablesDTO(Map.of(), Map.of("img_1", "image-key"))));
+            entry.setQuestion(new ContentDTO("<img_1>", new VariablesDTO(Map.of(), Map.of("img_1", "media/image-key.png"))));
             return entry;
         }).toList();
         when(questions.findPending(0, "", "", List.of(), List.of())).thenReturn(new PendingQuestionPageDTO(items, 0, 10, 9, 1));
