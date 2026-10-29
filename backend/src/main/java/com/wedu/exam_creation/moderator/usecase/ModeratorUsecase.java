@@ -97,7 +97,9 @@ public class ModeratorUsecase {
         if (variables.getMath() == null) variables.setMath(new java.util.HashMap<>());
         var images = new java.util.HashMap<String, String>();
         if (variables.getImage() != null) variables.getImage().forEach((key, value) -> {
-            if (value != null && !value.isBlank()) images.put(key, s3Service.generatePresignedUrl(value));
+            if (value != null && !value.isBlank()) {
+                images.put(key, QuestionImageReference.isStoredKey(value) ? s3Service.generatePresignedUrl(value) : value);
+            }
         });
         variables.setImage(images);
         return content;

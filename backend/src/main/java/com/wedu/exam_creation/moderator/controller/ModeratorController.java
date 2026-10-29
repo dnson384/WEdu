@@ -13,15 +13,28 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase;
+import com.wedu.exam_creation.moderator.dto.EditPendingQuestionDTO;
+import org.springframework.util.MultiValueMap;
 
 @RestController
 @RequestMapping("/moderator")
 @PreAuthorize("hasRole('MODERATOR')")
 public class ModeratorController {
     private final ModeratorUsecase moderatorUsecase;
+    private final EditPendingQuestionUsecase editPendingQuestionUsecase;
 
-    public ModeratorController(ModeratorUsecase moderatorUsecase) {
+    public ModeratorController(ModeratorUsecase moderatorUsecase, EditPendingQuestionUsecase editPendingQuestionUsecase) {
         this.moderatorUsecase = moderatorUsecase;
+        this.editPendingQuestionUsecase = editPendingQuestionUsecase;
+    }
+
+    @PatchMapping(value = "/questions/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<Void> editPendingQuestion(@PathVariable("id") String id,
+            @RequestPart("payload") EditPendingQuestionDTO payload,
+            @RequestParam MultiValueMap<String, MultipartFile> files) {
+        editPendingQuestionUsecase.execute(id, payload, files);
+        return ResponseEntity.noContent().header("Cache-Control", "private, no-store").build();
     }
 
     @GetMapping("/question-files")
