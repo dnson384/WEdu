@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Update;
+import com.wedu.exam_creation.question.domain.entity.ContentEntity;
 
 @Repository
 public class QuestionRepositoryImpl implements IQuestionRepository {
@@ -24,6 +26,28 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
     public QuestionRepositoryImpl(MongoTemplate mongoTemplate, QuestionMapper questionMapper) {
         this.mongoTemplate = mongoTemplate;
         this.questionMapper = questionMapper;
+    }
+
+    @Override
+    public QuestionEntity findById(String id) {
+        QuestionDocument document = mongoTemplate.findById(id, QuestionDocument.class);
+        if (document == null) throw new NotFoundException("Không tìm thấy câu hỏi");
+        return questionMapper.toEntity(document);
+    }
+
+    @Override
+    public boolean updatePendingContent(String id, ContentEntity question, List<ContentEntity> options, Instant expectedUpdatedAt) {
+        Query query = new Query(Criteria.where("_id").is(id).and("status").is("PENDING_REVIEW")
+                .and("updatedAt").is(expectedUpdatedAt));
+        QuestionEntity entity = QuestionEntity.builder().question(question).options(options).build();
+        QuestionDocument document = questionMapper.toDocument(entity);
+        Instant nextUpdatedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        if (expectedUpdatedAt != null && !nextUpdatedAt.isAfter(expectedUpdatedAt)) {
+            nextUpdatedAt = expectedUpdatedAt.plusMillis(1);
+        }
+        Update update = new Update().set("question", document.getQuestion()).set("options", document.getOptions())
+                .set("updatedAt", nextUpdatedAt);
+        return mongoTemplate.updateFirst(query, update, QuestionDocument.class).getMatchedCount() == 1;
     }
 
     @Override

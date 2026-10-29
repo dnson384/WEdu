@@ -1,5 +1,11 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Moderator xem câu hỏi chờ duyệt — 2026-10-27
+
+Moderator mở `/moderator/review`, UI gọi GET pending qua Next proxy access cookie → Bearer. Backend kiểm tra ROLE_MODERATOR; chỉ đọc Questions.status=PENDING_REVIEW, filter nội dung/chương/bài/loại câu trước count/phân trang cố định 10. Trả mới nhất trước, tên chương/bài và ảnh presigned; không có chương/bài dùng nhãn dự phòng. UI có tổng số, Trang trước/sau, loading/error/retry/empty; đổi bộ lọc trở lại trang 0, tìm kiếm debounce 300 ms. Không lấy từ QuestionsReview.regeneratedQuestions; không backfill legacy null, không thay việc dùng câu AI trong đề.
+
+Duyệt thẳng, Chỉnh sửa, Từ chối – yêu cầu regenerate vẫn chỉ giao diện; không ghi APPROVED/REJECTED, không gọi AI, không tạo snapshot/audit hoặc gửi thông báo. [Contract](api-reference.md), [page](../frontend/app/(site)/moderator/review/page.tsx).
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 Câu AI PENDING_REVIEW được lưu trong Questions; IDs chuyển vào QuestionReviewService → QuestionReviewUsecase → entity → repository → QuestionsReview. regeneratedQuestions mặc định rỗng; kiểu phần tử mới RegeneratedQuestionEntity/RegeneratedQuestionDocument cùng cấu trúc Question nhưng hoàn toàn thuộc questionReview, kể cả Content/Variables. Giữ transaction, Telegram và việc dùng câu AI trong đề; không regenerate/append hoặc đổi approve/reject.

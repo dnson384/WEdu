@@ -1,5 +1,11 @@
 # Kiến trúc WEdu hiện tại
 
+## Đọc hàng chờ câu hỏi — 2026-10-27
+
+Ranh giới phân trang: `IQuestionRepository.findPending`/adapter chỉ trả `List<QuestionEntity>`; `countPending` trả long. Cả hai dùng chung private `pendingQuery` để giữ bộ lọc nhất quán. `QuestionService.findPending` ở tầng usecase điều phối count/list, chuyển entity qua mapper và tạo `PendingQuestionPageDTO` với metadata phân trang. Không wrapper entity/DTO phân trang trong infrastructure; đã xóa QuestionPageEntity. HTTP contract giữ nguyên.
+
+Frontend review đã nối theo component → hook → presentation service → Next BFF → usecase → port/adapter → backend moderator. ModeratorController giữ mỏng, ModeratorUsecase validate page/filter và điều phối ChapterService.getAll, QuestionService.findPending, S3Service.generatePresignedUrl. Query/count/skip/limit nằm trong question repository; dữ liệu liên feature là common DTO, không expose entity. QuestionDTOMapper tạo DTO độc lập để việc ký ảnh không ghi vào persistence. Search chương/bài xác định IDs từ danh mục, OR với template rồi phân trang Questions; không join/import model từ questionReview. Không đổi schema hoặc ranh giới importer/exam generation. [Contract](api-reference.md), [wiring](module-map.md).
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 questionReview có entity/document snapshot và Content/Variables nội bộ; không import model hoặc mapper từ question. QuestionReviewMapper componentModel=spring tự ánh xạ nested models. Luồng vẫn QuestionService.generateExamQuestions (@Transactional) → lưu Questions → QuestionReviewService → QuestionReviewUsecase → IQuestionReviewRepository → QuestionReviewRepositoryImpl → QuestionsReview. Liên module chỉ truyền List<String> IDs tới service; transaction/schema fields/API giữ nguyên. Collection name QuestionsReview theo chỉnh sửa source hiện tại; không đổi lại QuestionsToReview.

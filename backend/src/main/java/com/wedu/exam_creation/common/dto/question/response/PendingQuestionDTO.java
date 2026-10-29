@@ -11,4 +11,5 @@ public class PendingQuestionDTO extends QuestionDTO {
     private String lesson;
     private String status;
     private Instant createdAt;
+    private Instant updatedAt;
 }

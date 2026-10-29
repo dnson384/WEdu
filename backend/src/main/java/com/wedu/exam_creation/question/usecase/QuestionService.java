@@ -11,6 +11,10 @@ import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.NewQuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.exception.ConflictException;
+import java.time.Instant;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
@@ -49,6 +53,21 @@ public class QuestionService {
         return new PendingQuestionPageDTO(
                 questions.stream().map(mapper::entityToPendingDTO).toList(), page, 10,
                 total, (total + 9) / 10);
+    }
+
+    public PendingQuestionDTO getPendingForEdit(String id) {
+        QuestionEntity entity = repo.findById(id);
+        if (!"PENDING_REVIEW".equals(entity.getStatus())) {
+            throw new ConflictException("Câu hỏi không còn chờ duyệt. Vui lòng tải lại danh sách");
+        }
+        return mapper.entityToPendingDTO(entity);
+    }
+
+    public void updatePendingContent(String id, ContentDTO question, List<ContentDTO> options, Instant expectedUpdatedAt) {
+        if (!repo.updatePendingContent(id, mapper.contentDTOToEntity(question),
+                options.stream().map(mapper::contentDTOToEntity).toList(), expectedUpdatedAt)) {
+            throw new ConflictException("Câu hỏi đã thay đổi. Vui lòng tải lại danh sách trước khi chỉnh sửa");
+        }
     }
 
     private List<String> insert(List<NewQuestionDTO> questions, String status) {

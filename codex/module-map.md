@@ -1,5 +1,11 @@
 # Bản đồ module, symbols và API
 
+## Giao diện review — 2026-10-27
+
+`ReviewPage` → `usePendingQuestions` → `ModeratorService.getPendingQuestions` → Next GET `/api/moderator/questions/pending` → `GetPendingQuestionsUsecase` → `IModeratorRepository/ModeratorRepositoryImpl` → `ModeratorController.listPendingQuestions` → `ModeratorUsecase.listPendingQuestions` → `QuestionService.findPending` → `IQuestionRepository.findPending/countPending` → `QuestionRepositoryImpl` → Questions. Repository trả `List<QuestionEntity>` và long riêng, hai query dùng chung `pendingQuery`; QuestionService gọi mapper chuyển `PendingQuestionDTO`, tạo `PendingQuestionPageDTO` và tính totalPages. Không QuestionPageEntity hoặc DTO trong kết quả infrastructure. ModeratorUsecase dùng `ChapterService.getAll` map tên/tìm chương-bài và S3Service ký ảnh trên DTO. Hook quản lý filters/debounce/page/query/cache theo user và thông báo; card giữ form sửa thử. Ba thao tác write chưa nối API.
+
+[Page](../frontend/app/(site)/moderator/review/page.tsx), [card](../frontend/presentation/components/Moderator/PendingQuestionCard.tsx), [hook](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts), [Next route](../frontend/app/api/moderator/questions/pending/route.ts), [API](api-reference.md).
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 QuestionService.generateExamQuestions → QuestionReviewService.createForQuestions → QuestionReviewUsecase.createForQuestions → QuestionReviewEntity → IQuestionReviewRepository.saveReviews → QuestionReviewRepositoryImpl → QuestionReviewMapper → QuestionReviewDocument → QuestionsReview. regeneratedQuestions dùng RegeneratedQuestionEntity/RegeneratedQuestionDocument; ContentRegeneratedEntity/VariablesRegeneratedEntity và ContentDocument/VariablesDocument nằm trong questionReview. Mapper không uses QuestionMapper, không có import từ package question trong module review.

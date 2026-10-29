@@ -1,5 +1,39 @@
 # Source catalogue WEdu
 
+## Giao diện review — 2026-10-27
+
+- [ReviewPage](../frontend/app/(site)/moderator/review/page.tsx): danh sách API thật, tìm kiếm, lọc loại câu, loading/error/retry/empty và phân trang 10 câu.
+- [PendingQuestionCard](../frontend/presentation/components/Moderator/PendingQuestionCard.tsx): renderer dùng lại, form sửa thử và ba lựa chọn duyệt/chỉnh sửa/từ chối–regenerate.
+- [usePendingQuestions](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts): query, debounce/filter/page/state/thông báo; export `ReviewPreviewAction`. Hook mẫu và fixtures đã xóa.
+- [pendingQuestion.entity.ts](../frontend/domain/entities/pendingQuestion.entity.ts): `PendingQuestionEntity`, `PendingQuestionPage`, `PendingQuestionFilters`.
+- [Next pending route](../frontend/app/api/moderator/questions/pending/route.ts), [GetPendingQuestionsUsecase](../frontend/usecases/moderator/GetPendingQuestionsUsecase.ts): cookie validation, paging/filter input, proxy/error/no-store; port/adapter/service mở rộng `getPendingQuestions`.
+- [PendingQuestionDTO](../backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/PendingQuestionDTO.java), [PendingQuestionPageDTO](../backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/PendingQuestionPageDTO.java): response liên feature và HTTP.
+- Đã xóa `question/domain/entity/QuestionPageEntity.java`: repository chỉ trả danh sách entity và count long; DTO phân trang chỉ tạo ở QuestionService. PendingQuestionPageDTO giữ class Lombok `@Data/@NoArgsConstructor/@AllArgsConstructor`. JSON/phân trang không đổi.
+- [QuestionDTOMapper](../backend/src/main/java/com/wedu/exam_creation/question/dto/mapper/QuestionDTOMapper.java): `entityToPendingDTO`, disable builder cho DTO kế thừa. [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java)/[repository](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java): `findPending`.
+- [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java)/[ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java): `listPendingQuestions`; [ChapterService](../backend/src/main/java/com/wedu/exam_creation/chapter/usecase/ChapterService.java): `getAll` qua repository/mapper hiện có.
+- [ModeratorPendingQuestionsTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java), [PendingQuestionsRepositoryTest](../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionsRepositoryTest.java): auth/input/response và query/count/sort/limit. Ba MVC tests tệp hiện có bổ sung mocks ChapterService/QuestionService theo constructor mới.
+- [QuestionServicePendingQuestionsTest](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java): mapping entity → DTO và metadata phân trang thuộc usecase; giữ tổng kết quả khi trang yêu cầu rỗng.
+
+Các file còn lại trong thay đổi nối API:
+
+- [IQuestionRepository.java](../backend/src/main/java/com/wedu/exam_creation/question/domain/repository/IQuestionRepository.java): findPending trả List<QuestionEntity>, countPending trả long. Adapter dùng private pendingQuery chung, không map DTO.
+- [IModeratorRepository.ts](../frontend/domain/repositories/IModeratorRepository.ts): contract getPendingQuestions.
+- [ModeratorRepositoryImpl.ts](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts): gọi backend với filters và Bearer phía server.
+- [ModeratorService.ts](../frontend/presentation/services/ModeratorService.ts): gọi Next pending API, hỗ trợ AbortSignal.
+- [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java): thêm mocks hai dependency đọc câu hỏi.
+- [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java): thêm mocks hai dependency đọc câu hỏi.
+- [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java): thêm mocks hai dependency đọc câu hỏi.
+- Xóa `frontend/presentation/hooks/Moderator/usePendingQuestionPreview.ts`: thay bằng hook query thật; xóa `frontend/presentation/data/pendingQuestionExamples.ts`: bỏ dữ liệu minh họa. Hai file này được tạo ở bước giao diện trước, chưa tracked trong Git.
+- [api-reference.md](api-reference.md): endpoint/query/response/quyền và lỗi mới.
+- [architecture.md](architecture.md): ranh giới đọc dữ liệu, map DTO và ký ảnh.
+- [business-flows.md](business-flows.md): luồng danh sách thật và giới hạn ba thao tác write.
+- [current-status.md](current-status.md): mức hoàn thiện, kiểm tra và giới hạn chưa xác minh.
+- [development-decisions.md](development-decisions.md): bổ sung phạm vi API đọc đã duyệt.
+- [module-map.md](module-map.md): wiring/symbols mới, bỏ hook/fixtures cũ.
+- `codex/source-catalog.md` (file này): inventory file/symbol mới và thay đổi/xóa.
+
+Không thay đổi config, dependency, database schema/index; `backend/src/main/resources/application.yml` là thay đổi có sẵn của người dùng.
+
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
 questionReview bổ sung 6 model snapshot riêng: domain/entity RegeneratedQuestionEntity, ContentRegeneratedEntity, VariablesRegeneratedEntity; infrastructure/document RegeneratedQuestionDocument, ContentDocument, VariablesDocument. QuestionReviewEntity và QuestionReviewDocument đổi kiểu regeneratedQuestions sang model nội bộ; QuestionReviewMapper bỏ uses QuestionMapper. QuestionReviewService gọi QuestionReviewUsecase; collection hiện tại QuestionsReview. Không import model/mapper từ question.
