@@ -12,6 +12,7 @@ const service = new ModeratorService();
 
 export default function usePendingQuestionEdit(question: PendingQuestionEntity, onSaved: () => void) {
   const [version] = useState(question.updatedAt);
+  const [reviewRevision] = useState(question.reviewRevision);
   const [contents, setContents] = useState<Record<string, ContentDraft>>(() => ({
     question: createContentDraft(question.question),
     ...Object.fromEntries(question.options.map((content, index) => [`options.${index}`, createContentDraft(content)])),
@@ -51,6 +52,7 @@ export default function usePendingQuestionEdit(question: PendingQuestionEntity, 
     if (fileCount > 10) { setError("Chỉ tải tối đa 10 ảnh trong một lần lưu."); return; }
     data.set("payload", new Blob([JSON.stringify({
       updatedAt: version,
+      reviewRevision,
       question: serializeContent(contents.question),
       options: question.options.map((_, index) => serializeContent(contents[`options.${index}`])),
     })], { type: "application/json" }), "payload.json");

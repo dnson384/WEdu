@@ -3,15 +3,15 @@
 import { useState } from "react";
 import PendingQuestionEditForm from "./PendingQuestionEditForm";
 import { Check, Pencil, RefreshCw } from "lucide-react";
-import { PendingQuestionEntity } from "@/domain/entities/pendingQuestion.entity";
+import { PendingQuestionEntity, QuestionReviewAction } from "@/domain/entities/pendingQuestion.entity";
 import QuestionContent from "@/presentation/components/Exam/QuestionContent";
 import MultipleChoiceContent from "@/presentation/components/Exam/MultipleChoiceContent";
-import { ReviewPreviewAction } from "@/presentation/hooks/Moderator/usePendingQuestions";
 
 interface Props {
   question: PendingQuestionEntity;
   order: number;
-  onAction: (action: ReviewPreviewAction) => void;
+  onAction: (question: PendingQuestionEntity, action: QuestionReviewAction) => void;
+  isProcessing: boolean;
   onSaved: () => void;
 }
 
@@ -20,8 +20,11 @@ export default function PendingQuestionCard({
   order,
   onAction,
   onSaved,
+  isProcessing,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  const displayed = question.latestRegeneratedQuestion
+    ? { ...question, ...question.latestRegeneratedQuestion } : question;
   return (
     <article
       className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
@@ -33,6 +36,10 @@ export default function PendingQuestionCard({
         </span>
         <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
           {question.questionType}
+        </span>
+        <span className="text-gray-500">
+          Đã từ chối {question.regenerationCount}/5
+          {question.latestRegeneratedQuestion ? ` · Bản sinh lại ${question.regenerationCount}` : ""}
         </span>
         <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
           {question.difficultyLevel}
@@ -51,13 +58,13 @@ export default function PendingQuestionCard({
           {question.chapter} / {question.lesson}
         </p>
         {editing ? (
-          <PendingQuestionEditForm question={question} onCancel={() => setEditing(false)}
+          <PendingQuestionEditForm key={`${question.updatedAt}-${question.reviewRevision}`} question={displayed} onCancel={() => setEditing(false)}
             onSaved={() => { setEditing(false); onSaved(); }} />
         ) : (
           <>
-            <QuestionContent order={order} {...question.question} />
+            <QuestionContent order={order} {...displayed.question} />
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {question.options.map((option, index) => (
+              {displayed.options.map((option, index) => (
                 <div
                   key={index}
                   className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700"
@@ -82,25 +89,25 @@ export default function PendingQuestionCard({
 
       <footer className="flex flex-wrap gap-3 border-t border-gray-100 bg-gray-50/50 px-6 py-4">
         <button
-          disabled={editing}
-          onClick={() => onAction("approve")}
+          disabled={editing || isProcessing}
+          onClick={() => onAction(question, "approve")}
           className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-40"
         >
-          <Check size={16} /> Duyệt thẳng
+          <Check size={16} /> Duyệt
         </button>
         <button
-          disabled={editing}
+          disabled={editing || isProcessing}
           onClick={() => setEditing(true)}
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
         >
           <Pencil size={16} /> Chỉnh sửa
         </button>
         <button
-          disabled={editing}
-          onClick={() => onAction("regenerate")}
+          disabled={editing || isProcessing}
+          onClick={() => onAction(question, "reject")}
           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40"
         >
-          <RefreshCw size={16} /> Từ chối – yêu cầu regenerate
+          <RefreshCw size={16} /> {question.regenerationCount >= 4 ? "Từ chối – chuyển sang cân nhắc" : "Từ chối – sinh lại"}
         </button>
       </footer>
     </article>

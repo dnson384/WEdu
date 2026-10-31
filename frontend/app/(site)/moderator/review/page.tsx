@@ -15,6 +15,7 @@ export default function ReviewPage() {
     notice,
     handleAction,
     handleSaved,
+    isProcessing,
     page,
     totalPages,
     total,
@@ -41,8 +42,8 @@ export default function ReviewPage() {
       </header>
 
       <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Chỉnh sửa nội dung, công thức và tải ảnh thay cho mô tả AI. Duyệt thẳng
-        và yêu cầu regenerate chưa được kết nối.
+        Duyệt bản đang hiển thị hoặc từ chối để sinh lại. Tối đa 4 bản sinh lại;
+        lần từ chối thứ 5 chuyển câu hỏi sang cân nhắc trước khi sử dụng.
       </p>
 
       <section
@@ -123,6 +124,7 @@ export default function ReviewPage() {
               question={question}
               order={page * 10 + index + 1}
               onAction={handleAction}
+              isProcessing={isProcessing}
               onSaved={handleSaved}
             />
           ))
