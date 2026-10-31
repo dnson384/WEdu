@@ -9,6 +9,7 @@ import com.wedu.exam_creation.common.dto.ai.response.AIListQuestionsResponseDTO;
 import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.wedu.exam_creation.common.exception.AIGenerationException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -31,6 +32,35 @@ public class AIQuestionGenerationService {
                 .defaultHeader("Authorization", "Bearer " + properties.getApiKey())
                 .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
+    }
+
+    private static @NonNull StringBuilder getStringBuilder(List<GenerateQuestionRequestDTO> requests) {
+        StringBuilder specsBuilder = new StringBuilder();
+        for (int i = 0; i < requests.size(); i++) {
+            GenerateQuestionRequestDTO req = requests.get(i);
+            specsBuilder.append(String.format("""
+                            Yêu cầu %d:
+                            - Số lượng câu hỏi cần tạo: %d câu
+                            - Chương: "%s" với id: "%s"
+                            - Bài: "%s" với id: "%s"
+                            - Dạng bài: "%s"
+                            - Mức độ: "%s"
+                            - Yêu cầu cần đạt: "%s"
+                            - Loại câu hỏi: "%s"
+                            """,
+                    i + 1,
+                    req.getNumberOfQuestions(),
+                    req.getChapter(),
+                    req.getChapterId(),
+                    req.getLesson(),
+                    req.getLessonId(),
+                    req.getExerciseType(),
+                    req.getDifficultyLevel(),
+                    req.getLearningOutcome(),
+                    req.getQuestionType()
+            ));
+        }
+        return specsBuilder;
     }
 
     public List<AIQuestionResponseDTO> generateQuestions(List<GenerateQuestionRequestDTO> requests) throws JsonProcessingException {
@@ -86,31 +116,7 @@ public class AIQuestionGenerationService {
                 .mapToInt(req -> req.getNumberOfQuestions() != null ? req.getNumberOfQuestions() : 0)
                 .sum();
 
-        StringBuilder specsBuilder = new StringBuilder();
-        for (int i = 0; i < requests.size(); i++) {
-            GenerateQuestionRequestDTO req = requests.get(i);
-            specsBuilder.append(String.format("""
-                            Yêu cầu %d:
-                            - Số lượng câu hỏi cần tạo: %d câu
-                            - Chương: "%s" với id: "%s"
-                            - Bài: "%s" với id: "%s"
-                            - Dạng bài: "%s"
-                            - Mức độ: "%s"
-                            - Yêu cầu cần đạt: "%s"
-                            - Loại câu hỏi: "%s"
-                            """,
-                    i + 1,
-                    req.getNumberOfQuestions(),
-                    req.getChapter(),
-                    req.getChapterId(),
-                    req.getLesson(),
-                    req.getLessonId(),
-                    req.getExerciseType(),
-                    req.getDifficultyLevel(),
-                    req.getLearningOutcome(),
-                    req.getQuestionType()
-            ));
-        }
+        StringBuilder specsBuilder = getStringBuilder(requests);
 
         return """
                 Bạn là một Chuyên gia khảo thí và xây dựng ngân hàng câu hỏi cấp cao. Nhiệm vụ của bạn là soạn thảo danh sách câu hỏi dựa trên các yêu cầu cụ thể, đảm bảo tính khoa học, độ chính xác kiến thức và định dạng dữ liệu nghiêm ngặt.

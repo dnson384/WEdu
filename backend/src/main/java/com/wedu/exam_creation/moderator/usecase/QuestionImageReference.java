@@ -1,6 +1,5 @@
 package com.wedu.exam_creation.moderator.usecase;
 
-/** Question media keys use the media/ namespace; all other values are AI descriptions. */
 public final class QuestionImageReference {
     private QuestionImageReference() {
     }
