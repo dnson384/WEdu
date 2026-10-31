@@ -1,21 +1,24 @@
 package com.wedu.exam_creation.moderator.controller;
 
-import com.wedu.exam_creation.moderator.usecase.ModeratorUsecase;
-import com.wedu.exam_creation.moderator.dto.ApproveQuestionFileResponseDTO;
-import com.wedu.exam_creation.moderator.dto.RejectQuestionFileDTO;
 import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
+import com.wedu.exam_creation.moderator.dto.ApproveQuestionFileResponseDTO;
+import com.wedu.exam_creation.moderator.dto.EditPendingQuestionDTO;
+import com.wedu.exam_creation.moderator.dto.RejectPendingQuestionResponseDTO;
+import com.wedu.exam_creation.moderator.dto.RejectQuestionFileDTO;
+import com.wedu.exam_creation.moderator.dto.ReviewPendingQuestionDTO;
+import com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase;
+import com.wedu.exam_creation.moderator.usecase.ModeratorUsecase;
+import com.wedu.exam_creation.moderator.usecase.ReviewPendingQuestionUsecase;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase;
-import com.wedu.exam_creation.moderator.dto.EditPendingQuestionDTO;
-import org.springframework.util.MultiValueMap;
 
 @RestController
 @RequestMapping("/moderator")
@@ -23,10 +26,27 @@ import org.springframework.util.MultiValueMap;
 public class ModeratorController {
     private final ModeratorUsecase moderatorUsecase;
     private final EditPendingQuestionUsecase editPendingQuestionUsecase;
+    private final ReviewPendingQuestionUsecase reviewPendingQuestionUsecase;
 
-    public ModeratorController(ModeratorUsecase moderatorUsecase, EditPendingQuestionUsecase editPendingQuestionUsecase) {
+    public ModeratorController(ModeratorUsecase moderatorUsecase, EditPendingQuestionUsecase editPendingQuestionUsecase,
+            ReviewPendingQuestionUsecase reviewPendingQuestionUsecase) {
         this.moderatorUsecase = moderatorUsecase;
         this.editPendingQuestionUsecase = editPendingQuestionUsecase;
+        this.reviewPendingQuestionUsecase = reviewPendingQuestionUsecase;
+    }
+
+    @PostMapping("/questions/{id}/approve")
+    public ResponseEntity<Void> approvePendingQuestion(@PathVariable("id") String id,
+            @RequestBody ReviewPendingQuestionDTO input) {
+        reviewPendingQuestionUsecase.approve(id, input);
+        return ResponseEntity.noContent().header("Cache-Control", "private, no-store").build();
+    }
+
+    @PostMapping("/questions/{id}/reject")
+    public ResponseEntity<RejectPendingQuestionResponseDTO> rejectPendingQuestion(
+            @PathVariable("id") String id, @RequestBody ReviewPendingQuestionDTO input) {
+        return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+                .body(reviewPendingQuestionUsecase.reject(id, input));
     }
 
     @PatchMapping(value = "/questions/{id}", consumes = "multipart/form-data")

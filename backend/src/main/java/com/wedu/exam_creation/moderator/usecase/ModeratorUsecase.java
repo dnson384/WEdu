@@ -1,5 +1,8 @@
 package com.wedu.exam_creation.moderator.usecase;
 
+import com.wedu.exam_creation.chapter.usecase.ChapterService;
+import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
+import com.wedu.exam_creation.common.dto.question.response.*;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.ForbiddenException;
@@ -9,6 +12,7 @@ import com.wedu.exam_creation.mail.service.MailService;
 import com.wedu.exam_creation.moderator.dto.ApproveQuestionFileResponseDTO;
 import com.wedu.exam_creation.moderator.dto.RejectQuestionFileDTO;
 import com.wedu.exam_creation.moderator.infrastructure.StoredDocumentFile;
+import com.wedu.exam_creation.question.usecase.QuestionService;
 import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
 import com.wedu.exam_creation.storage.service.S3Service;
 import jakarta.mail.internet.AddressException;
@@ -18,14 +22,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ArrayList;
-import com.wedu.exam_creation.chapter.usecase.ChapterService;
-import com.wedu.exam_creation.question.usecase.QuestionService;
-import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
-import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
-import com.wedu.exam_creation.common.dto.question.response.VariablesDTO;
 
 @Service
 public class ModeratorUsecase {
@@ -47,45 +46,72 @@ public class ModeratorUsecase {
 
     public PendingQuestionPageDTO listPendingQuestions(String rawPage, String search, String questionType) {
         int page;
+
         try {
             if (!rawPage.matches("[0-9]+")) throw new NumberFormatException();
             page = Integer.parseInt(rawPage);
         } catch (NumberFormatException e) {
             throw new BadRequestException("Trang phải là số nguyên không âm");
         }
+
         search = search.trim();
         questionType = questionType.trim();
         if (search.length() > 200 || questionType.length() > 100) {
             throw new BadRequestException("Bộ lọc vượt quá độ dài cho phép");
         }
-        var chapters = chapterService.getAll();
+
+        List<ChapterResponseDTO> chapters = chapterService.getAll();
+
         List<String> chapterIds = new ArrayList<>();
         List<String> lessonIds = new ArrayList<>();
+
         String term = search.toLowerCase(Locale.ROOT);
         if (!term.isEmpty()) {
-            for (var chapter : chapters) {
-                if (chapter.getName() != null && chapter.getName().toLowerCase(Locale.ROOT).contains(term)) chapterIds.add(chapter.getId());
+            for (ChapterResponseDTO chapter : chapters) {
+                if (chapter.getName() != null && chapter.getName().toLowerCase(Locale.ROOT).contains(term)) {
+                    chapterIds.add(chapter.getId());
+                }
                 if (chapter.getLessons() != null) {
                     chapter.getLessons().stream()
-                            .filter(lesson -> lesson.getName() != null && lesson.getName().toLowerCase(Locale.ROOT).contains(term))
+                            .filter(lesson -> lesson.getName() != null &&
+                                    lesson.getName().toLowerCase(Locale.ROOT).contains(term))
                             .forEach(lesson -> lessonIds.add(lesson.getId()));
                 }
             }
         }
-        var result = questionService.findPending(page, search, questionType, chapterIds, lessonIds);
-        for (var question : result.getItems()) {
+
+        PendingQuestionPageDTO result = questionService.findPending(page, search, questionType, chapterIds, lessonIds);
+        for (PendingQuestionDTO question : result.getItems()) {
+            QuestionDTO latest = question.getLatestRegeneratedQuestion();
+
+            if (latest != null) {
+                latest.setQuestion(signContent(latest.getQuestion()));
+                latest.setOptions(latest.getOptions() == null ? List.of() : latest.getOptions().stream().map(this::signContent).toList());
+            }
+
             question.setChapter("Chương không còn tồn tại");
             question.setLesson("Bài học không còn tồn tại");
-            chapters.stream().filter(chapter -> chapter.getId().equals(question.getChapterId())).findFirst().ifPresent(chapter -> {
-                question.setChapter(chapter.getName());
-                if (chapter.getLessons() != null) chapter.getLessons().stream()
-                        .filter(lesson -> lesson.getId().equals(question.getLessonId())).findFirst()
-                        .ifPresent(lesson -> question.setLesson(lesson.getName()));
-            });
+
+            chapters.stream()
+                    .filter(chapter -> chapter.getId().equals(question.getChapterId()))
+                    .findFirst()
+                    .ifPresent(chapter -> {
+                        question.setChapter(chapter.getName());
+                        if (chapter.getLessons() != null) chapter.getLessons().stream()
+                                .filter(lesson -> lesson.getId().equals(question.getLessonId())).findFirst()
+                                .ifPresent(lesson -> question.setLesson(lesson.getName()));
+                    });
+
             question.setQuestion(signContent(question.getQuestion()));
-            question.setOptions(question.getOptions() == null ? List.of() : question.getOptions().stream().map(this::signContent).toList());
-            if (question.getLearningOutcomes() == null) question.setLearningOutcomes(List.of());
+            question.setOptions(question.getOptions() == null ? List.of() : question.getOptions().stream()
+                    .map(this::signContent)
+                    .toList());
+
+            if (question.getLearningOutcomes() == null) {
+                question.setLearningOutcomes(List.of());
+            }
         }
+
         return result;
     }
 
@@ -161,7 +187,6 @@ public class ModeratorUsecase {
             throw new BadRequestException("Không xác định được email người gửi từ tên tệp");
         }
 
-        // Confirm existence before deleting; no notification for an already absent object.
         getQuestionFileContent(request.key());
         deleteQuestionFile(request.key());
 

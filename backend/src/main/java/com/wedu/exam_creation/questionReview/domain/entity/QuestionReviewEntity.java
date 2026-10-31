@@ -14,6 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 public class QuestionReviewEntity {
     private String id;
+    private int regenerationCount;
+    private long revision;
 
     @Builder.Default
     private List<RegeneratedQuestionEntity> regeneratedQuestions = new ArrayList<>();

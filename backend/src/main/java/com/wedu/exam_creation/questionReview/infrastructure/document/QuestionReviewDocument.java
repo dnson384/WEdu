@@ -18,6 +18,8 @@ import java.util.List;
 public class QuestionReviewDocument {
     @Id
     private String id;
+    private int regenerationCount;
+    private long revision;
 
     @Builder.Default
     private List<RegeneratedQuestionDocument> regeneratedQuestions = new ArrayList<>();
