@@ -1,5 +1,18 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+1. Moderator vào /moderator/review, đọc Questions.status=PENDING_REVIEW; tìm/lọc/phân trang giữ trên câu gốc. Card ưu tiên bản sinh lại mới nhất nếu có, cùng số lần từ chối đã ghi nhận.
+2. Duyệt gửi updatedAt/reviewRevision. Backend kiểm tra còn chờ và đúng phiên bản, promote question/options của bản mới nhất nếu có, chuyển APPROVED, xóa QuestionsReview trong transaction. ID/metadata/createdAt giữ nguyên. UI refetch và sửa trang nếu cần.
+3. Từ chối tính lượt kế tiếp. Với lượt 1–4, đọc yêu cầu từ metadata câu gốc và danh mục chương/bài; ghép đầy đủ learningOutcomes bằng "; ". AI sinh đúng một câu. Kiểm tra metadata, số phương án, nội dung và placeholder; con người đánh giá chuyên môn. Khi thành công, kiểm lại phiên bản trong transaction, tăng updatedAt gốc và append snapshot/tăng count, revision. AI lỗi không tăng lượt và không thay dữ liệu.
+4. Moderator xem/sửa bản mới nhất rồi duyệt hoặc từ chối tiếp. Lưu chỉnh sửa không tự duyệt hoặc tăng lượt; thay đổi snapshot cuối, tăng revision/updatedAt, giữ nội dung Questions gốc.
+5. Từ chối khi đã có 4 lần sinh lại thành công không gọi AI; chuyển câu gốc sang NEEDS_CONSIDERATION, giữ nội dung gốc, xóa QuestionsReview và lịch sử. UI loại khỏi hàng chờ.
+
+Chưa đổi cách chọn câu hoặc thêm cảnh báo trong đề. Các đề lưu questionIds vẫn có thể đọc nội dung mới sau duyệt vì ID giữ nguyên. Request cũ/đồng thời không được ghi đè; có thể cùng tốn chi phí gọi AI trước khi một kết quả bị 409. Không có persisted reviewer/reason/audit, tự đánh giá bằng AI, hàng đợi hoặc retry tự động.
+
+[Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [UI hook](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts), [contract](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+
 ## Moderator sửa câu hỏi với LaTeX và mô tả ảnh — 2026-10-29
 
 1. Mở Chỉnh sửa: clone nội dung/phương án và updatedAt. Template hiển thị nguyên placeholders; mỗi key math/image duy nhất trong mỗi content có input riêng. `<img_0>` ở câu hỏi độc lập với `<img_0>` ở phương án.

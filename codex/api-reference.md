@@ -1,5 +1,17 @@
 # API reference WEdu
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+- `POST /moderator/questions/{id}/approve` ↔ `POST /api/moderator/questions/{id}/approve`: JSON `{updatedAt: ISO instant|null, reviewRevision: nonnegative integer}`, thành công 204. Duyệt nội dung gốc hoặc promote bản sinh lại mới nhất, status APPROVED; xóa QuestionsReview.
+- `POST /moderator/questions/{id}/reject` ↔ `POST /api/moderator/questions/{id}/reject`: cùng request, 200 `{status: "PENDING_REVIEW"|"NEEDS_CONSIDERATION", regenerationCount: number}`. Kết quả 1–4 là snapshot mới; kết quả 5 không gọi AI và xóa review.
+- GET pending giữ paging/filter trên Questions gốc, thêm `regenerationCount`, `reviewRevision`, `latestRegeneratedQuestion: QuestionDTO|null`. Chỉ gửi snapshot mới nhất; image key được presign trên DTO, mô tả vẫn là text. Root question/options vẫn là bản gốc; UI ưu tiên nội dung snapshot nếu có.
+- PATCH multipart hiện có thêm `payload.reviewRevision`; thiếu tương đương 0 để tương thích editor cũ chưa có snapshot. Khi revision hiện tại khác 0, client thiếu revision bị 409. Sửa latest snapshot nếu có, không tăng lượt, không thay nội dung Questions; updatedAt câu gốc vẫn tăng để guard mọi thao tác.
+
+Các API giữ ROLE_MODERATOR và `private, no-store`. Next kiểm ID 24 ký tự hex; ID/payload sai ở Next trả 400. Backend approve/reject kiểm input/reviewRevision nhưng chưa kiểm định dạng ID; lỗi này đang được test `invalidInputDoesNotReadOrWrite` phát hiện, không chứng nhận direct backend malformed ID trả 400. Thiếu chương/bài/yêu cầu sinh lại trả 400; không có câu 404; status/version/review revision cũ trả 409; auth theo JWT/cookie hiện tại. AI lỗi hoặc output sai trả 500 với thông báo chung, không tính lượt. Next thiếu cookie trả 401, upstream mất kết nối trả 502; không chuyển nguyên thông báo provider. Next dùng chung dynamic route `[id]/[action]`, chỉ chấp nhận approve/reject.
+
+[Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [input](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/ReviewPendingQuestionDTO.java), [result](../backend/src/main/java/com/wedu/exam_creation/moderator/dto/RejectPendingQuestionResponseDTO.java), [Next route](../frontend/app/api/moderator/questions/[id]/[action]/route.ts).
+
+
 ## Chỉnh sửa câu hỏi chờ duyệt — 2026-10-29
 
 `PATCH /moderator/questions/{id}` ↔ `PATCH /api/moderator/questions/{id}`; ROLE_MODERATOR, multipart/form-data, thành công 204/no-store. ID là 24 ký tự hex. Part `payload` là JSON application/json: `{updatedAt: ISO instant|null, question: ContentDTO, options: ContentDTO[]}`. updatedAt lấy từ response danh sách, kiểm tra phiên bản trước upload và trong conditional update. Giữ số phương án, không nhận thay đổi metadata/status. ContentDTO giữ `{template, variables:{math:{math_N:latex}, image:{img_N:description}}}`; image trong request chỉ là mô tả, không được tin làm URL/key. Part ảnh tên `question.img_N` hoặc `options.<index>.img_N`; mỗi tên một file, JPEG/PNG tối đa 5 MiB, tối đa 10 ảnh thay thế/request. Next giới hạn JSON part 1 MiB; backend giữ multipart limits hiện có.

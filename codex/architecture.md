@@ -1,5 +1,16 @@
 # Kiến trúc WEdu hiện tại
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+ReviewPage/PendingQuestionCard → usePendingQuestions → ModeratorService → Next POST [id]/[action] → frontend ReviewPendingQuestionUsecase → moderator port/adapter → ModeratorController → backend ReviewPendingQuestionUsecase. Backend điều phối QuestionService, QuestionReviewService, ChapterService và AIQuestionGenerationService; controller không chứa nghiệp vụ.
+
+Gọi AI đồng bộ ngoài transaction, không tự retry. Sau khi validate output, TransactionTemplate kiểm lại Questions.status/updatedAt và reviewRevision, touch phiên bản câu gốc, rồi lưu snapshot/counter/revision. Approve/final reject đổi status và xóa review trong cùng transaction. Conditional writes cùng việc chạm Questions ở mọi mutation chống ghi đè/trùng kết quả; xung đột Mongo transient transaction được đổi thành 409 ở review usecase. Không ngăn nhiều lần gọi AI song song hoặc giải quyết outcome commit mất phản hồi.
+
+QuestionService đọc review theo batch cho tối đa 10 câu, attach common DTO. questionReview giữ snapshot models riêng, mapper chỉ nhận/trả common DTO giữa service/usecase, repository chỉ nhận entity/scalar. Editor dùng overload updatePendingContent có transaction để cập nhật đúng snapshot cuối hoặc nội dung gốc. Editor cleanup ảnh mới khi IOException hoặc ConflictException; RuntimeException khác truyền ra ngoài và không cleanup, ảnh cũ luôn giữ. Quy tắc này cập nhật mô tả cleanup ở snapshot editor cũ bên dưới. AI service ghi loại exception và trả thông báo chung thay vì log/trả provider error chứa dữ liệu nhạy cảm; helper getStringBuilder dựng phần đặc tả prompt.
+
+[Coordinator](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [review usecase](../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java).
+
+
 ## Editor câu hỏi và lưu ảnh — 2026-10-29
 
 PendingQuestionCard chỉ giữ trạng thái mở form; PendingQuestionEditForm/QuestionContentEditor render editor dùng lại cho câu và phương án. usePendingQuestionEdit giữ draft/LaTeX/image descriptions/File/blob URL, validation, multipart và mutation; questionContentEditor utils phân tích/serialize references. ReferencedContent dùng lại cho QuestionContent/MultipleChoiceContent và preview, render mô tả như text thay vì src ảnh. Hủy không upload, unmount revoke object URLs. Lưu thành công gọi cache invalidation danh sách, câu vẫn PENDING_REVIEW.

@@ -1,5 +1,17 @@
 # Bản đồ module, symbols và API
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+- Approve/reject: ReviewPage → PendingQuestionCard → usePendingQuestions.handleAction → ModeratorService.reviewPendingQuestion → Next POST /api/moderator/questions/[id]/[action] → frontend ReviewPendingQuestionUsecase.execute → IModeratorRepository/ModeratorRepositoryImpl.reviewPendingQuestion → ModeratorController.approvePendingQuestion/rejectPendingQuestion → backend ReviewPendingQuestionUsecase.approve/reject.
+- Điều phối: QuestionService.getPendingForEdit/commitPendingReview → IQuestionRepository.updatePendingState → MongoTemplate; QuestionReviewService.state/saveCandidate/delete → QuestionReviewUsecase.states/saveCandidate/delete → IQuestionReviewRepository.findByIds/ensureExists/update/delete → QuestionsReview. Review coordinator dùng ChapterService.getAll/AIQuestionGenerationService.generateQuestions và TransactionTemplate.
+- Read: QuestionService.findPending lấy Questions rồi batch review states, attachReview thêm count/revision/latestRegeneratedQuestion; ModeratorUsecase ký ảnh của cả bản gốc và snapshot.
+- Edit: usePendingQuestionEdit gửi reviewRevision; EditPendingQuestionUsecase dùng snapshot cuối làm baseline, gọi QuestionService.updatePendingContent overload 5 tham số có transaction. Có candidate thì chỉ touch version gốc và lưu snapshot; không có thì giữ update content cũ.
+- DTO mới: ReviewPendingQuestionDTO, RejectPendingQuestionResponseDTO, common QuestionReviewStateDTO; PendingQuestionDTO thêm count/revision/latest; QuestionReviewMapper thêm toDTO/toSnapshot. Models review thêm regenerationCount/revision. Không đổi exam/exporter.
+- AIQuestionGenerationService.buildPrompt → private getStringBuilder dựng đặc tả các GenerateQuestionRequestDTO; phần gọi AI và định dạng kết quả giữ nguyên. Commit backend/test/frontend đã merge vào main tại d3ad7a3; validation mới nhất ở current-status, gồm một test failure còn tồn tại.
+
+[Inventory và mô tả từng file](source-catalog.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31), [API](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+
 ## Chỉnh sửa câu hỏi — 2026-10-29
 
 ReviewPage → PendingQuestionCard → PendingQuestionEditForm → QuestionContentEditor/usePendingQuestionEdit → ModeratorService.editPendingQuestion → Next PATCH `/api/moderator/questions/[id]` → frontend EditPendingQuestionUsecase → IModeratorRepository/ModeratorRepositoryImpl.editPendingQuestion → ModeratorController.editPendingQuestion → backend EditPendingQuestionUsecase.execute → QuestionService.getPendingForEdit/updatePendingContent → IQuestionRepository.findById/updatePendingContent → QuestionRepositoryImpl. DTO request EditPendingQuestionDTO; common PendingQuestionDTO bổ sung updatedAt; QuestionDTOMapper.contentDTOToEntity map vào domain trước adapter.

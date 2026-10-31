@@ -1,5 +1,16 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+QuestionsReview thêm `regenerationCount:int` (0–4 khi còn chờ) và `revision:long` (tăng sau append/edit snapshot). Field thiếu được đọc là 0; query revision 0 chấp nhận missing/null. Không thêm collection/index/migration. Khi thao tác với câu PENDING_REVIEW thiếu review, khởi tạo bằng upsert setOnInsert trong transaction; không backfill hàng loạt.
+
+regeneratedQuestions chứa tối đa 4 snapshot theo thứ tự sinh thành công; ID snapshot giữ ID gốc, metadata lấy từ câu gốc, status PENDING_REVIEW, có createdAt/updatedAt và content/options với model riêng. Editor chỉ thay snapshot cuối, giữ createdAt và bộ đếm, tăng revision. Nội dung Questions không thay trước khi duyệt, nhưng updatedAt tăng khi append/edit snapshot để chặn request cũ.
+
+Duyệt cập nhật Questions.status=APPROVED và lấy question/options của snapshot cuối nếu có, giữ _id/metadata/createdAt. Từ chối lần 5 giữ nội dung gốc, status=NEEDS_CONSIDERATION. Cả hai xóa QuestionsReview trong cùng Mongo transaction. Số lượt 5 chỉ còn trong response vì review đã xóa; không có lịch sử/audit sau kết thúc. AI lỗi không ghi. Placeholder/S3 keys giữ nguyên, không persist presigned URL. Không lọc status khi sinh đề.
+
+[Review model](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [review adapter](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java), [question adapter](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java).
+
+
 ## Cập nhật nội dung câu hỏi chờ duyệt — 2026-10-29
 
 Không thêm collection/field/index. Questions.question và options vẫn ContentDocument `{template, variables:{math,image}}`; updatedAt đã có. AI sinh mô tả text trong image map; khi moderator lưu với file hợp lệ, chỉ sau conditional update thành công mô tả được thay bằng `media/questions/{questionId}/<uuid>.<extension>`. Ảnh cũ theo media/ convention giữ nguyên nếu không thay. Không lưu mô tả vào field riêng hoặc presigned URL. Variables không còn tham chiếu bị loại khỏi content khi lưu. Status vẫn PENDING_REVIEW, không thay metadata/createdAt, không append QuestionsReview snapshot. Query guard `_id + status + updatedAt` chống editor cũ ghi đè; timestamp mới ít nhất tăng 1 ms khi cần. Các đề có thể dùng lại media nên không xóa object cũ.

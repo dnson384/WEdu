@@ -1,5 +1,12 @@
 # WEdu Development Decisions
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+Người dùng đã duyệt triển khai workflow câu hỏi, thay thế giới hạn read-only/approve-regenerate ngoài scope của các snapshot 26–29/10 cho phần này. ROLE_MODERATOR duyệt bản gốc hoặc bản sinh lại mới nhất. Lần từ chối thành công 1–4 sinh một bản mới để con người kiểm tra; lần 5 không gọi AI, chuyển câu gốc sang `NEEDS_CONSIDERATION`. Lỗi AI/dữ liệu không hợp lệ không mất lượt. Giữ nội dung Questions cho đến khi duyệt, giữ ID/metadata/createdAt khi thay nội dung. Kết thúc bằng duyệt hoặc cân nhắc đều xóa QuestionsReview và lịch sử. Editor sửa bản mới nhất khi có bản sinh lại. Giữ cách chọn câu, dùng câu và hiển thị đề hiện tại; không thêm audit, backfill, hàng đợi hoặc khóa phân tán. AI retry/timeout của luồng sinh đề vẫn giữ phạm vi cũ.
+
+Chấp nhận hai request đồng thời có thể cùng gọi AI; conditional writes và Mongo transaction chỉ cho một kết quả được ghi/tính lượt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [contract](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31), [validation](current-status.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+
 ## Chỉnh sửa câu hỏi, công thức và ảnh — 2026-10-29
 
 Người dùng đã duyệt triển khai editor và lưu thật cho câu PENDING_REVIEW. Template giữ `<math_N>`/`<img_N>`; mỗi key duy nhất có input riêng trong câu hỏi hoặc từng phương án. Công thức nhập LaTeX; ảnh có mô tả AI và upload JPEG/PNG. Chỉ khi Lưu mới upload và thay mô tả bằng S3 object key; mô tả không được lưu riêng. Không đổi số phương án/metadata, không tự duyệt, regenerate, snapshot/audit hoặc sửa importer/exam generation. API PATCH là ngoại lệ bổ sung so với phạm vi read-only 2026-10-27; approve/regenerate vẫn ngoài scope. Repository chỉ nhận/trả entity hoặc scalar, usecase map DTO; class Lombok, không record. [Contract](api-reference.md), [trạng thái](current-status.md).

@@ -1,5 +1,68 @@
 # Source catalogue WEdu
 
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+Inventory **52 file** application/tests/docs thay đổi hoặc thêm; không đổi config/dependency/exporter. Không xóa/rename file. Application/tests đã commit và push: backend 85269d8, 89553d9; tests e938083; frontend 835576c. Đã merge vào main tại d3ad7a3 qua PR #123–125. Tám file docs được chuẩn bị trong commit đồng bộ context này. Harness JSDOM và log validation chỉ nằm trong thư mục tạm, không thuộc source repository.
+
+Symbols/contracts mới: ReviewPendingQuestionUsecase.approve/reject (backend), ReviewPendingQuestionDTO, RejectPendingQuestionResponseDTO, QuestionReviewStateDTO; QuestionService.commitPendingReview/updatePendingContent overload có revision; IQuestionRepository.updatePendingState; QuestionReviewService.state/states/saveCandidate/delete; QuestionReviewUsecase.states/saveCandidate/delete; IQuestionReviewRepository.findByIds/ensureExists/update/delete; QuestionReviewMapper.toDTO/toSnapshot. Frontend QuestionReviewAction/Input/Result, reviewPendingQuestion trên port/adapter/service, ReviewPendingQuestionUsecase.execute và POST /api/moderator/questions/[id]/[action]. [Contract](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31), [validation](current-status.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+| File | Thay đổi |
+| --- | --- |
+| [backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java>) | Ẩn provider exception khỏi log/response; tách helper getStringBuilder dựng đặc tả prompt. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java>) | Bỏ comment, không đổi nhận diện S3 key. |
+| [frontend/app/api/moderator/question-files/reject/route.ts](<../frontend/app/api/moderator/question-files/reject/route.ts>) | Chuẩn hóa định dạng và tách biến repository; không đổi contract từ chối tệp. |
+| [frontend/app/api/moderator/questions/[id]/route.ts](<../frontend/app/api/moderator/questions/[id]/route.ts>) | Chuẩn hóa định dạng route PATCH, giữ contract multipart hiện có. |
+| [backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/PendingQuestionDTO.java](<../backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/PendingQuestionDTO.java>) | Thêm bộ đếm, reviewRevision và snapshot mới nhất cho API đọc. |
+| [backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/QuestionReviewStateDTO.java](<../backend/src/main/java/com/wedu/exam_creation/common/dto/question/response/QuestionReviewStateDTO.java>) | Common DTO trao đổi count/revision/latest giữa question và questionReview. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java>) | Thêm POST approve/reject và inject coordinator kiểm duyệt. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/dto/EditPendingQuestionDTO.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/dto/EditPendingQuestionDTO.java>) | Nhận reviewRevision trong payload editor. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/dto/RejectPendingQuestionResponseDTO.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/dto/RejectPendingQuestionResponseDTO.java>) | Response trạng thái và bộ đếm sau từ chối. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/dto/ReviewPendingQuestionDTO.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/dto/ReviewPendingQuestionDTO.java>) | Request kiểm duyệt chứa updatedAt/reviewRevision. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java>) | Chọn baseline snapshot mới nhất, kiểm revision, giữ validation/upload ảnh. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java>) | Ký ảnh trên DTO snapshot mới nhất, giữ mô tả AI dạng text. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java>) | Coordinator approve/reject, dựng yêu cầu/validate AI, transaction ngắn và xử lý conflict. |
+| [backend/src/main/java/com/wedu/exam_creation/question/domain/repository/IQuestionRepository.java](<../backend/src/main/java/com/wedu/exam_creation/question/domain/repository/IQuestionRepository.java>) | Port conditional update trạng thái/nội dung câu chờ duyệt. |
+| [backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java>) | Atomic update status/content/version với guard _id/status/updatedAt. |
+| [backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java](<../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java>) | Batch attach review, commit trạng thái và editor transactional cho snapshot. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/QuestionReviewEntity.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/QuestionReviewEntity.java>) | Thêm regenerationCount/revision vào domain review. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/domain/repository/IQuestionReviewRepository.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/repository/IQuestionReviewRepository.java>) | Port đọc batch, khởi tạo thiếu, update/delete có revision. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java>) | Persist regenerationCount/revision trong QuestionsReview. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java>) | Map snapshot riêng sang/từ common QuestionDTO. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java>) | Mongo read/upsert setOnInsert và update/delete theo revision, hỗ trợ legacy. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewService.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewService.java>) | Facade common DTO cho state/batch/saveCandidate/delete. |
+| [backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java>) | Quản lý snapshot cuối, count/revision, append/edit/delete và default cũ. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java>) | Bổ sung mock coordinator cho controller có dependency mới. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java>) | Bổ sung mock coordinator và xác thực overload editor có revision. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java>) | Kiểm tra API approve/reject, quyền, no-store và ký ảnh snapshot. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java>) | Bổ sung mock coordinator, giữ hồi quy nội dung DOCX. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java>) | Bổ sung mock coordinator, giữ hồi quy kiểm duyệt tệp. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java>) | Cập nhật guard revision, thêm baseline ảnh/options của snapshot cuối. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java>) | Kiểm tra lượt 1–5, duyệt, AI lỗi/sai, stale request, conflict và transaction interception. |
+| [backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java>) | Bổ sung kiểm tra trạng thái cuối chỉ ghi status/version, timestamp tăng. |
+| [backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java>) | Bổ sung editor chỉ ghi snapshot, touch version và chặn ghi khi guard thất bại. |
+| [backend/src/test/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryTest.java>) | Kiểm tra query revision legacy, setOnInsert, conditional update/delete. |
+| [backend/src/test/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecaseTest.java>) | Kiểm tra mapping snapshot, giữ keys/metadata, edit không mất lượt, legacy và conflict. |
+| [codex/api-reference.md](<../codex/api-reference.md>) | Đồng bộ POST approve/reject và GET/PATCH mở rộng. |
+| [codex/architecture.md](<../codex/architecture.md>) | Ghi service boundaries, transaction, gọi AI và concurrency. |
+| [codex/business-flows.md](<../codex/business-flows.md>) | Ghi đầy đủ luồng con người duyệt từng bản và nhánh hết lượt. |
+| [codex/current-status.md](<../codex/current-status.md>) | Ghi hành vi, kiểm tra đã chạy, lỗi đã xử lý và giới hạn chưa xác minh. |
+| [codex/database-schema.md](<../codex/database-schema.md>) | Ghi fields review mới, legacy defaults và chuyển trạng thái/xóa review. |
+| [codex/development-decisions.md](<../codex/development-decisions.md>) | Ghi phạm vi đã duyệt, giới hạn lượt, lưu/xóa review và phạm vi exam giữ nguyên. |
+| [codex/module-map.md](<../codex/module-map.md>) | Đồng bộ call graph, methods, DTO và model mới. |
+| [codex/source-catalog.md](<../codex/source-catalog.md>) | Inventory toàn bộ file thay đổi và symbols mới trong feature. |
+| [frontend/app/(site)/moderator/review/page.tsx](<../frontend/app/(site)/moderator/review/page.tsx>) | Nối trạng thái mutation vào card và mô tả giới hạn lượt. |
+| [frontend/app/api/moderator/questions/[id]/[action]/route.ts](<../frontend/app/api/moderator/questions/[id]/[action]/route.ts>) | Dynamic POST approve/reject, validate cookie/action/payload và lỗi an toàn. |
+| [frontend/domain/entities/pendingQuestion.entity.ts](<../frontend/domain/entities/pendingQuestion.entity.ts>) | Types count/revision/latest và request/action/result kiểm duyệt. |
+| [frontend/domain/repositories/IModeratorRepository.ts](<../frontend/domain/repositories/IModeratorRepository.ts>) | Port reviewPendingQuestion cho approve/reject. |
+| [frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts](<../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts>) | Adapter POST backend kiểm duyệt với access token. |
+| [frontend/presentation/components/Moderator/PendingQuestionCard.tsx](<../frontend/presentation/components/Moderator/PendingQuestionCard.tsx>) | Hiển thị bản mới nhất, số lượt, nút trạng thái cuối và editor đúng bản. |
+| [frontend/presentation/hooks/Moderator/usePendingQuestionEdit.ts](<../frontend/presentation/hooks/Moderator/usePendingQuestionEdit.ts>) | Giữ và gửi revision cùng phiên bản editor. |
+| [frontend/presentation/hooks/Moderator/usePendingQuestions.ts](<../frontend/presentation/hooks/Moderator/usePendingQuestions.ts>) | Mutation thật, chặn gửi lặp, notice/refetch và sửa trang sau xóa. |
+| [frontend/presentation/services/ModeratorService.ts](<../frontend/presentation/services/ModeratorService.ts>) | Presentation service POST các route kiểm duyệt Next. |
+| [frontend/usecases/moderator/ReviewPendingQuestionUsecase.ts](<../frontend/usecases/moderator/ReviewPendingQuestionUsecase.ts>) | Frontend usecase chuyển thao tác qua moderator repository. |
+
+
+
 ## Editor câu hỏi, LaTeX và ảnh — 2026-10-29
 
 Inventory toàn bộ file thay đổi trong tính năng editor (không gồm các file tạm validation ngoài repository):
