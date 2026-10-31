@@ -55,7 +55,7 @@ class EditPendingQuestionUsecaseTest {
         when(storage.uploadImageFile(image, "media/questions/" + id, 5)).thenReturn("media/questions/new.png");
         usecase.execute(id, input, files);
         var captor = ArgumentCaptor.forClass(ContentDTO.class);
-        verify(questions).updatePendingContent(eq(id), captor.capture(), eq(List.of()), eq(version));
+        verify(questions).updatePendingContent(eq(id), captor.capture(), eq(List.of()), eq(version), eq(0L));
         assertThat(captor.getValue().getVariables().getImage()).containsExactlyEntriesOf(Map.of("img_0", "media/questions/new.png"));
         assertThat(captor.getValue().getVariables().getMath()).containsExactlyEntriesOf(Map.of("math_0", "x^2"));
         verify(storage, times(1)).uploadImageFile(any(), anyString(), eq(5));
@@ -65,7 +65,7 @@ class EditPendingQuestionUsecaseTest {
     @Test
     void requiresAnActualImageForAnAiDescription() {
         assertThatThrownBy(() -> usecase.execute(id, input, files)).isInstanceOf(BadRequestException.class);
-        verify(questions, never()).updatePendingContent(any(), any(), any(), any());
+        verify(questions, never()).updatePendingContent(any(), any(), any(), any(), anyLong());
         verifyNoInteractions(storage);
     }
 
@@ -75,7 +75,7 @@ class EditPendingQuestionUsecaseTest {
         input.setQuestion(content("<img_0>", Map.of(), Map.of("img_0", "https://attacker.test/image.png")));
         usecase.execute(id, input, files);
         var captor = ArgumentCaptor.forClass(ContentDTO.class);
-        verify(questions).updatePendingContent(eq(id), captor.capture(), anyList(), eq(version));
+        verify(questions).updatePendingContent(eq(id), captor.capture(), anyList(), eq(version), eq(0L));
         assertThat(captor.getValue().getVariables().getImage()).containsEntry("img_0", "media/old.png");
         verifyNoInteractions(storage);
     }
@@ -85,7 +85,7 @@ class EditPendingQuestionUsecaseTest {
         input.setQuestion(content("Không dùng ảnh", Map.of("math_0", "unused"), Map.of("img_0", "unused")));
         usecase.execute(id, input, files);
         var captor = ArgumentCaptor.forClass(ContentDTO.class);
-        verify(questions).updatePendingContent(eq(id), captor.capture(), anyList(), eq(version));
+        verify(questions).updatePendingContent(eq(id), captor.capture(), anyList(), eq(version), eq(0L));
         assertThat(captor.getValue().getVariables().getImage()).isEmpty();
         assertThat(captor.getValue().getVariables().getMath()).isEmpty();
         verifyNoInteractions(storage);
@@ -95,7 +95,7 @@ class EditPendingQuestionUsecaseTest {
     void cleansNewUploadsWhenConditionalUpdateConflicts() throws Exception {
         files.add("question.img_0", image("question.img_0"));
         when(storage.uploadImageFile(any(), anyString(), eq(5))).thenReturn("media/new.png");
-        doThrow(new ConflictException("changed")).when(questions).updatePendingContent(any(), any(), any(), any());
+        doThrow(new ConflictException("changed")).when(questions).updatePendingContent(any(), any(), any(), any(), anyLong());
         assertThatThrownBy(() -> usecase.execute(id, input, files)).isInstanceOf(ConflictException.class);
         verify(storage).deleteFile("media/new.png");
     }
@@ -108,14 +108,14 @@ class EditPendingQuestionUsecaseTest {
         when(storage.uploadImageFile(any(), anyString(), eq(5))).thenReturn("media/new.png").thenThrow(new IOException());
         assertThatThrownBy(() -> usecase.execute(id, input, files)).isInstanceOf(InternalServerException.class);
         verify(storage).deleteFile("media/new.png");
-        verify(questions, never()).updatePendingContent(any(), any(), any(), any());
+        verify(questions, never()).updatePendingContent(any(), any(), any(), any(), anyLong());
     }
 
     @Test
     void retainsMediaWhenDatabaseOutcomeIsUnknown() throws Exception {
         files.add("question.img_0", image("question.img_0"));
         when(storage.uploadImageFile(any(), anyString(), eq(5))).thenReturn("media/new.png");
-        doThrow(new IllegalStateException("ack lost")).when(questions).updatePendingContent(any(), any(), any(), any());
+        doThrow(new IllegalStateException("ack lost")).when(questions).updatePendingContent(any(), any(), any(), any(), anyLong());
         assertThatThrownBy(() -> usecase.execute(id, input, files)).isInstanceOf(IllegalStateException.class);
         verify(storage, never()).deleteFile(anyString());
     }
@@ -156,13 +156,36 @@ class EditPendingQuestionUsecaseTest {
         usecase.execute(id, input, files);
         var question = ArgumentCaptor.forClass(ContentDTO.class);
         @SuppressWarnings("unchecked") var options = (ArgumentCaptor<List<ContentDTO>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
-        verify(questions).updatePendingContent(eq(id), question.capture(), options.capture(), eq(version));
+        verify(questions).updatePendingContent(eq(id), question.capture(), options.capture(), eq(version), eq(0L));
         assertThat(question.getValue().getVariables().getImage()).containsEntry("img_0", "media/question.png");
         assertThat(options.getValue().get(0).getVariables().getImage()).containsEntry("img_0", "media/option.png");
     }
 
     private ContentDTO content(String text, Map<String, String> math, Map<String, String> image) {
         return new ContentDTO(text, new VariablesDTO(math, image));
+    }
+
+    @Test
+    void editsLatestCandidateUsingItsImagesAndOptionCount() throws Exception {
+        var candidate = new QuestionDTO();
+        candidate.setQuestion(content("<img_0>", Map.of(), Map.of("img_0", "media/candidate.png")));
+        candidate.setOptions(List.of(content("Phương án", Map.of(), Map.of())));
+        original.setLatestRegeneratedQuestion(candidate);
+        original.setReviewRevision(3);
+        input.setReviewRevision(3L);
+        input.setQuestion(content("<img_0>", Map.of(), Map.of()));
+        input.setOptions(candidate.getOptions());
+        usecase.execute(id, input, files);
+        verify(questions).updatePendingContent(eq(id), argThat(c -> "media/candidate.png".equals(c.getVariables().getImage().get("img_0"))),
+                eq(candidate.getOptions()), eq(version), eq(3L));
+        verifyNoInteractions(storage);
+    }
+
+    @Test
+    void missingOrStaleReviewRevisionIsRejectedBeforeUpload() {
+        original.setReviewRevision(1);
+        assertThatThrownBy(() -> usecase.execute(id, input, files)).isInstanceOf(ConflictException.class);
+        verifyNoInteractions(storage);
     }
 
     private MockMultipartFile image(String name) {

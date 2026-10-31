@@ -44,4 +44,19 @@ class PendingQuestionUpdateRepositoryTest {
         var repository = new QuestionRepositoryImpl(mongo, Mappers.getMapper(QuestionMapper.class));
         assertThat(repository.updatePendingContent("id", new ContentEntity(), List.of(), null)).isFalse();
     }
+
+    @Test
+    void finalStatusOnlyChangesStatusAndTimestampUnderVersionGuard() {
+        var mongo = mock(MongoTemplate.class);
+        when(mongo.updateFirst(any(Query.class), any(Update.class), eq(QuestionDocument.class)))
+                .thenReturn(UpdateResult.acknowledged(1, 1L, null));
+        var repository = new QuestionRepositoryImpl(mongo, Mappers.getMapper(QuestionMapper.class));
+        var version = Instant.now().plusSeconds(60).truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        assertThat(repository.updatePendingState("id", "NEEDS_CONSIDERATION", null, null, version)).isTrue();
+        var update = ArgumentCaptor.forClass(Update.class);
+        verify(mongo).updateFirst(any(Query.class), update.capture(), eq(QuestionDocument.class));
+        Document fields = update.getValue().getUpdateObject().get("$set", Document.class);
+        assertThat(fields.keySet()).containsExactlyInAnyOrder("status", "updatedAt");
+        assertThat(fields).containsEntry("status", "NEEDS_CONSIDERATION").containsEntry("updatedAt", version.plusMillis(1));
+    }
 }

@@ -2,6 +2,9 @@ import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
 import {
   PendingQuestionFilters,
   PendingQuestionPage,
+  QuestionReviewAction,
+  QuestionReviewInput,
+  QuestionReviewResult,
 } from "@/domain/entities/pendingQuestion.entity";
 import {
   ApproveQuestionFileResult,
@@ -9,6 +12,7 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export interface IModeratorRepository {
+  reviewPendingQuestion(id: string, action: QuestionReviewAction, input: QuestionReviewInput, accessToken: string): Promise<QuestionReviewResult | void>;
   editPendingQuestion(id: string, data: FormData, accessToken: string): Promise<void>;
   getPendingQuestions(
     filters: PendingQuestionFilters,

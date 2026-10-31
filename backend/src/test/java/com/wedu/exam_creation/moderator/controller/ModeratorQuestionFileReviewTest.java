@@ -54,6 +54,7 @@ class ModeratorQuestionFileReviewTest {
     @MockitoBean private com.wedu.exam_creation.chapter.usecase.ChapterService chapters;
     @MockitoBean private com.wedu.exam_creation.question.usecase.QuestionService questions;
     private static final String KEY = "question-files/physics/teacher-name@example-domain.com-DeThi(1).docx";
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.ReviewPendingQuestionUsecase reviewer;
     @Autowired private MockMvc mvc;
     @Autowired private WebApplicationContext context;
     @MockitoBean private CustomOAuth2UserService oauthService;

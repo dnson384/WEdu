@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, EditPendingQuestionUsecase.class})
 class ModeratorEditPendingQuestionTest {
     private static final String ID = "507f1f77bcf86cd799439011";
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.ReviewPendingQuestionUsecase reviewer;
     @Autowired private MockMvc mvc;
     @MockitoBean private ModeratorUsecase moderator;
     @MockitoBean private QuestionService questions;
@@ -64,7 +65,7 @@ class ModeratorEditPendingQuestionTest {
                         .file(new MockMultipartFile("question.img_0", "image.png", "image/png", new byte[]{1, 2}))
                         .header("Authorization", "Bearer test-token"))
                 .andExpect(status().isNoContent()).andExpect(header().string("Cache-Control", "private, no-store"));
-        verify(questions).updatePendingContent(eq(ID), argThat(content -> "media/questions/new.png".equals(content.getVariables().getImage().get("img_0"))), eq(List.of()), eq(Instant.parse("2026-10-29T00:00:00Z")));
+        verify(questions).updatePendingContent(eq(ID), argThat(content -> "media/questions/new.png".equals(content.getVariables().getImage().get("img_0"))), eq(List.of()), eq(Instant.parse("2026-10-29T00:00:00Z")), eq(0L));
     }
 
     @Test
@@ -85,7 +86,7 @@ class ModeratorEditPendingQuestionTest {
     void missingImageIsRejectedBeforeUpdating() throws Exception {
         mvc.perform(multipart(HttpMethod.PATCH, "/moderator/questions/" + ID).file(payload()).header("Authorization", "Bearer test-token"))
                 .andExpect(status().isBadRequest());
-        verify(questions, never()).updatePendingContent(any(), any(), any(), any());
+        verify(questions, never()).updatePendingContent(any(), any(), any(), any(), anyLong());
     }
 
     @Test

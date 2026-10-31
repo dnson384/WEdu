@@ -2,6 +2,9 @@ import axios from "axios";
 import {
   PendingQuestionFilters,
   PendingQuestionPage,
+  QuestionReviewAction,
+  QuestionReviewInput,
+  QuestionReviewResult,
 } from "@/domain/entities/pendingQuestion.entity";
 import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
 import {
@@ -10,6 +13,11 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export class ModeratorService {
+  async reviewPendingQuestion(id: string, action: QuestionReviewAction, input: QuestionReviewInput): Promise<QuestionReviewResult | void> {
+    const { data } = await axios.post<QuestionReviewResult | void>(`/api/moderator/questions/${id}/${action}`, input);
+    return data;
+  }
+
   async editPendingQuestion(id: string, data: FormData): Promise<void> {
     await axios.patch(`/api/moderator/questions/${id}`, data);
   }

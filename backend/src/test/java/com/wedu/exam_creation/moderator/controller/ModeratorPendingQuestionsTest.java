@@ -28,12 +28,14 @@ import java.util.List;
 import java.util.Map;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ModeratorController.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, ModeratorUsecase.class})
 class ModeratorPendingQuestionsTest {
     @MockitoBean private com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase editor;
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.ReviewPendingQuestionUsecase reviewer;
     @Autowired private MockMvc mvc;
     @MockitoBean private CustomOAuth2UserService oauth;
     @MockitoBean private OAuth2AuthenticationSuccessHandler oauthHandler;
@@ -50,6 +52,55 @@ class ModeratorPendingQuestionsTest {
         when(tokens.getPayloadFromAccessToken("test-token")).thenReturn(new ATPayload("jti", "moderator", "moderator@example.com", "ROLE_MODERATOR"));
         when(users.loadUserByUsername("moderator@example.com")).thenReturn(User.withUsername("moderator").password("unused").roles("MODERATOR").build());
         when(chapters.getAll()).thenReturn(List.of());
+    }
+
+    @Test
+    void moderatorCanApproveAndRejectWithNoStoreResponses() throws Exception {
+        String id = "507f1f77bcf86cd799439011";
+        String body = "{\"updatedAt\":null,\"reviewRevision\":0}";
+        mvc.perform(post("/moderator/questions/" + id + "/approve").contentType("application/json").content(body)
+                .header("Authorization", "Bearer test-token"))
+                .andExpect(status().isNoContent()).andExpect(header().string("Cache-Control", "private, no-store"));
+        verify(reviewer).approve(eq(id), argThat(input -> input.getReviewRevision() == 0));
+        when(reviewer.reject(eq(id), any())).thenReturn(
+                new com.wedu.exam_creation.moderator.dto.RejectPendingQuestionResponseDTO("NEEDS_CONSIDERATION", 5));
+        mvc.perform(post("/moderator/questions/" + id + "/reject").contentType("application/json").content(body)
+                .header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "private, no-store"))
+                .andExpect(jsonPath("$.status").value("NEEDS_CONSIDERATION"))
+                .andExpect(jsonPath("$.regenerationCount").value(5));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"approve", "reject"})
+    void teacherAndUnauthenticatedCannotReview(String action) throws Exception {
+        var request = post("/moderator/questions/507f1f77bcf86cd799439011/" + action)
+                .contentType("application/json").content("{\"updatedAt\":null,\"reviewRevision\":0}");
+        mvc.perform(request).andExpect(status().is4xxClientError());
+        when(users.loadUserByUsername("moderator@example.com")).thenReturn(
+                User.withUsername("teacher").password("unused").roles("TEACHER").build());
+        mvc.perform(request.header("Authorization", "Bearer test-token")).andExpect(status().isForbidden());
+        verifyNoInteractions(reviewer);
+    }
+
+    @Test
+    void signsOnlyStoredImagesOnLatestCandidateAndReturnsRevision() throws Exception {
+        var question = new PendingQuestionDTO();
+        question.setReviewRevision(2);
+        question.setRegenerationCount(1);
+        var latest = new QuestionDTO();
+        latest.setQuestion(new ContentDTO("<img_0> <img_1>", new VariablesDTO(Map.of(),
+                Map.of("img_0", "media/latest.png", "img_1", "Đồ thị cần vẽ"))));
+        question.setLatestRegeneratedQuestion(latest);
+        when(storage.generatePresignedUrl("media/latest.png")).thenReturn("https://example.test/latest");
+        when(questions.findPending(0, "", "", List.of(), List.of())).thenReturn(
+                new PendingQuestionPageDTO(List.of(question), 0, 10, 1, 1));
+        mvc.perform(get("/moderator/questions/pending").header("Authorization", "Bearer test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].reviewRevision").value(2))
+                .andExpect(jsonPath("$.items[0].latestRegeneratedQuestion.question.variables.image.img_0").value("https://example.test/latest"))
+                .andExpect(jsonPath("$.items[0].latestRegeneratedQuestion.question.variables.image.img_1").value("Đồ thị cần vẽ"));
+        verify(storage, times(1)).generatePresignedUrl(anyString());
     }
 
     @Test

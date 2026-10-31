@@ -42,6 +42,7 @@ class ModeratorQuestionFileContentTest {
     @MockitoBean private com.wedu.exam_creation.moderator.usecase.EditPendingQuestionUsecase editor;
     @MockitoBean private com.wedu.exam_creation.chapter.usecase.ChapterService chapters;
     @MockitoBean private com.wedu.exam_creation.question.usecase.QuestionService questions;
+    @MockitoBean private com.wedu.exam_creation.moderator.usecase.ReviewPendingQuestionUsecase reviewer;
     @Autowired private MockMvc mvc;
     @Autowired private WebApplicationContext context;
     @MockitoBean private CustomOAuth2UserService oauthService;

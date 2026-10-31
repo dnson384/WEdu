@@ -2,6 +2,9 @@ import axios from "axios";
 import {
   PendingQuestionFilters,
   PendingQuestionPage,
+  QuestionReviewAction,
+  QuestionReviewInput,
+  QuestionReviewResult,
 } from "@/domain/entities/pendingQuestion.entity";
 import { IModeratorRepository } from "@/domain/repositories/IModeratorRepository";
 import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
@@ -11,6 +14,13 @@ import {
 } from "@/domain/entities/questionFileReview.entity";
 
 export class ModeratorRepositoryImpl implements IModeratorRepository {
+  async reviewPendingQuestion(id: string, action: QuestionReviewAction, input: QuestionReviewInput, accessToken: string): Promise<QuestionReviewResult | void> {
+    const { data } = await axios.post<QuestionReviewResult | void>(`${this.baseUrl}/moderator/questions/${id}/${action}`, input, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return data;
+  }
+
   async editPendingQuestion(id: string, data: FormData, accessToken: string): Promise<void> {
     await axios.patch(`${this.baseUrl}/moderator/questions/${id}`, data, {
       headers: { Authorization: `Bearer ${accessToken}` },

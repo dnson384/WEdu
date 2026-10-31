@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import useAuth from "@/presentation/hooks/Auth/useAuth";
 import { ModeratorService } from "@/presentation/services/ModeratorService";
 
-export type ReviewPreviewAction = "approve" | "regenerate";
+import { PendingQuestionEntity, QuestionReviewAction } from "@/domain/entities/pendingQuestion.entity";
 const service = new ModeratorService();
 const types = ["Nhiều lựa chọn", "Đúng sai", "Tự luận"];
 
@@ -21,6 +21,12 @@ export default function usePendingQuestions() {
   });
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
+  const processing = useRef(false);
+  const mutation = useMutation({
+    mutationFn: ({ question, action }: { question: PendingQuestionEntity; action: QuestionReviewAction }) =>
+      service.reviewPendingQuestion(question.id, action, { updatedAt: question.updatedAt, reviewRevision: question.reviewRevision }),
+    retry: false,
+  });
 
   useEffect(() => {
     const timer = setTimeout(
@@ -43,14 +49,32 @@ export default function usePendingQuestions() {
     retry: false,
   });
 
-  const handleAction = (action: ReviewPreviewAction) => {
-    const labels = {
-      approve: "Duyệt thẳng",
-      regenerate: "Từ chối duyệt – yêu cầu regenerate",
-    };
-    setNotice(
-      `${labels[action]} chưa được kết nối. Chưa lưu thay đổi hoặc gửi yêu cầu lên hệ thống.`,
-    );
+  const refreshList = () => queryClient.invalidateQueries({ queryKey: ["moderator-pending-questions", user.id] });
+
+  useEffect(() => {
+    if (!query.data || query.isFetching || query.isError || filters.page === 0) return;
+    if (filters.page >= query.data.totalPages) {
+      setFilters((previous) => ({ ...previous, page: Math.max(0, query.data.totalPages - 1) }));
+    }
+  }, [query.data, query.isFetching, query.isError, filters.page]);
+
+  const handleAction = async (question: PendingQuestionEntity, action: QuestionReviewAction) => {
+    if (processing.current) return;
+    processing.current = true;
+    setNotice(action === "reject" && question.regenerationCount < 4 ? "Đang sinh lại câu hỏi…" : "Đang xử lý…");
+    try {
+      const result = await mutation.mutateAsync({ question, action });
+      setNotice(action === "approve" ? "Đã duyệt câu hỏi."
+        : result?.status === "NEEDS_CONSIDERATION" ? "Đã chuyển câu hỏi sang cân nhắc trước khi sử dụng."
+          : "Đã sinh lại câu hỏi. Hãy kiểm tra bản mới trước khi duyệt.");
+    } catch (error) {
+      setNotice(isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message ?? "Không thể kiểm duyệt câu hỏi. Hãy kiểm tra danh sách trước khi thử lại."
+        : "Không thể kiểm duyệt câu hỏi. Hãy kiểm tra danh sách trước khi thử lại.");
+    } finally {
+      await refreshList();
+      processing.current = false;
+    }
   };
 
   return {
@@ -60,6 +84,7 @@ export default function usePendingQuestions() {
     types,
     notice,
     handleAction,
+    isProcessing: mutation.isPending || query.isFetching,
     handleSaved: () => {
       setNotice("Đã lưu chỉnh sửa. Câu hỏi vẫn đang chờ duyệt.");
       void queryClient.invalidateQueries({ queryKey: ["moderator-pending-questions", user.id] });
