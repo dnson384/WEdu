@@ -94,7 +94,7 @@ public class QuestionRepositoryImpl implements IQuestionRepository {
                     Criteria.where("chapterId").in(chapterIds),
                     Criteria.where("lessonId").in(lessonIds)));
         }
-
+        
         return new Query(new Criteria().andOperator(filters.toArray(Criteria[]::new)));
     }
 

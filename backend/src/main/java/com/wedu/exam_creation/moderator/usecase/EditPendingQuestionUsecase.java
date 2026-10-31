@@ -157,7 +157,7 @@ public class EditPendingQuestionUsecase {
                 if (!QuestionImageReference.isStoredKey(old)) {
                     throw new BadRequestException("Cần tải ảnh cho tham chiếu " + section + "." + key);
                 }
-
+                
                 images.put(key, old);
             }
         }
