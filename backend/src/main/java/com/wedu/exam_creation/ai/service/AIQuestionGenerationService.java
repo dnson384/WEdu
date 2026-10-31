@@ -57,8 +57,8 @@ public class AIQuestionGenerationService {
                     .retrieve()
                     .body(String.class);
         } catch (Exception e) {
-            log.error("Lỗi: ", e);
-            throw new AIGenerationException("Không thể gọi DeepSeek API: " + e.getMessage());
+            log.warn("Không thể gọi DeepSeek API; loại lỗi: {}", e.getClass().getSimpleName());
+            throw new AIGenerationException("Không thể gọi dịch vụ sinh câu hỏi");
         }
 
         String json = extractGeneratedText(rawResponse);
@@ -76,7 +76,7 @@ public class AIQuestionGenerationService {
                     .path("content")
                     .asText();
         } catch (Exception e) {
-            log.error("Lỗi tại hàm extractGeneratedText: ", e);
+            log.warn("Không thể đọc phản hồi AI; loại lỗi: {}", e.getClass().getSimpleName());
             throw new AIGenerationException("Không thể trích xuất nội dung từ phản hồi DeepSeek");
         }
     }

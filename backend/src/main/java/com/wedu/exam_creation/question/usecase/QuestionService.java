@@ -9,12 +9,8 @@ import com.wedu.exam_creation.common.dto.chapter.response.LessonDataResponseDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.NewQuestionDTO;
-import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
-import com.wedu.exam_creation.common.dto.question.response.PendingQuestionPageDTO;
-import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
-import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.dto.question.response.*;
 import com.wedu.exam_creation.common.exception.ConflictException;
-import java.time.Instant;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
@@ -24,6 +20,7 @@ import com.wedu.exam_creation.questionReview.usecase.QuestionReviewService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -46,21 +43,76 @@ public class QuestionService {
         return insert(questions, "APPROVED");
     }
 
-    public PendingQuestionPageDTO findPending(
-            int page, String search, String questionType, List<String> chapterIds, List<String> lessonIds) {
+    public PendingQuestionPageDTO findPending(int page, String search, String questionType, List<String> chapterIds, List<String> lessonIds) {
         long total = repo.countPending(search, questionType, chapterIds, lessonIds);
+
         List<QuestionEntity> questions = repo.findPending(page, search, questionType, chapterIds, lessonIds);
+
+        Map<String, QuestionReviewStateDTO> reviews = questionReviewService.states(questions.stream()
+                .map(QuestionEntity::getId).toList());
+
         return new PendingQuestionPageDTO(
-                questions.stream().map(mapper::entityToPendingDTO).toList(), page, 10,
-                total, (total + 9) / 10);
+                questions.stream()
+                        .map(entity -> {
+                            PendingQuestionDTO dto = mapper.entityToPendingDTO(entity);
+                            attachReview(dto, reviews.get(entity.getId()));
+                            return dto;
+                        })
+                        .toList(),
+                page, 10, total, (total + 9) / 10);
     }
 
     public PendingQuestionDTO getPendingForEdit(String id) {
         QuestionEntity entity = repo.findById(id);
+
         if (!"PENDING_REVIEW".equals(entity.getStatus())) {
             throw new ConflictException("Câu hỏi không còn chờ duyệt. Vui lòng tải lại danh sách");
         }
-        return mapper.entityToPendingDTO(entity);
+
+        PendingQuestionDTO dto = mapper.entityToPendingDTO(entity);
+        attachReview(dto, questionReviewService.state(id));
+        return dto;
+    }
+
+    private void attachReview(PendingQuestionDTO dto, QuestionReviewStateDTO review) {
+        if (review == null) return;
+
+        dto.setReviewRevision(review.getRevision());
+        dto.setRegenerationCount(review.getRegenerationCount());
+        dto.setLatestRegeneratedQuestion(review.getLatestQuestion());
+    }
+
+    public void commitPendingReview(String id, String status, QuestionDTO candidate, Instant version) {
+        if (!repo.updatePendingState(
+                id,
+                status,
+                candidate == null ? null : mapper.contentDTOToEntity(candidate.getQuestion()),
+                candidate == null ? null : candidate.getOptions().stream()
+                        .map(mapper::contentDTOToEntity)
+                        .toList(),
+                version
+        )) {
+            throw new ConflictException("Câu hỏi đã thay đổi. Vui lòng tải lại danh sách");
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePendingContent(String id, ContentDTO question, List<ContentDTO> options, Instant expectedUpdatedAt, long reviewRevision) {
+        PendingQuestionDTO current = getPendingForEdit(id);
+        if (!Objects.equals(current.getUpdatedAt(), expectedUpdatedAt) ||
+                current.getReviewRevision() != reviewRevision) {
+            throw new ConflictException("Câu hỏi đã thay đổi. Vui lòng tải lại danh sách");
+        }
+
+        QuestionDTO candidate = current.getLatestRegeneratedQuestion();
+        if (candidate == null) {
+            updatePendingContent(id, question, options, expectedUpdatedAt);
+        } else {
+            candidate.setQuestion(question);
+            candidate.setOptions(options);
+            commitPendingReview(id, "PENDING_REVIEW", null, expectedUpdatedAt);
+            questionReviewService.saveCandidate(id, candidate, reviewRevision, false);
+        }
     }
 
     public void updatePendingContent(String id, ContentDTO question, List<ContentDTO> options, Instant expectedUpdatedAt) {
