@@ -74,6 +74,19 @@ export async function POST(
       : NextResponse.json(result, { headers });
   } catch (error) {
     const status = isAxiosError(error) ? (error.response?.status ?? 502) : 500;
+    if (
+      isAxiosError<{ code?: string; message?: string }>(error) &&
+      (status === 429 || status === 503) &&
+      error.response?.data?.code?.startsWith("AI_")
+    ) {
+      return NextResponse.json(
+        {
+          code: error.response.data.code,
+          message: error.response.data.message,
+        },
+        { status, headers },
+      );
+    }
     const message =
       status === 409
         ? "Câu hỏi đã thay đổi hoặc không còn chờ duyệt. Danh sách sẽ được tải lại."

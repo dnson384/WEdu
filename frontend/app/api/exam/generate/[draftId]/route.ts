@@ -29,8 +29,8 @@ export async function POST(
   } catch (err) {
     if (isAxiosError(err)) {
       return NextResponse.json(
-        { message: err.response?.data.message },
-        { status: err.status },
+        { message: err.response?.data.message, code: err.response?.data.code },
+        { status: err.response?.status ?? 502 },
       );
     }
     return NextResponse.json({ message: "Lỗi Server" }, { status: 500 });
