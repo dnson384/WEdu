@@ -4,8 +4,10 @@ import { isAxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
 
 export default function useNavBar() {
+  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const authService = useMemo(() => new AuthService(), []);
@@ -53,13 +55,17 @@ export default function useNavBar() {
         router.push("/me");
       },
     },
-    {
-      label: "Thanh toán",
-      icon: icons.creditCard,
-      onClick: () => {
-        router.push("/me/bill");
-      },
-    },
+    ...(user.role === "ROLE_ADMIN"
+      ? []
+      : [
+          {
+            label: "Thanh toán",
+            icon: icons.creditCard,
+            onClick: () => {
+              router.push("/me/bill");
+            },
+          },
+        ]),
     {
       label: "Đăng xuất",
       icon: icons.logout,

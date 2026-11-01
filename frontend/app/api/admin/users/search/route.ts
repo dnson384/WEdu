@@ -23,7 +23,10 @@ export async function GET(req: NextRequest) {
     const usecase = new FindUsersUsecase(repo);
     const response = await usecase.execute(keyword, accessToken);
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json(response, {
+      status: 200,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   } catch (err) {
     if (isAxiosError(err)) {
       return NextResponse.json(
