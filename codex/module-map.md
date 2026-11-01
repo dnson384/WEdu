@@ -1,5 +1,23 @@
 # Bản đồ module, symbols và API
 
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+`getRoleHome` là mapping dùng chung cho `useLogin` và `Home`: ADMIN → /admin/users, MODERATOR → /moderator/question-files, các role khác → /. AdminPage (/admin) redirect tới /admin/users, AdminLayout vẫn kiểm ROLE_ADMIN.
+
+AdminUsersPage → useAdminUsers → AdminService → GET users/search, PUT role/lock/unlock, DELETE user BFF → usecases admin hiện có → IAdminRepository/AdminRepositoryImpl → AdminController/AdminUsecase. AdminUserEntity tách khỏi UserEntity, khớp isActive của backend. AdminUserRow render dữ liệu/thao tác, AdminUserActionDialog giữ native dialog/focus/Escape; hook quản lý query/search/client pagination/mutation/confirmation/ref chống submit lặp. Navbar phân nhánh ADMIN với đúng hai links, useNavBar ẩn billing theo role.
+
+[Types](../frontend/domain/entities/adminUser.entity.ts), [hook](../frontend/presentation/hooks/Admin/useAdminUsers.ts), [page](<../frontend/app/(site)/admin/users/page.tsx>), [API](api-reference.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+- UI: `AdminLayout` kiểm role → `AiManagementPage` → `useAiManagement` (filters/query/form/revision/ref chống submit lặp) → `AiManagementService` → Next handlers usage/status/budget → `handleAiManagement` → frontend `AiManagementUsecase` → `IAiManagementRepository/AiManagementRepositoryImpl`.
+- Backend: `AiManagementController` `/admin/ai` ROLE_ADMIN → `AiManagementUsecase.report/status/getBudget/updateBudget` → `IAiUsageRepository/AiUsageRepositoryImpl` → AiUsage/AiBudget. Mapper `AiUsageMapper` tách document/entity; `AiManagementDTO` chứa BudgetDTO, DailyUsageDTO, UsageReportDTO, BalanceInfoDTO, BalanceDTO, StatusDTO.
+- AI chung: `AIQuestionGenerationService.generateQuestions` → `AiUsageService.begin/complete`; `AiManagementUsecase.status` → `DeepSeekBalanceService.getBalance`. `AiPricingProperties` map model → giá cao điểm USD. `AiAccessException` → `GlobalExceptionHandler.handleAiAccess`, hai BFF tạo đề/review giữ code/status.
+- Reusable UI: `AiMetricCard`, `AiUsageChart`, `AiStatusPanel` và `AiBudgetForm`; formatting tại utils/aiManagement. Backend repository aggregation theo ngày Việt Nam, không để query hoặc nghiệp vụ trong component/controller.
+
+[API/DTO](api-reference.md#quản-lý-usagebudget-ai--2026-11-01), [inventory từng file](source-catalog.md#quản-lý-usagebudget-ai--2026-11-01), [schema](database-schema.md#quản-lý-usagebudget-ai--2026-11-01).
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 - Approve/reject: ReviewPage → PendingQuestionCard → usePendingQuestions.handleAction → ModeratorService.reviewPendingQuestion → Next POST /api/moderator/questions/[id]/[action] → frontend ReviewPendingQuestionUsecase.execute → IModeratorRepository/ModeratorRepositoryImpl.reviewPendingQuestion → ModeratorController.approvePendingQuestion/rejectPendingQuestion → backend ReviewPendingQuestionUsecase.approve/reject.

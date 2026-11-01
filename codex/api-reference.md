@@ -1,5 +1,35 @@
 # API reference WEdu
 
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+Không thêm/đổi backend API hoặc HTTP method/path. UI mới dùng GET `/api/admin/users`, GET `/api/admin/users/search?keyword=...`, PUT `/api/admin/{id}/role?role=ROLE_TEACHER|ROLE_MODERATOR`, PUT lock/unlock và DELETE `/api/admin/{id}/delete`; adapters tiếp tục map tới routes backend hiện có bên dưới. Hai GET response thành công thêm `Cache-Control: private, no-store`.
+
+Frontend `AdminUserEntity {id,email,username,role,avatarUrl:string|null,isActive:boolean|null,accountType,createdAt:string|null,updatedAt:string|null}` phản ánh CommonUserResponseDTO; các method tài khoản trong IAdminRepository/AdminRepositoryImpl/AdminService và 3 usecase có return annotation dùng type này. `UserEntity.isActived` của profile không đổi. Delete vẫn boolean, false không được báo là xóa thành công. Server tiếp tục chặn tự sửa/xóa/khóa và ADMIN khác; BFF role vẫn chỉ chấp nhận TEACHER/MODERATOR, không mở rộng cấp ADMIN.
+
+Routes UI mới `/admin/users` và `/admin` redirect tới users; `/admin/ai` giữ nguyên. [Type](../frontend/domain/entities/adminUser.entity.ts), [service](../frontend/presentation/services/AdminService.ts), [validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+Backend [AiManagementController](../backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java), `@PreAuthorize(hasRole('ADMIN'))`, mọi response thành công no-store; Next BFF thêm `Cache-Control: private, no-store`, đọc cookie accessToken rồi gửi Bearer như cũ. Không token/plaintext key trong response.
+
+| Backend | Next BFF | Input → output |
+| --- | --- | --- |
+| GET `/admin/ai/usage` | GET `/api/admin/ai/usage` | from/to YYYY-MM-DD bắt buộc, model tùy chọn → UsageReportDTO |
+| GET `/admin/ai/status` | GET `/api/admin/ai/status` | → StatusDTO của tháng Việt Nam hiện tại, mọi model |
+| GET `/admin/ai/budget` | GET `/api/admin/ai/budget` | → BudgetDTO |
+| PUT `/admin/ai/budget` | PUT `/api/admin/ai/budget` | BudgetDTO → BudgetDTO revision mới |
+
+[AiManagementDTO](../backend/src/main/java/com/wedu/exam_creation/ai/dto/AiManagementDTO.java) là các class Lombok nested, frontend mirror tại [aiManagement.entity.ts](../frontend/domain/entities/aiManagement.entity.ts):
+
+- BudgetDTO `{revision:long, monthlyBudgetUsd:string|null, monthlyTokenQuota:long|null}`. PUT thay toàn bộ limits, null tắt từng giới hạn. Revision bắt buộc >=0, lần đầu 0; revision/quota phải là JSON integer (không làm tròn số thập phân hoặc nhận chuỗi). Tiền dạng decimal dương, tối đa 12 chữ số nguyên/8 thập phân; token nguyên dương <=9007199254740991. Không có cấu hình trả revision 0 và hai limit null. Stale revision trả 409, không overwrite.
+- DailyUsageDTO `{day:string|null, requests, unknownUsageRequests, inputTokens, outputTokens, totalTokens:long, estimatedCostUsd:string}`. Tổng có day null, daily có YYYY-MM-DD.
+- UsageReportDTO `{from,to,model:string|null,timezone,currency,models:string[],totals:DailyUsageDTO,days:DailyUsageDTO[]}`. from/to bao gồm đầu/cuối, 1–366 ngày, timezone Asia/Ho_Chi_Minh, currency USD; bù ngày trống. Model blank/>100 ký tự không hợp lệ; BFF bỏ empty model để lấy tất cả. models gồm model từng dùng và model cấu hình hiện tại.
+- StatusDTO `{month,budget,usage,remainingBudgetUsd:string|null,remainingTokens:long|null,budgetUsedPercent:number|null,tokensUsedPercent:number|null,level:NORMAL|WARNING|BLOCKED,reasons:string[],balance:BalanceDTO}`. Remaining không âm; null là chưa giới hạn. Level warning >=80%, blocked >=100% hoặc số dư mới unavailable; bộ lọc report không tác động status.
+- BalanceDTO `{available:boolean|null,updatedAt:Instant|null,stale:boolean,balances:BalanceInfoDTO[]}`; BalanceInfoDTO `{currency:USD|CNY,totalBalance,grantedBalance,toppedUpBalance:string}`. Chưa lấy được số dư trả null/empty/stale, không giả lập số dư 0. Không quy đổi tiền.
+
+Gọi AI của tạo đề/sinh lại thêm lỗi `{message,code}`: 429 AI_BUDGET_EXCEEDED / AI_TOKEN_QUOTA_EXCEEDED / AI_BALANCE_UNAVAILABLE; 503 AI_TRACKING_UNAVAILABLE / AI_PRICING_UNAVAILABLE. GlobalExceptionHandler và BFF giữ status/code, frontend hiển thị message. Request bị chặn không gọi provider và không mất lượt review. API quản trị validation 400, sai role 403; BFF thiếu cookie 401, backend JwtAuthenticationFilter vẫn giữ contract có sẵn trả 400 khi thiếu Authorization header. Chưa đổi các route/DTO câu hỏi/exam hoặc exporter payload.
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 - `POST /moderator/questions/{id}/approve` ↔ `POST /api/moderator/questions/{id}/approve`: JSON `{updatedAt: ISO instant|null, reviewRevision: nonnegative integer}`, thành công 204. Duyệt nội dung gốc hoặc promote bản sinh lại mới nhất, status APPROVED; xóa QuestionsReview.
@@ -80,7 +110,7 @@ Nguồn: [ModeratorController.deleteQuestionFile](../backend/src/main/java/com/w
 - Không còn declaration POST /storage/question-bank, Next /api/storage/question-bank, GET /storage/documents. Test preservesLegacyDocumentsEndpoint còn mong route cuối trả 200; chưa chạy test trong lượt tài liệu này.
 - Avatar backend PATCH /user/update-avatar; frontend adapter hiện gọi /user/avatar/${s3Key}, đây là mismatch còn lại. Signature/type frontend không chứng minh remote JSON đúng schema.
 
-Nguồn: [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [Next files GET](../frontend/app/api/moderator/question-files/route.ts), [QuestionFileEntity](../frontend/domain/entities/questionFile.entity.ts), [StorageService](../frontend/presentation/services/StorageService.ts), [ModeratorQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFilesTest.java).
+Nguồn: [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [Next files GET](../frontend/app/api/moderator/question-files/route.ts), [QuestionFileEntity](../frontend/domain/entities/questionFile.entity.ts), [StorageService](../frontend/presentation/services/StorageService.ts), `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại).
 
 ## Spring MVC endpoints
 

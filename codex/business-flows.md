@@ -1,5 +1,26 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+1. Đăng nhập ADMIN → getRoleHome → /admin/users. Truy cập / hoặc /admin cũng về users; TeacherHome không mount cho ADMIN. Navigation chính chỉ Quản lý tài khoản người dùng và Quản lý AI. Menu tài khoản giữ thông tin cá nhân/đăng xuất, ẩn thanh toán.
+2. useAdminUsers lấy danh sách hoặc tìm theo keyword tên/email qua API hiện có; phân trang 10 kết quả ở client. Bộ lọc đổi thì về trang đầu, xóa làm giảm tổng thì clamp trang hiện tại.
+3. Chọn Phân quyền/Khóa/Mở khóa/Xóa → native dialog xác nhận. Đổi quyền chỉ TEACHER/MODERATOR theo BFF hiện có; không submit nếu không đổi role. Bản thân/ADMIN khác không có thao tác; trạng thái unknown không khóa/mở khóa.
+4. Confirm → ref khóa submit đồng thời → AdminService/BFF/usecase/adapter → backend quyết định quyền. Thành công đóng dialog/thông báo; lỗi giữ dialog và message. Cả hai nhánh refresh danh sách, không tự retry mutation. Hủy không gọi API. isActive nhận từ backend quyết định nhãn trạng thái; không suy ra PLUS provisioning.
+
+Không thay đổi chính sách backend hoặc dữ liệu thật trong validation. [Hook](../frontend/presentation/hooks/Admin/useAdminUsers.ts), [dialog](../frontend/presentation/components/Admin/AdminUserActionDialog.tsx), [validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+1. ROLE_ADMIN chọn Quản lý AI → `/admin/ai`; hook lấy report, trạng thái tháng và cấu hình. Bộ lọc from/to bao gồm hai ngày đầu/cuối, tối đa 366 ngày, theo giờ Việt Nam; model lấy từ usage đã ghi và model cấu hình hiện tại. Báo cáo không thay đổi phạm vi hạn mức tháng toàn hệ thống.
+2. Report tổng hợp request, input/output/total tokens, unknownUsageRequests, chi phí ước tính và bù các ngày không có dữ liệu để vẽ SVG. Số dư tài khoản lấy riêng qua DeepSeek `/user/balance`, không chia theo model, không quy đổi CNY/USD. Cache cả lần polling thất bại 60 giây để tránh gọi lặp khi provider lỗi.
+3. Admin lưu budget USD/quota token nullable với revision. PUT thay toàn bộ cấu hình, null tắt giới hạn tương ứng; cấu hình chưa có là revision 0, insert đầu tiên tạo revision 1; sửa stale trả 409. Cấu hình áp dụng ngay cho usage tháng đang có và dùng tiếp các tháng sau; đổi tháng dựa query boundary, không cần job reset.
+4. Trước mọi lần gọi AI của tạo đề/sinh lại, đọc usage và budget ngoài transaction câu hỏi. >=80% cảnh báo; >=100% của một giới hạn trả 429, không gọi provider. Số dư mới xác nhận unavailable cũng trả 429; stale balance không quyết định chặn. DB lỗi hoặc không ghi được STARTED trả 503; model thiếu giá trả 503.
+5. STARTED lưu UUID/time/model và snapshot giá trước HTTP. Khi nhận response, lưu token/cache và tính phí trước khi parse nội dung. Phí ước tính = (cache-hit token × giá hit + cache-miss token × giá miss + output token × giá output) / 1 triệu. Không cộng riêng reasoning token vì đã thuộc completion_tokens. Thiếu cache-hit field coi toàn bộ input là cache miss để ước tính thận trọng. Giá/version của request đang chạy không đổi theo cấu hình mới.
+6. Provider/parse/validation/persistence câu hỏi thất bại không rollback usage đã ghi. Timeout/thiếu usage hoặc không lưu hoàn tất giữ unknown, không tự retry và không tính phần chưa biết vào tổng; UI nêu rõ số request thiếu usage. Request đang chạy được hoàn tất, chấp nhận vượt nhẹ do concurrency. Review nhận lỗi hạn mức/availability giữ code/status và không mất lượt; approve/final reject không cần AI vẫn dùng được.
+
+Không có lịch sử trước triển khai, usage ngoài ứng dụng, backfill hóa đơn hoặc reservation. [Decision](development-decisions.md#quản-lý-usagebudget-ai--2026-11-01), [service](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java), [validation](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 1. Moderator vào /moderator/review, đọc Questions.status=PENDING_REVIEW; tìm/lọc/phân trang giữ trên câu gốc. Card ưu tiên bản sinh lại mới nhất nếu có, cùng số lần từ chối đã ghi nhận.
@@ -85,10 +106,10 @@ Reset: so khớp confirmation → hash token nhận vào → tìm unused token �
 
 Username: Next PUT chuyển thành backend PATCH; use case validate nonblank và ≤254 ký tự. Avatar: UI upload → S3 trả key → gọi update profile với key → lưu key mới → xóa ảnh cũ trừ avatar mặc định; lưu thất bại cố xóa ảnh mới; xóa ảnh cũ lỗi gửi Telegram. `getMe` chuyển key thành presigned URL, không ghi URL tạm vào Mongo.
 
-Bằng chứng: [useUpdateAvatar](../frontend/presentation/hooks/Me/useUpdateAvatar.ts), [UserRepositoryImpl frontend](../frontend/infrastructure/repositories/UserRepositoryImpl.ts), [UserUsecase.updateAvatar/updateUsername/getMe](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java). Xác minh ownership của S3 key đầu vào chưa thấy trong `updateAvatar`; không coi compensation là transaction phân tán.
+Bằng chứng: [useUpdateAvatar](../frontend/presentation/hooks/Me/useUpdateAvatar.ts), [UserRepositoryImpl frontend](../frontend/infrastructure/repositories/userRepositoryImpl.ts), [UserUsecase.updateAvatar/updateUsername/getMe](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java). Xác minh ownership của S3 key đầu vào chưa thấy trong `updateAvatar`; không coi compensation là transaction phân tán.
 
 
-Frontend avatar vẫn **partial**: [UserRepositoryImpl.updateAvatar](../frontend/infrastructure/repositories/UserRepositoryImpl.ts) gọi `/user/avatar/${s3Key}` nhưng [UserController](../backend/src/main/java/com/wedu/exam_creation/user/controller/UserController.java) khai báo PATCH `/user/update-avatar` với query s3Key. Hook tạo `new QueryClient()` và invalidate `user-profile`, trong khi [useAuth](../frontend/presentation/hooks/Auth/useAuth.ts) dùng key `user`; chưa làm mới đúng cache provider. Không mô tả luồng này là end-to-end hoàn thiện.
+Frontend avatar vẫn **partial**: [UserRepositoryImpl.updateAvatar](../frontend/infrastructure/repositories/userRepositoryImpl.ts) gọi `/user/avatar/${s3Key}` nhưng [UserController](../backend/src/main/java/com/wedu/exam_creation/user/controller/UserController.java) khai báo PATCH `/user/update-avatar` với query s3Key. Hook tạo `new QueryClient()` và invalidate `user-profile`, trong khi [useAuth](../frontend/presentation/hooks/Auth/useAuth.ts) dùng key `user`; chưa làm mới đúng cache provider. Không mô tả luồng này là end-to-end hoàn thiện.
 
 ## 5. Upload DOCX, danh sách file và kiểm duyệt
 
@@ -137,7 +158,7 @@ Question service nạp pool theo lesson IDs, match lesson/dạng bài/độ khó
 
 Lưu `ExamEntity` chứa cấu trúc chapter/lesson snapshot và nhóm question IDs theo type/difficulty; không copy toàn bộ body câu hỏi. Generate trả `{examId, errors}`; không có job ID/status retry/cancel. Đọc đề hydrate nội dung từ Questions, generate presigned ảnh, UI render KaTeX. Xóa đề chỉ xóa document Exam, không xóa câu ngân hàng.
 
-Bằng chứng: [ExamUsecase](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionRepositoryImpl.findByLessonIds](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java), [AIQuestionGenerationService](../backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java), [ExamResponseDTOMapper](../backend/src/main/java/com/wedu/exam_creation/exam/dto/mapper/ExamResponseDTOMapper.java), [TelegramNotificationService](../backend/src/main/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationService.java).
+Bằng chứng: [ExamUsecase](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionRepositoryImpl.findByLessonIds](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java), [AIQuestionGenerationService](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java), [ExamResponseDTOMapper](../backend/src/main/java/com/wedu/exam_creation/exam/dto/mapper/ExamResponseDTOMapper.java), [TelegramNotificationService](../backend/src/main/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationService.java).
 
 ## 9. Xuất Word
 

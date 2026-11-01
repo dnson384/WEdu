@@ -1,5 +1,106 @@
 # Source catalogue WEdu
 
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+Inventory lượt này: 19 files frontend và 7 docs, tổng **26 files**. Không bao gồm thay đổi AI/backend đang có từ lượt trước hoặc các thay đổi khác trong working tree. [Validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01), [contract](api-reference.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+| File | Thay đổi |
+| --- | --- |
+| [codex/api-reference.md](<../codex/api-reference.md>) | Type frontend khớp CommonUserResponseDTO, no-store GET; không đổi wire contract. |
+| [codex/architecture.md](<../codex/architecture.md>) | Ranh giới hook/component/BFF, cache/mutation và type tách profile. |
+| [codex/business-flows.md](<../codex/business-flows.md>) | Luồng login/navigation/search/confirmation/mutation/refresh tài khoản. |
+| [codex/current-status.md](<../codex/current-status.md>) | Implementation, validation thực tế, giới hạn client pagination và unknown. |
+| [codex/development-decisions.md](<../codex/development-decisions.md>) | Ghi quyết định ADMIN có hai mục, default landing và phạm vi UI tài khoản. |
+| [codex/module-map.md](<../codex/module-map.md>) | Wiring trang users, role landing, types/port/adapter hiện có. |
+| [codex/source-catalog.md](<../codex/source-catalog.md>) | Inventory đủ 26 files của lượt khu vực ADMIN, có mô tả từng file. |
+| [frontend/app/(site)/admin/page.tsx](<../frontend/app/(site)/admin/page.tsx>) | Thêm /admin redirect tới /admin/users. |
+| [frontend/app/(site)/admin/users/page.tsx](<../frontend/app/(site)/admin/users/page.tsx>) | Trang tài khoản: danh sách/tìm kiếm/phân trang, thao tác và confirmation dialog. |
+| [frontend/app/api/admin/users/route.ts](<../frontend/app/api/admin/users/route.ts>) | Thêm private,no-store cho response danh sách thành công. |
+| [frontend/app/api/admin/users/search/route.ts](<../frontend/app/api/admin/users/search/route.ts>) | Thêm private,no-store cho response tìm kiếm thành công. |
+| [frontend/app/page.tsx](<../frontend/app/page.tsx>) | Dùng role landing chung, không mount dashboard giáo viên cho ADMIN. |
+| [frontend/domain/entities/adminUser.entity.ts](<../frontend/domain/entities/adminUser.entity.ts>) | AdminUserEntity khớp isActive nullable của backend; action types cho UI. |
+| [frontend/domain/repositories/IAdminRepository.ts](<../frontend/domain/repositories/IAdminRepository.ts>) | Dùng AdminUserEntity cho return type tài khoản, giữ method/payload. |
+| [frontend/infrastructure/repositories/AdminRepositoryImpl.ts](<../frontend/infrastructure/repositories/AdminRepositoryImpl.ts>) | Đồng bộ return type AdminUserEntity, giữ routes/Bearer và payload. |
+| [frontend/presentation/components/Admin/AdminUserActionDialog.tsx](<../frontend/presentation/components/Admin/AdminUserActionDialog.tsx>) | Dialog dùng chung xác nhận role/lock/unlock/delete, focus/cancel/pending/error. |
+| [frontend/presentation/components/Admin/AdminUserRow.tsx](<../frontend/presentation/components/Admin/AdminUserRow.tsx>) | Row tài khoản, role/status/actions và trạng thái target được bảo vệ. |
+| [frontend/presentation/components/layout/Navbar.tsx](<../frontend/presentation/components/layout/Navbar.tsx>) | Menu ADMIN riêng đúng hai mục users/AI; bỏ kế thừa menu giáo viên. |
+| [frontend/presentation/hooks/Admin/useAdminUsers.ts](<../frontend/presentation/hooks/Admin/useAdminUsers.ts>) | Query/cache/search/client pagination, role restrictions, mutation confirmation/ref guard và refresh. |
+| [frontend/presentation/hooks/Auth/useLogin.ts](<../frontend/presentation/hooks/Auth/useLogin.ts>) | Chọn trang sau login qua getRoleHome, ADMIN về users. |
+| [frontend/presentation/hooks/layout/useNavBar.ts](<../frontend/presentation/hooks/layout/useNavBar.ts>) | Ẩn billing cho ADMIN, giữ profile/logout và menu role khác. |
+| [frontend/presentation/services/AdminService.ts](<../frontend/presentation/services/AdminService.ts>) | Dùng AdminUserEntity, thêm AbortSignal cho list/search. |
+| [frontend/presentation/utils/roleNavigation.ts](<../frontend/presentation/utils/roleNavigation.ts>) | Mapping landing ADMIN/MODERATOR/default dùng chung login/home. |
+| [frontend/usecases/admin/LockUserUsecase.ts](<../frontend/usecases/admin/LockUserUsecase.ts>) | Return type AdminUserEntity, không đổi nghiệp vụ. |
+| [frontend/usecases/admin/UnlockUserUsecase.ts](<../frontend/usecases/admin/UnlockUserUsecase.ts>) | Return type AdminUserEntity, không đổi nghiệp vụ. |
+| [frontend/usecases/admin/UpdateUserRoleUsecase.ts](<../frontend/usecases/admin/UpdateUserRoleUsecase.ts>) | Return type AdminUserEntity, không đổi quyền được BFF chấp nhận. |
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+Đường dẫn service và hai test dùng constructor package-private đã đồng bộ với package `ai.usecase`. `AiUsageServiceTest` vẫn ở package test `ai.service` vì không cần truy cập package-private. Validation sau chuyển package và vấn đề assertion query ngoài phạm vi ở [current-status](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+
+Inventory AI đã đối chiếu các commit `66c3c92`, `54462e0`, `9c997a0`: 48 files application/tests/config và 9 docs, tổng 57 files; gồm cả hai file question được đồng bộ import sau khi chuyển package AI. Không bao gồm logs/build artifacts hoặc harness tạm ngoài repository. Các declarations/symbols được thêm nằm trong từng file dưới đây; các snapshot cũ phía sau không bao gồm feature này. [API](api-reference.md#quản-lý-usagebudget-ai--2026-11-01), [validation mới nhất](current-status.md#snapshot-main-sau-merge-ai-và-quản-lý-tài-khoản--2026-11-01).
+
+| File | Thay đổi |
+| --- | --- |
+| [backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java](<../backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java>) | Thêm 4 endpoints quản trị usage/status/budget, ROLE_ADMIN và no-store. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiBudgetEntity.java](<../backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiBudgetEntity.java>) | Domain cấu hình budget/quota tháng và revision. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiDailyUsageEntity.java](<../backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiDailyUsageEntity.java>) | Domain kết quả tổng hợp usage theo ngày, gồm unknown requests. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiUsageEntity.java](<../backend/src/main/java/com/wedu/exam_creation/ai/domain/entity/AiUsageEntity.java>) | Domain từng lần gọi, token, outcome và snapshot giá. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/domain/repository/IAiUsageRepository.java](<../backend/src/main/java/com/wedu/exam_creation/ai/domain/repository/IAiUsageRepository.java>) | Port ghi usage, aggregate theo ngày, model list và optimistic budget update. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/dto/AiManagementDTO.java](<../backend/src/main/java/com/wedu/exam_creation/ai/dto/AiManagementDTO.java>) | HTTP DTO Budget/DailyUsage/UsageReport/BalanceInfo/Balance/Status; tiền dạng string, IntegerDeserializer không làm tròn quota/revision. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiBudgetDocument.java](<../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiBudgetDocument.java>) | Collection AiBudget, Decimal128 budget và revision. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiUsageDocument.java](<../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiUsageDocument.java>) | Collection AiUsage; token/outcome/time/model và Decimal128 giá/chi phí. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/mapper/AiUsageMapper.java](<../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/mapper/AiUsageMapper.java>) | MapStruct document ↔ entity của budget và entity → usage document. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/repository/AiUsageRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/repository/AiUsageRepositoryImpl.java>) | Mongo aggregation/index, insert/CAS budget, NOT_SUPPORTED độc lập transaction caller. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/properties/AiPricingProperties.java](<../backend/src/main/java/com/wedu/exam_creation/ai/properties/AiPricingProperties.java>) | Bind version và map giá USD/triệu token theo model. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java>) | Kiểm tra/ghi STARTED trước HTTP; hoàn tất usage trước parse, giữ generation contract. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java>) | Enforce hạn mức, snapshot giá, tính phí cache/token và xử lý unknown/failure. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceService.java>) | GET balance, validate snapshot, cache/throttle 60 giây và timeout riêng 5 giây. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecase.java>) | Report/filter, tháng Việt Nam, ngưỡng, remaining, cấu hình và mapping HTTP DTO. |
+| [backend/src/main/java/com/wedu/exam_creation/common/exception/AiAccessException.java](<../backend/src/main/java/com/wedu/exam_creation/common/exception/AiAccessException.java>) | Lỗi AI có machine-readable code và HTTP 429/503. |
+| [backend/src/main/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandler.java](<../backend/src/main/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandler.java>) | Thêm handler giữ code/message/status của AiAccessException. |
+| [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java>) | Truyền nguyên lỗi hạn mức/availability, không bọc thành lỗi sinh lại chung. |
+| [backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java](<../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java>) | Đồng bộ import AIQuestionGenerationService sang package ai.usecase. |
+| [backend/src/main/resources/application.yml](<../backend/src/main/resources/application.yml>) | Thêm bảng giá cao điểm USD cho flash/v4-pro và pricing version; không đổi secrets. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/controller/AiManagementControllerTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/controller/AiManagementControllerTest.java>) | 8 cases auth/roles/no-store/budget conflict/error code và từ chối quota/revision thập phân. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/infrastructure/AiUsageRepositoryImplTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/infrastructure/AiUsageRepositoryImplTest.java>) | 6 cases default/initial race/CAS/clear/stale, aggregation filter/timezone và suspend-resume transaction. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationUsageTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationUsageTest.java>) | 4 cases usage trước parse, block trước HTTP, provider failure/no retry, empty request. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/service/AiUsageServiceTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/service/AiUsageServiceTest.java>) | 14 cases decimal/cache/pricing snapshot, unknown usage, limits và fail-closed. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceServiceTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceServiceTest.java>) | 2 cases TTL/throttle/stale fallback và failure ban đầu không bịa số dư. |
+| [backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecaseTest.java>) | 24 cases filter/ngày/tháng Việt Nam, 80/100%, balance và budget validation. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java>) | Thêm 1 case lỗi budget giữ nguyên và không ghi/mất lượt sinh lại; không sửa failure cũ. |
+| [backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java>) | Đồng bộ import AIQuestionGenerationService sang package ai.usecase. |
+| [codex/api-reference.md](<../codex/api-reference.md>) | 4 backend + 4 BFF methods, payload DTO, validation và 429/503 codes. |
+| [codex/architecture.md](<../codex/architecture.md>) | Cập nhật luồng phân lớp, adapter balance và transaction độc lập. |
+| [codex/business-flows.md](<../codex/business-flows.md>) | Luồng admin, guard, tính phí, missing usage và budget revision. |
+| [codex/current-status.md](<../codex/current-status.md>) | Ghi implementation, validation thực tế, lỗi cũ và unknown/giới hạn. |
+| [codex/database-schema.md](<../codex/database-schema.md>) | Fields/states/Decimal128/indexes/CAS của hai collection mới. |
+| [codex/development-decisions.md](<../codex/development-decisions.md>) | Ghi scope đã duyệt, thay DEFERRED chỉ cho usage/dashboard/budget/cost. |
+| [codex/module-map.md](<../codex/module-map.md>) | Wiring mới, symbols và component/contracts liên quan. |
+| [codex/source-catalog.md](<../codex/source-catalog.md>) | Inventory toàn bộ file application/test/config/docs thay đổi, từng file có mô tả. |
+| [codex/tech-stack.md](<../codex/tech-stack.md>) | Config bảng giá/version/timeout balance và yêu cầu quyền index; không thêm dependency. |
+| [frontend/app/(site)/admin/ai/page.tsx](<../frontend/app/(site)/admin/ai/page.tsx>) | Trang report/filter/metrics/3 chart/status/config; render dữ liệu từ hook. |
+| [frontend/app/(site)/admin/layout.tsx](<../frontend/app/(site)/admin/layout.tsx>) | ROLE_ADMIN UI guard, navigation và layout responsive. |
+| [frontend/app/api/admin/ai/budget/route.ts](<../frontend/app/api/admin/ai/budget/route.ts>) | GET/PUT budget BFF mỏng dùng chung handler. |
+| [frontend/app/api/admin/ai/handler.ts](<../frontend/app/api/admin/ai/handler.ts>) | Cookie forwarding, validation, no-store và lỗi an toàn cho quản trị AI. |
+| [frontend/app/api/admin/ai/status/route.ts](<../frontend/app/api/admin/ai/status/route.ts>) | GET status BFF. |
+| [frontend/app/api/admin/ai/usage/route.ts](<../frontend/app/api/admin/ai/usage/route.ts>) | GET usage BFF. |
+| [frontend/app/api/exam/generate/[draftId]/route.ts](<../frontend/app/api/exam/generate/[draftId]/route.ts>) | Giữ code lỗi AI và response status từ backend. |
+| [frontend/app/api/moderator/questions/[id]/[action]/route.ts](<../frontend/app/api/moderator/questions/[id]/[action]/route.ts>) | Giữ code/message/status lỗi AI 429/503. |
+| [frontend/domain/entities/aiManagement.entity.ts](<../frontend/domain/entities/aiManagement.entity.ts>) | Types budget/report/status/balance/filter và draft form. |
+| [frontend/domain/repositories/IAiManagementRepository.ts](<../frontend/domain/repositories/IAiManagementRepository.ts>) | Port frontend cho 4 thao tác quản trị. |
+| [frontend/infrastructure/repositories/AiManagementRepositoryImpl.ts](<../frontend/infrastructure/repositories/AiManagementRepositoryImpl.ts>) | Axios adapter tới backend, Bearer forwarding. |
+| [frontend/presentation/components/Admin/AiBudgetForm.tsx](<../frontend/presentation/components/Admin/AiBudgetForm.tsx>) | Form nullable limits, trạng thái pending/error và explicit reload. |
+| [frontend/presentation/components/Admin/AiMetricCard.tsx](<../frontend/presentation/components/Admin/AiMetricCard.tsx>) | Card số liệu dùng lại. |
+| [frontend/presentation/components/Admin/AiStatusPanel.tsx](<../frontend/presentation/components/Admin/AiStatusPanel.tsx>) | Ngưỡng/progress/remaining, unknown usage và stale platform balance. |
+| [frontend/presentation/components/Admin/AiUsageChart.tsx](<../frontend/presentation/components/Admin/AiUsageChart.tsx>) | SVG chart dùng lại, tooltip và bảng dữ liệu accessible. |
+| [frontend/presentation/components/layout/Navbar.tsx](<../frontend/presentation/components/layout/Navbar.tsx>) | Thêm Quản lý AI chỉ cho admin, navigation admin hiển thị trên mobile. |
+| [frontend/presentation/hooks/Admin/useAiManagement.ts](<../frontend/presentation/hooks/Admin/useAiManagement.ts>) | Query/user-scoped cache, filter/form/revision, save/ref chống submit lặp và reload conflict. |
+| [frontend/presentation/services/AiManagementService.ts](<../frontend/presentation/services/AiManagementService.ts>) | Client HTTP service tới BFF, AbortSignal cho GET. |
+| [frontend/presentation/utils/aiManagement.ts](<../frontend/presentation/utils/aiManagement.ts>) | Format số/USD/timestamp Việt Nam dùng chung. |
+| [frontend/usecases/admin/AiManagementUsecase.ts](<../frontend/usecases/admin/AiManagementUsecase.ts>) | Frontend usecase điều phối port quản trị AI. |
+
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 Inventory **52 file** application/tests/docs thay đổi hoặc thêm; không đổi config/dependency/exporter. Không xóa/rename file. Application/tests đã commit và push: backend 85269d8, 89553d9; tests e938083; frontend 835576c. Đã merge vào main tại d3ad7a3 qua PR #123–125. Tám file docs được chuẩn bị trong commit đồng bộ context này. Harness JSDOM và log validation chỉ nằm trong thư mục tạm, không thuộc source repository.
@@ -8,7 +109,7 @@ Symbols/contracts mới: ReviewPendingQuestionUsecase.approve/reject (backend), 
 
 | File | Thay đổi |
 | --- | --- |
-| [backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java>) | Ẩn provider exception khỏi log/response; tách helper getStringBuilder dựng đặc tả prompt. |
+| [backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java](<../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java>) | Ẩn provider exception khỏi log/response; tách helper getStringBuilder dựng đặc tả prompt. |
 | [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReference.java>) | Bỏ comment, không đổi nhận diện S3 key. |
 | [frontend/app/api/moderator/question-files/reject/route.ts](<../frontend/app/api/moderator/question-files/reject/route.ts>) | Chuẩn hóa định dạng và tách biến repository; không đổi contract từ chối tệp. |
 | [frontend/app/api/moderator/questions/[id]/route.ts](<../frontend/app/api/moderator/questions/[id]/route.ts>) | Chuẩn hóa định dạng route PATCH, giữ contract multipart hiện có. |
@@ -203,7 +304,7 @@ Snapshot working tree 2026-10-24, gồm staged/unstaged/untracked files. Chỉ m
 | Layer / thư mục | Symbols / source |
 | --- | --- |
 | `properties` | [DeepSeekProperties](../backend/src/main/java/com/wedu/exam_creation/ai/properties/DeepSeekProperties.java) |
-| `service` | [AIQuestionGenerationService](../backend/src/main/java/com/wedu/exam_creation/ai/service/AIQuestionGenerationService.java) |
+| `usecase` | [AIQuestionGenerationService](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java) |
 
 ### Backend `auth`
 
@@ -472,7 +573,7 @@ Layouts/entry points: [root layout](../frontend/app/layout.tsx), [moderator layo
 
 | Thư mục | Files / symbols |
 | --- | --- |
-| `repositories` | [AdminRepositoryImpl](../frontend/infrastructure/repositories/AdminRepositoryImpl.ts), [AuthRepositoryImpl](../frontend/infrastructure/repositories/AuthRepositoryImpl.ts), [ChapterRepositoryImpl](../frontend/infrastructure/repositories/ChapterRepositoryImpl.ts), [DraftRepositoryImpl](../frontend/infrastructure/repositories/DraftRepositoryImpl.ts), [ExamsRepositoryImpl](../frontend/infrastructure/repositories/ExamsRepositoryImpl.ts), [ExporterRepositoryImpl](../frontend/infrastructure/repositories/ExporterRepositoryImpl.ts), [ModeratorRepositoryImpl](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts), [StorageRepositoryImpl](../frontend/infrastructure/repositories/StorageRepositoryImpl.ts), [UserRepositoryImpl](../frontend/infrastructure/repositories/UserRepositoryImpl.ts) |
+| `repositories` | [AdminRepositoryImpl](../frontend/infrastructure/repositories/AdminRepositoryImpl.ts), [AuthRepositoryImpl](../frontend/infrastructure/repositories/AuthRepositoryImpl.ts), [ChapterRepositoryImpl](../frontend/infrastructure/repositories/ChapterRepositoryImpl.ts), [DraftRepositoryImpl](../frontend/infrastructure/repositories/draftRepositoryImpl.ts), [ExamsRepositoryImpl](../frontend/infrastructure/repositories/ExamsRepositoryImpl.ts), [ExporterRepositoryImpl](../frontend/infrastructure/repositories/ExporterRepositoryImpl.ts), [ModeratorRepositoryImpl](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts), [StorageRepositoryImpl](../frontend/infrastructure/repositories/StorageRepositoryImpl.ts), [UserRepositoryImpl](../frontend/infrastructure/repositories/userRepositoryImpl.ts) |
 
 ### Frontend `presentation`
 
@@ -531,14 +632,14 @@ Hook mới [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuesti
 
 ## Backend tests
 
-Test tồn tại không đồng nghĩa pass; chưa chạy trong lượt tài liệu. ModeratorQuestionFilesTest còn kiểm route /storage/documents đã bị xóa khỏi controller hiện tại.
+Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQuestionFilesTest kiểm route /storage/documents; file này không còn trong source hiện tại, không dùng nhận định đó để kết luận tests hiện tại. Validation mới nhất ở đầu current-status.md.
 
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
 | `com/wedu/exam_creation/auth/controller` | [AuthControllerLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLoginTest.java), [AuthControllerLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLogoutTest.java), [AuthControllerRegisterTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java) |
 | `com/wedu/exam_creation/auth/usecase` | [AuthUsecaseLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java), [AuthUsecaseLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLogoutTest.java), [AuthUsecaseRegisterTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseRegisterTest.java) |
-| `com/wedu/exam_creation/moderator/controller` | [ModeratorQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFilesTest.java) |
+| `com/wedu/exam_creation/moderator/controller` | `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại) |
 | `com/wedu/exam_creation/storage/controller` | [StorageAvatarControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageAvatarControllerTest.java) |
 | `com/wedu/exam_creation/storage/service` | [StorageAvatarServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageAvatarServiceTest.java), [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java) |
 | `com/wedu/exam_creation/user/controller` | [UserControllerMeTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerMeTest.java), [UserControllerUpdateAvatarTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerUpdateAvatarTest.java), [UserControllerUpdateUsernameTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerUpdateUsernameTest.java) |

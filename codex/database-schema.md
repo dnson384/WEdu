@@ -1,5 +1,20 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Quản lý usage/budget AI — 2026-11-01
+
+Hai collection mới, không backfill hoặc đổi Questions/QuestionsReview:
+
+| Collection/document | Fields |
+| --- | --- |
+| `AiUsage` / AiUsageDocument | `_id:String` UUID nội bộ; createdAt:Instant (lúc bắt đầu); model:String; outcome:String = STARTED/RECEIVED/FAILED; usageKnown:boolean; inputTokens/outputTokens/cacheHitTokens/totalTokens:long; estimatedCostUsd:BigDecimal; pricingVersion:String; inputCacheHitPrice/inputCacheMissPrice/outputPrice:BigDecimal (USD/triệu token) |
+| `AiBudget` / AiBudgetDocument | `_id:String` cố định global; revision:long; monthlyBudgetUsd:BigDecimal nullable; monthlyTokenQuota:Long nullable |
+
+Tất cả BigDecimal trên document có `@Field(targetType=DECIMAL128)`. AiUsage có hai index non-unique `{createdAt:1}` và `{model:1,createdAt:1}`, được repository tạo lazy bằng createIndex khi đọc/ghi usage lần đầu; không phụ thuộc auto-index-creation. Không TTL hoặc cleanup lịch sử. `_id` mặc định Mongo giữ tính unique của cấu hình global. Sửa budget dùng findAndModify với `_id + revision`, tăng revision; khởi tạo dùng insert chống hai admin tạo đồng thời.
+
+STARTED/FAILED hoặc response không có usage hợp lệ là usageKnown=false; số 0 trong trường cộng dồn không đại diện hóa đơn thực bằng 0. Aggregation trả unknownUsageRequests riêng. RECEIVED chỉ nghĩa nhận được JSON provider, không chứng minh nội dung câu hỏi hợp lệ/lưu thành công. Chi phí ghi độc lập transaction câu hỏi (NOT_SUPPORTED) nên không rollback theo Questions. Hạn mức tháng tính từ query theo Asia/Ho_Chi_Minh, không có collection bộ đếm/reset/reservation.
+
+Bằng chứng: [documents](../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiUsageDocument.java), [budget](../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiBudgetDocument.java), [repository](../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/repository/AiUsageRepositoryImpl.java). Schema/index production và durability trên Mongo thật chưa xác nhận.
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 QuestionsReview thêm `regenerationCount:int` (0–4 khi còn chờ) và `revision:long` (tăng sau append/edit snapshot). Field thiếu được đọc là 0; query revision 0 chấp nhận missing/null. Không thêm collection/index/migration. Khi thao tác với câu PENDING_REVIEW thiếu review, khởi tạo bằng upsert setOnInsert trong transaction; không backfill hàng loạt.

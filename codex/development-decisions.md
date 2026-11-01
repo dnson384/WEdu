@@ -1,5 +1,24 @@
 # WEdu Development Decisions
 
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+Người dùng xác nhận ADMIN chỉ có hai tính năng chính: Quản lý tài khoản người dùng và Quản lý AI. Triển khai trang `/admin/users` dùng API tài khoản đã có; menu ADMIN không ghép menu giáo viên. Sau đăng nhập hoặc vào `/`, ADMIN về `/admin/users`; `/admin` cũng redirect tới trang này. Thông tin cá nhân/đăng xuất giữ trong menu tài khoản, ẩn Thanh toán cho ADMIN.
+
+Danh sách/tìm kiếm, đổi vai trò giáo viên↔kiểm duyệt viên, khóa/mở khóa/xóa dùng contract và quyền backend hiện có. Không bổ sung tạo tài khoản, cấp ADMIN từ UI, thay đổi quyền backend hoặc chính sách truy cập trực tiếp các route giáo viên. UI chặn thao tác lên bản thân/ADMIN khác và yêu cầu xác nhận mutation. [Điều hướng role](../frontend/presentation/utils/roleNavigation.ts), [hook](../frontend/presentation/hooks/Admin/useAdminUsers.ts), [validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+Người dùng đã duyệt dashboard ROLE_ADMIN và kiểm soát chi phí/quota DeepSeek. Quyết định này thay thế DEFERRED ở mục 8 chỉ cho usage, dashboard, budget và cost control; không mở lại timeout/retry hoặc edge cases sinh đề.
+
+- Admin đặt budget USD và/hoặc tổng token theo tháng Việt Nam, dùng chung mọi model và cả sinh đề/sinh lại. Chưa cấu hình hoặc giá trị null thì giới hạn tương ứng chưa bật; không tự đặt budget mặc định. Cấu hình áp dụng ngay và tiếp tục qua tháng mới; sửa có revision chống ghi đè.
+- Cảnh báo >=80%, chặn lần gọi mới >=100% của một giới hạn; request đang chạy không bị hủy. Chấp nhận vượt hạn mức do request cuối hoặc đồng thời, không giữ chỗ quota.
+- Số dư từ API DeepSeek; usage từ phản hồi từng lần gọi của ứng dụng, chỉ có lịch sử sau triển khai. Chi phí **ước tính theo giá cao điểm USD**, tách cache hit/miss/output, snapshot giá từng request; không coi là hóa đơn hoặc tổng sử dụng toàn tài khoản.
+- Số dư lỗi dùng snapshot gần nhất và vẫn kiểm tra DB nội bộ. Số dư hết được xác nhận thì chặn; snapshot stale không chặn theo số dư. Không quy đổi CNY/USD. Không tự retry AI.
+- Ghi STARTED trước gọi, hoàn tất usage trước parse câu hỏi, persistence độc lập transaction câu hỏi. Thiếu usage/timeout/ghi hoàn tất thất bại phải hiển thị unknown; không suy ra phí thực bằng 0. DB không thể kiểm tra/ghi STARTED thì chặn trước provider.
+
+Bằng chứng: [AiUsageService](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java), [AiManagementUsecase](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecase.java), [trạng thái/validation](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+
 ## Kiểm duyệt câu hỏi AI — 2026-10-31
 
 Người dùng đã duyệt triển khai workflow câu hỏi, thay thế giới hạn read-only/approve-regenerate ngoài scope của các snapshot 26–29/10 cho phần này. ROLE_MODERATOR duyệt bản gốc hoặc bản sinh lại mới nhất. Lần từ chối thành công 1–4 sinh một bản mới để con người kiểm tra; lần 5 không gọi AI, chuyển câu gốc sang `NEEDS_CONSIDERATION`. Lỗi AI/dữ liệu không hợp lệ không mất lượt. Giữ nội dung Questions cho đến khi duyệt, giữ ID/metadata/createdAt khi thay nội dung. Kết thúc bằng duyệt hoặc cân nhắc đều xóa QuestionsReview và lịch sử. Editor sửa bản mới nhất khi có bản sinh lại. Giữ cách chọn câu, dùng câu và hiển thị đề hiện tại; không thêm audit, backfill, hàng đợi hoặc khóa phân tán. AI retry/timeout của luồng sinh đề vẫn giữ phạm vi cũ.

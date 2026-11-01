@@ -1,5 +1,23 @@
 # Tech stack và môi trường WEdu
 
+## Validation checkout sạch — 2026-11-01
+
+Các staged snapshot frontend tại `9c997a0`/`1e36f83` qua Webpack compile nhưng thất bại ở TypeScript với TS1261: Git lưu [draftRepositoryImpl.ts](../frontend/infrastructure/repositories/draftRepositoryImpl.ts) và [userRepositoryImpl.ts](../frontend/infrastructure/repositories/userRepositoryImpl.ts), trong khi imports dùng PascalCase. Working tree Windows có thể mang casing khác nên kết quả build tại working tree không chứng nhận checkout từ Git. Không đổi tên file hoặc sửa import trong lượt tài liệu; ghi nhận kết quả ở [current-status](current-status.md#snapshot-main-sau-merge-ai-và-quản-lý-tài-khoản--2026-11-01).
+
+## Quản lý usage/budget AI — 2026-11-01
+
+Khi đổi package/move class Java, chạy `mvn clean compile` (hoặc Maven wrapper) trước khi khởi động lại. Incremental compile có thể giữ class ở package cũ trong target/classes; component scan khi đó gặp hai bean cùng tên dù source chỉ còn một. Đã xác nhận trường hợp `ai.service` → `ai.usecase`; không xử lý bằng đổi tên bean hoặc bật bean overriding. Hai test dùng constructor package-private phải cùng package `ai.usecase`.
+
+Không thêm dependency. Backend dùng RestClient/ObjectMapper, MongoTemplate aggregation, MapStruct và BigDecimal có sẵn; frontend dùng TanStack Query và SVG, không thêm chart/test runner.
+
+BudgetDTO.IntegerDeserializer dùng `tools.jackson` (Jackson 3 của Spring MVC) để từ chối quota/revision JSON không nguyên, tránh coercion thập phân thành Long. ObjectMapper `com.fasterxml.jackson` hiện có của provider/JWT và JacksonConfig giữ nguyên; không thay cấu hình JSON toàn hệ thống.
+
+[application.yml](../backend/src/main/resources/application.yml) bổ sung `ai.pricing.version=deepseek-2026-11-01-peak-usd`, map `ai.pricing.models.<model>.input-cache-hit/input-cache-miss/output` với đơn vị USD/triệu token. Giá cao điểm snapshot 01/11: deepseek-flash = 0.006/0.3/1.2; deepseek-v4-pro = 0.044/1.32/3.96. Đây là ước tính, không áp dụng lịch giảm giá; cần cập nhật cấu hình/version khi giá đổi hoặc thêm model. Nguồn: [DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/).
+
+DeepSeekBalanceService dùng api-key/base-url hiện có, GET `/user/balance`, cache process-local 60 giây gồm cả attempt thất bại; connect/read timeout riêng mỗi loại 5 giây. Không đổi generation timeout/retry. Không thêm secrets hoặc NEXT_PUBLIC credentials. Mongo account cần quyền tạo hai index AiUsage. Budget do admin lưu trong DB; không có hạn mức nội bộ mặc định khi collection chưa có cấu hình.
+
+Validation và giới hạn môi trường ở [current-status](current-status.md#quản-lý-usagebudget-ai--2026-11-01); lệnh build/test của các module giữ nguyên.
+
 ## Upload ảnh trong editor câu hỏi — 2026-10-29
 
 Không thêm dependency. Editor dùng KaTeX/React Query hiện có. [next.config.ts](../frontend/next.config.ts) đặt experimental.proxyClientMaxBodySize = 65 MiB, đồng bộ Spring max-request-size 65 MB để proxy không cắt multipart nhiều ảnh ở mặc định 10 MiB (đối chiếu source Next cài trong node_modules). Giới hạn nghiệp vụ vẫn 5 MiB/ảnh JPEG/PNG, tối đa 10 ảnh/upload request; Next PATCH giới hạn payload JSON 1 MiB. Backend tái sử dụng S3Service.uploadImageFile, không đổi cấu hình Spring. [API](api-reference.md).
@@ -82,7 +100,7 @@ Không thêm dependency mới cho question-file flow. Java ZipInputStream kiểm
 
 Backend avatar giới hạn 5 MiB; question-file 50 MiB, Spring multipart vẫn 50 MB/file và 65 MB/request theo configuration. Frontend upload page còn text 25 MB, chưa đồng bộ type string key ở StorageService. Không coi đây là một package MIME/DOCX mới.
 
-Có test source mới [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java), [ModeratorQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFilesTest.java). Có test legacy endpoint chưa khớp controller hiện tại; lượt này chỉ kiểm tra tài liệu và source, không chạy build/test hoặc gọi AWS.
+Có test source mới [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java), `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại). Có test legacy endpoint chưa khớp controller hiện tại; lượt này chỉ kiểm tra tài liệu và source, không chạy build/test hoặc gọi AWS.
 ## Lệnh thực tế
 
 Chạy trong module; không có root build command.
