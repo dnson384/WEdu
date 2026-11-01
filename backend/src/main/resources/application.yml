@@ -57,6 +57,17 @@ aws:
   bucketName: "fckedu-backend-storage-static"
 
 ai:
+  pricing:
+    version: deepseek-2026-11-01-peak-usd
+    models:
+      deepseek-flash:
+        input-cache-hit: 0.006
+        input-cache-miss: 0.3
+        output: 1.2
+      deepseek-v4-pro:
+        input-cache-hit: 0.044
+        input-cache-miss: 1.32
+        output: 3.96
   deepseek:
     api-key: ${DEEPSEEK_API_KEY}
     base-url: https://api.deepseek.com

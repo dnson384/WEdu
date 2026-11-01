@@ -1,7 +1,7 @@
 package com.wedu.exam_creation.question.usecase;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
+import com.wedu.exam_creation.ai.usecase.AIQuestionGenerationService;
 import com.wedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
 import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
