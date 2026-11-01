@@ -1,13 +1,19 @@
 package com.wedu.exam_creation.moderator.usecase;
 
-import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
+import com.wedu.exam_creation.ai.usecase.AIQuestionGenerationService;
 import com.wedu.exam_creation.chapter.usecase.ChapterService;
 import com.wedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
 import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
 import com.wedu.exam_creation.common.dto.chapter.response.LessonDataResponseDTO;
-import com.wedu.exam_creation.common.dto.question.response.*;
-import com.wedu.exam_creation.common.exception.*;
+import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.VariablesDTO;
+import com.wedu.exam_creation.common.exception.AIGenerationException;
+import com.wedu.exam_creation.common.exception.BadRequestException;
+import com.wedu.exam_creation.common.exception.ConflictException;
+import com.wedu.exam_creation.common.exception.NotFoundException;
 import com.wedu.exam_creation.moderator.dto.ReviewPendingQuestionDTO;
 import com.wedu.exam_creation.question.usecase.QuestionService;
 import com.wedu.exam_creation.questionReview.usecase.QuestionReviewService;
@@ -25,7 +31,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class ReviewPendingQuestionUsecaseTest {
@@ -38,6 +45,10 @@ class ReviewPendingQuestionUsecaseTest {
     private final ReviewPendingQuestionUsecase usecase = new ReviewPendingQuestionUsecase(questions, reviews, chapters, ai, transactions);
     private PendingQuestionDTO current;
     private ReviewPendingQuestionDTO input;
+
+    private static ContentDTO content(String template) {
+        return new ContentDTO(template, new VariablesDTO(Map.of(), Map.of()));
+    }
 
     @BeforeEach
     void setup() throws Exception {
@@ -68,6 +79,16 @@ class ReviewPendingQuestionUsecaseTest {
         verify(reviews).delete(ID, 0);
         verifyNoInteractions(ai);
         assertThat(transactions.commits).isEqualTo(1);
+    }
+
+    @Test
+    void aiBudgetBlockPreservesCodeAndDoesNotConsumeRegenerationAttempt() throws Exception {
+        var blocked = new com.wedu.exam_creation.common.exception.AiAccessException("AI_BUDGET_EXCEEDED", 429, "limit");
+        when(ai.generateQuestions(anyList())).thenThrow(blocked);
+        assertThatThrownBy(() -> usecase.reject(ID, input)).isSameAs(blocked);
+        verifyNoInteractions(reviews);
+        verify(questions, never()).commitPendingReview(any(), any(), any(), any());
+        assertThat(transactions.commits).isZero();
     }
 
     @Test
@@ -130,9 +151,12 @@ class ReviewPendingQuestionUsecaseTest {
             case "outcome" -> candidate.setLearningOutcome("wrong requirement");
             case "options" -> candidate.setOptions(List.of(content("unexpected")));
             case "placeholder" -> candidate.setQuestion(content("<math_0>"));
-            case "unused" -> candidate.setQuestion(new ContentDTO("Câu", new VariablesDTO(Map.of("math_0", "x"), Map.of())));
-            case "image-url" -> candidate.setQuestion(new ContentDTO("<img_0>", new VariablesDTO(Map.of(), Map.of("img_0", "https://private/image"))));
-            default -> { }
+            case "unused" ->
+                    candidate.setQuestion(new ContentDTO("Câu", new VariablesDTO(Map.of("math_0", "x"), Map.of())));
+            case "image-url" ->
+                    candidate.setQuestion(new ContentDTO("<img_0>", new VariablesDTO(Map.of(), Map.of("img_0", "https://private/image"))));
+            default -> {
+            }
         }
         when(ai.generateQuestions(anyList())).thenReturn(kind.equals("empty") ? List.of()
                 : kind.equals("extra") ? List.of(candidate, candidate) : List.of(candidate));
@@ -191,17 +215,29 @@ class ReviewPendingQuestionUsecaseTest {
                 "Trả lời ngắn", content("Bản mới"), List.of());
     }
 
-    private static ContentDTO content(String template) {
-        return new ContentDTO(template, new VariablesDTO(Map.of(), Map.of()));
-    }
-
     private static class TestTransactions extends AbstractPlatformTransactionManager {
         int begins;
         int commits;
         int rollbacks;
-        @Override protected Object doGetTransaction() { return new Object(); }
-        @Override protected void doBegin(Object transaction, TransactionDefinition definition) { begins++; }
-        @Override protected void doCommit(DefaultTransactionStatus status) { commits++; }
-        @Override protected void doRollback(DefaultTransactionStatus status) { rollbacks++; }
+
+        @Override
+        protected Object doGetTransaction() {
+            return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaction, TransactionDefinition definition) {
+            begins++;
+        }
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus status) {
+            commits++;
+        }
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus status) {
+            rollbacks++;
+        }
     }
 }

@@ -1,10 +1,9 @@
 package com.wedu.exam_creation.question.usecase;
 
-import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
-import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
+import com.wedu.exam_creation.ai.usecase.AIQuestionGenerationService;
 import com.wedu.exam_creation.common.dto.question.response.ContentDTO;
+import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
 import com.wedu.exam_creation.common.exception.ConflictException;
-import java.time.Instant;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
@@ -12,6 +11,7 @@ import com.wedu.exam_creation.question.dto.mapper.QuestionDTOMapper;
 import com.wedu.exam_creation.questionReview.usecase.QuestionReviewService;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
