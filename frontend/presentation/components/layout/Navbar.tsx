@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import useNavBar from "@/presentation/hooks/layout/useNavBar";
 import useAuth from "@/presentation/hooks/Auth/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Files, ShieldCheck, Library, Activity } from "lucide-react";
+import { Files, ShieldCheck, Library, Activity, Users } from "lucide-react";
 
 interface Data {
   avatarUrl: string;
@@ -24,7 +24,9 @@ function resolveAvatarSrc(value: string | undefined) {
   if (source.startsWith("/") && !source.startsWith("//")) return source;
   try {
     const url = new URL(source);
-    return url.protocol === "https:" || url.protocol === "http:" ? source : DEFAULT_AVATAR;
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? source
+      : DEFAULT_AVATAR;
   } catch {
     return DEFAULT_AVATAR;
   }
@@ -58,13 +60,38 @@ export default function NavBar({ avatarUrl, username }: Data) {
   const queryClient = useQueryClient();
   const isModerator = user.role === "ROLE_MODERATOR";
   const isAdmin = user.role === "ROLE_ADMIN";
-  const links = isModerator ? [
-    { name: "Quản lý tệp tin câu hỏi", href: "/moderator/question-files", icon: <Files size={20} /> },
-    { name: "Kiểm duyệt câu hỏi", href: "/moderator/review", icon: <ShieldCheck size={20} /> },
-    { name: "Quản lý ngân hàng câu hỏi", href: "/moderator/question-bank", icon: <Library size={20} /> },
-  ] : isAdmin ? [
-    { name: "Quản lý AI", href: "/admin/ai", icon: <Activity size={20} /> },
-  ] : navLinks;
+  const links = isModerator
+    ? [
+        {
+          name: "Quản lý tệp tin câu hỏi",
+          href: "/moderator/question-files",
+          icon: <Files size={20} />,
+        },
+        {
+          name: "Kiểm duyệt câu hỏi",
+          href: "/moderator/review",
+          icon: <ShieldCheck size={20} />,
+        },
+        {
+          name: "Quản lý ngân hàng câu hỏi",
+          href: "/moderator/question-bank",
+          icon: <Library size={20} />,
+        },
+      ]
+    : isAdmin
+      ? [
+          {
+            name: "Quản lý tài khoản người dùng",
+            href: "/admin/users",
+            icon: <Users size={20} />,
+          },
+          {
+            name: "Quản lý AI",
+            href: "/admin/ai",
+            icon: <Activity size={20} />,
+          },
+        ]
+      : navLinks;
   const { isLoggingOut, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
     useNavBar();
 
@@ -76,7 +103,10 @@ export default function NavBar({ avatarUrl, username }: Data) {
   };
 
   return (
-    <nav aria-label="Điều hướng chính" className={`${isModerator || isAdmin ? "relative lg:fixed lg:h-screen" : "fixed h-screen hidden lg:block"} z-40 bg-white top-0 left-0 lg:w-60 shadow-md px-3 py-6`}>
+    <nav
+      aria-label="Điều hướng chính"
+      className={`${isModerator || isAdmin ? "relative lg:fixed lg:h-screen" : "fixed h-screen hidden lg:block"} z-40 bg-white top-0 left-0 lg:w-60 shadow-md px-3 py-6`}
+    >
       <div className="h-full flex flex-col justify-between">
         <section id="content">
           <div className="px-3 mb-10">
@@ -95,7 +125,9 @@ export default function NavBar({ avatarUrl, username }: Data) {
                   aria-current={active ? "page" : undefined}
                   onClick={() => {
                     if (link.href === "/moderator/question-files") {
-                      void queryClient.invalidateQueries({ queryKey: ["moderator-question-files"] });
+                      void queryClient.invalidateQueries({
+                        queryKey: ["moderator-question-files"],
+                      });
                     }
                   }}
                   className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-lg font-medium transition-colors ${

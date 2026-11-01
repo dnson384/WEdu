@@ -1,4 +1,4 @@
-import { UserEntity } from "@/domain/entities/user.entity";
+import { AdminUserEntity } from "@/domain/entities/adminUser.entity";
 import { IAdminRepository } from "@/domain/repositories/IAdminRepository";
 import axios from "axios";
 
@@ -12,7 +12,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
         : process.env.NEXT_PUBLIC_BACKEND_PROD_URL!;
   }
 
-  async getAllUsers(accessToken: string): Promise<UserEntity[]> {
+  async getAllUsers(accessToken: string): Promise<AdminUserEntity[]> {
     const { data } = await axios.get(`${this.baseUrl}/admin/users`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -22,7 +22,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
     return data;
   }
 
-  async findUsers(keyword: string, accessToken: string): Promise<UserEntity[]> {
+  async findUsers(keyword: string, accessToken: string): Promise<AdminUserEntity[]> {
     const { data } = await axios.get(`${this.baseUrl}/admin/users/search`, {
       params: {
         keyword: keyword,
@@ -39,7 +39,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
     userId: string,
     role: string,
     accessToken: string,
-  ): Promise<UserEntity> {
+  ): Promise<AdminUserEntity> {
     const { data } = await axios.put(
       `${this.baseUrl}/admin/${userId}/role`,
       {},
@@ -56,7 +56,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
     return data;
   }
 
-  async lockUser(userId: string, accessToken: string): Promise<UserEntity> {
+  async lockUser(userId: string, accessToken: string): Promise<AdminUserEntity> {
     const { data } = await axios.put(
       `${this.baseUrl}/admin/${userId}/lock`,
       {},
@@ -70,7 +70,7 @@ export class AdminRepositoryImpl implements IAdminRepository {
     return data;
   }
 
-  async unlockUser(userId: string, accessToken: string): Promise<UserEntity> {
+  async unlockUser(userId: string, accessToken: string): Promise<AdminUserEntity> {
     const { data } = await axios.put(
       `${this.baseUrl}/admin/${userId}/unlock`,
       {},

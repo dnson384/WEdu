@@ -11,14 +11,16 @@ import useDashboard from "@/presentation/hooks/Dashboard/useDashboard";
 import ExamCard from "@/presentation/components/Exam/ExamCard";
 import DraftCard from "@/presentation/components/Draft/DraftCard";
 import Loader from "@/presentation/components/layout/Loader";
+import { getRoleHome } from "@/presentation/utils/roleNavigation";
 
 export default function Home() {
   const { user, isLoadingUser } = useAuth();
   const router = useRouter();
+  const destination = getRoleHome(user.role);
   useEffect(() => {
-    if (user.role === "ROLE_MODERATOR") router.replace("/moderator/question-files");
-  }, [user.role, router]);
-  if (isLoadingUser || user.role === "ROLE_MODERATOR") return <Loader />;
+    if (!isLoadingUser && destination !== "/") router.replace(destination);
+  }, [destination, isLoadingUser, router]);
+  if (isLoadingUser || destination !== "/") return <Loader />;
   return <TeacherHome />;
 }
 

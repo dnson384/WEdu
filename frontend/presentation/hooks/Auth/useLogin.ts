@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserService } from "@/presentation/services/UserService";
+import { getRoleHome } from "@/presentation/utils/roleNavigation";
 
 interface FormData {
   email: string;
@@ -65,7 +66,7 @@ export default function useLogin() {
           queryFn: () => userService.getMe(),
           staleTime: 0,
         });
-        router.replace(user.role === "ROLE_MODERATOR" ? "/moderator/question-files" : "/");
+        router.replace(getRoleHome(user.role));
         router.refresh();
       }
     } catch (err) {
