@@ -1,5 +1,15 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Cấu hình giới hạn AI — 2026-11-01
+
+Snapshot implementation/validation bên dưới thuộc commit `476fb98` trên `frontend/feature/ai-management`. Khi chuẩn bị commit tài liệu, `main`/`origin/main` đang ở `11db659`, chưa chứa commit frontend này; đây không phải xác nhận tính năng đã merge hoặc deploy trên main.
+
+Implemented: `/admin/ai` có summary cấu hình và nút mở form, điền sẵn/hủy draft, lưu/đóng form, hiển thị giới hạn mới và refetch status. Validation form tách khỏi filter; lỗi lưu giữ input; 409 khóa lưu đến khi reload thành công. Lỗi status sau lưu nêu rõ cấu hình đã lưu, dùng Làm mới để thử lại. Backend WEdu áp dụng cơ chế hiện có, không gửi hạn mức sang DeepSeek; API/schema không đổi.
+
+Validation lượt này: ESLint bốn file frontend thay đổi, `tsc --noEmit --incremental false` và production `npm run build -- --webpack` đều đạt trên working tree hiện tại. Build sandbox lần đầu lỗi tải Google Fonts (EACCES); chạy ngoài sandbox đạt. Harness React/JSDOM tạm đạt mở/hủy/mở lại, validation, save/double-submit, conflict/reload (kể cả đóng/mở lại), lỗi lưu giữ draft, lỗi status sau lưu/retry, summary mới, tắt hai giới hạn và hiển thị NORMAL/WARNING/BLOCKED với mock status; giữ kiểm tra filters/charts/role/BFF. Không thêm dependency/test runner. Chưa kiểm tra pixel layout trên browser hoặc gọi MongoDB/DeepSeek thật; không chạy lại backend tests vì không sửa backend. Các snapshot validation cũ bên dưới giữ nguyên phạm vi lịch sử, không chứng nhận checkout Git sạch khác casing working tree.
+
+[Inventory](source-catalog.md#cấu-hình-giới-hạn-ai--2026-11-01).
+
 ## Snapshot main sau merge AI và quản lý tài khoản — 2026-11-01
 
 Đã đối chiếu `main`/`origin/main` tại `399b476` sau PR #126–129. Bốn commit đã merge: backend main `66c3c92`, backend tests `54462e0`, frontend AI `9c997a0`, frontend tài khoản `1e36f83`. Source backend/frontend trên main giống cây source đã validation ở `1e36f83`; không thay application code trong lượt cập nhật docs này. Các phần dưới ghi behavior/snapshot theo từng lượt, không phải chứng nhận deploy.

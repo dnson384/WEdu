@@ -1,5 +1,14 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Cấu hình giới hạn AI — 2026-11-01
+
+1. ADMIN vào `/admin/ai`, xem giới hạn đã lưu và chọn **Cấu hình giới hạn** để mở form tại chỗ. Form điền sẵn cấu hình; Hủy bỏ draft, mở lại dùng dữ liệu đã lưu.
+2. Nhập budget USD và/hoặc tổng token tháng; để trống tắt từng giới hạn. Validation budget/quota tách khỏi lỗi bộ lọc báo cáo. Lưu khóa gửi lặp; Hủy/tải lại không chạy khi mutation đang xử lý.
+3. PUT budget thành công cập nhật cache cấu hình, đóng form, thông báo và refetch status. Panel hiển thị giới hạn, đã dùng/còn lại và tỷ lệ; nếu refetch lỗi, thông báo rõ cấu hình đã lưu nhưng trạng thái chưa cập nhật, dùng Làm mới để thử lại.
+4. Lỗi lưu giữ draft. Revision conflict khóa lưu tới khi tải lại thành công, kể cả khi Hủy rồi mở lại form. Tải lại chủ động thay draft bằng cấu hình server.
+
+Backend WEdu áp dụng cấu hình trước request AI tiếp theo; không đồng bộ hạn mức sang DeepSeek. Giữ hạn mức tháng toàn hệ thống, cảnh báo 80%/chặn 100%, không hủy request đang chạy. [Hook](../frontend/presentation/hooks/Admin/useAiManagement.ts), [form](../frontend/presentation/components/Admin/AiBudgetForm.tsx).
+
 ## Khu vực ADMIN hai tính năng — 2026-11-01
 
 1. Đăng nhập ADMIN → getRoleHome → /admin/users. Truy cập / hoặc /admin cũng về users; TeacherHome không mount cho ADMIN. Navigation chính chỉ Quản lý tài khoản người dùng và Quản lý AI. Menu tài khoản giữ thông tin cá nhân/đăng xuất, ẩn thanh toán.

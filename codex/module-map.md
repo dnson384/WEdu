@@ -1,5 +1,13 @@
 # Bản đồ module, symbols và API
 
+## Cấu hình giới hạn AI — 2026-11-01
+
+- `AiManagementPage` nối `openBudget/cancelBudget`, trạng thái editing/conflict và budget đã lưu từ `useAiManagement` vào `AiBudgetForm`. Component render summary và chỉ mở form khi chọn Cấu hình giới hạn.
+- Hook quản lý draft, validation riêng, mutation guard và conflict đến khi reload thành công. Save cập nhật budget cache, đóng form và invalidate status; lỗi status sau lưu được page phân biệt với lỗi lưu.
+- `AiStatusPanel/LimitProgress` hiển thị thêm giới hạn cấu hình bên cạnh usage/remaining. Giữ GET/PUT budget, GET status, DTO/schema và backend enforcement hiện có.
+
+[Inventory](source-catalog.md#cấu-hình-giới-hạn-ai--2026-11-01), [luồng](business-flows.md#cấu-hình-giới-hạn-ai--2026-11-01).
+
 ## Khu vực ADMIN hai tính năng — 2026-11-01
 
 `getRoleHome` là mapping dùng chung cho `useLogin` và `Home`: ADMIN → /admin/users, MODERATOR → /moderator/question-files, các role khác → /. AdminPage (/admin) redirect tới /admin/users, AdminLayout vẫn kiểm ROLE_ADMIN.

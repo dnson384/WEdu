@@ -1,5 +1,20 @@
 # Source catalogue WEdu
 
+## Cấu hình giới hạn AI — 2026-11-01
+
+Inventory tính năng gồm 4 file frontend trong commit `476fb98` trên `frontend/feature/ai-management` và 4 docs dưới đây. Commit tài liệu trên main chỉ chứa 4 docs; tại base `11db659`, main chưa chứa frontend `476fb98`. Không đổi backend, contract hoặc schema.
+
+| File | Thay đổi |
+| --- | --- |
+| [AiManagementPage](<../frontend/app/(site)/admin/ai/page.tsx>) | Nối mở/hủy form, budget/conflict và thông báo lỗi tải trạng thái sau lưu. |
+| [AiBudgetForm](../frontend/presentation/components/Admin/AiBudgetForm.tsx) | Summary hạn mức đã lưu, form mở theo thao tác, Lưu cấu hình/Hủy và khóa lưu khi conflict. |
+| [AiStatusPanel](../frontend/presentation/components/Admin/AiStatusPanel.tsx) | Hiển thị giới hạn USD/token cùng usage và remaining. |
+| [useAiManagement](../frontend/presentation/hooks/Admin/useAiManagement.ts) | Editing/draft, validation riêng, cancel/reset, conflict guard và đóng form sau lưu. |
+| [business-flows](business-flows.md#cấu-hình-giới-hạn-ai--2026-11-01) | Luồng cấu hình, lưu/lỗi/conflict và backend áp dụng. |
+| [module-map](module-map.md#cấu-hình-giới-hạn-ai--2026-11-01) | Wiring component/hook và tái sử dụng contract hiện có. |
+| [current-status](current-status.md#cấu-hình-giới-hạn-ai--2026-11-01) | Implementation, validation và giới hạn kiểm chứng. |
+| [source-catalog](source-catalog.md#cấu-hình-giới-hạn-ai--2026-11-01) | Inventory đầy đủ 8 file lượt này. |
+
 ## Khu vực ADMIN hai tính năng — 2026-11-01
 
 Inventory lượt này: 19 files frontend và 7 docs, tổng **26 files**. Không bao gồm thay đổi AI/backend đang có từ lượt trước hoặc các thay đổi khác trong working tree. [Validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01), [contract](api-reference.md#khu-vực-admin-hai-tính-năng--2026-11-01).
