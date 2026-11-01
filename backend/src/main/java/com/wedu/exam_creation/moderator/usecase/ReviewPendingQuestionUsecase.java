@@ -1,7 +1,7 @@
 package com.wedu.exam_creation.moderator.usecase;
 
 import com.mongodb.MongoException;
-import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
+import com.wedu.exam_creation.ai.usecase.AIQuestionGenerationService;
 import com.wedu.exam_creation.chapter.usecase.ChapterService;
 import com.wedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
 import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
@@ -12,6 +12,7 @@ import com.wedu.exam_creation.common.dto.question.response.PendingQuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
 import com.wedu.exam_creation.common.dto.question.response.VariablesDTO;
 import com.wedu.exam_creation.common.exception.AIGenerationException;
+import com.wedu.exam_creation.common.exception.AiAccessException;
 import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.common.exception.ConflictException;
 import com.wedu.exam_creation.moderator.dto.RejectPendingQuestionResponseDTO;
@@ -88,6 +89,8 @@ public class ReviewPendingQuestionUsecase {
             }
 
             candidate = validateCandidate(current, request, generated.get(0));
+        } catch (AiAccessException access) {
+            throw access;
         } catch (Exception failure) {
             throw new AIGenerationException("Không thể sinh lại câu hỏi hợp lệ. Chưa tính lượt; vui lòng thử lại");
         }

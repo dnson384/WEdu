@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.ai.service;
+package com.wedu.exam_creation.ai.usecase;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,6 +10,7 @@ import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.wedu.exam_creation.common.exception.AIGenerationException;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -23,15 +24,22 @@ public class AIQuestionGenerationService {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final DeepSeekProperties properties;
+    private final AiUsageService usageService;
 
-    public AIQuestionGenerationService(DeepSeekProperties properties, ObjectMapper objectMapper) {
-        this.properties = properties;
-        this.objectMapper = objectMapper;
-        this.restClient = RestClient.builder()
+    @Autowired
+    public AIQuestionGenerationService(DeepSeekProperties properties, ObjectMapper objectMapper, AiUsageService usageService) {
+        this(properties, objectMapper, usageService, RestClient.builder()
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("Authorization", "Bearer " + properties.getApiKey())
                 .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .build();
+                .build());
+    }
+
+    AIQuestionGenerationService(DeepSeekProperties properties, ObjectMapper objectMapper, AiUsageService usageService, RestClient restClient) {
+        this.usageService = usageService;
+        this.properties = properties;
+        this.objectMapper = objectMapper;
+        this.restClient = restClient;
     }
 
     private static @NonNull StringBuilder getStringBuilder(List<GenerateQuestionRequestDTO> requests) {
@@ -79,6 +87,7 @@ public class AIQuestionGenerationService {
                 "temperature", 0.7
         );
 
+        var usage = usageService.begin(properties.getModel());
         String rawResponse;
         try {
             rawResponse = restClient.post()
@@ -87,10 +96,18 @@ public class AIQuestionGenerationService {
                     .retrieve()
                     .body(String.class);
         } catch (Exception e) {
+            usageService.complete(usage, null);
             log.warn("Không thể gọi DeepSeek API; loại lỗi: {}", e.getClass().getSimpleName());
             throw new AIGenerationException("Không thể gọi dịch vụ sinh câu hỏi");
         }
 
+        JsonNode root = null;
+        try {
+            root = objectMapper.readTree(rawResponse);
+        } catch (Exception invalidResponse) {
+            // Record unknown usage even when the provider body is not valid JSON.
+        }
+        usageService.complete(usage, root);
         String json = extractGeneratedText(rawResponse);
         AIListQuestionsResponseDTO aiListQuestionsResponseDTO = objectMapper.readValue(json, AIListQuestionsResponseDTO.class);
 
