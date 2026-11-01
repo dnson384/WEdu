@@ -41,6 +41,8 @@ export default function useAiManagement() {
   const [filters, setFilters] = useState(currentMonth);
   const [filterDraft, setFilterDraft] = useState(currentMonth);
   const [draft, setDraft] = useState<AiBudgetDraft | null>(null);
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [budgetValidation, setBudgetValidation] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [validation, setValidation] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -79,6 +81,7 @@ export default function useAiManagement() {
     onSuccess: (data) => {
       queryClient.setQueryData([...key, "budget"], data);
       setDraft(null);
+      setEditingBudget(false);
       setNotice(
         "Đã lưu hạn mức. Cấu hình có hiệu lực ngay và áp dụng cho các tháng tiếp theo.",
       );
@@ -88,6 +91,8 @@ export default function useAiManagement() {
       savingRef.current = false;
     },
   });
+  const budgetConflict =
+    isAxiosError(save.error) && save.error.response?.status === 409;
 
   const applyFilters = (event: FormEvent) => {
     event.preventDefault();
@@ -106,7 +111,8 @@ export default function useAiManagement() {
 
   const submitBudget = (event: FormEvent) => {
     event.preventDefault();
-    if (savingRef.current || !budget.data) return;
+    if (savingRef.current || !budget.data || !editingBudget || budgetConflict)
+      return;
     const amount = form.amount.trim();
     const tokens = form.tokens.trim();
     if (
@@ -117,12 +123,12 @@ export default function useAiManagement() {
           !Number.isSafeInteger(Number(tokens)) ||
           Number(tokens) <= 0))
     ) {
-      setValidation(
+      setBudgetValidation(
         "Budget phải lớn hơn 0, tối đa 8 số thập phân; quota phải là số nguyên dương an toàn.",
       );
       return;
     }
-    setValidation(null);
+    setBudgetValidation(null);
     setNotice(null);
     savingRef.current = true;
     save.mutate({
@@ -133,11 +139,12 @@ export default function useAiManagement() {
   };
 
   const reloadBudget = async () => {
+    if (savingRef.current) return;
     const result = await budget.refetch();
     if (result.isSuccess) {
       setDraft(null);
       save.reset();
-      setValidation(null);
+      setBudgetValidation(null);
     }
   };
 
@@ -149,6 +156,23 @@ export default function useAiManagement() {
     setFilterDraft,
     applyFilters,
     form,
+    editingBudget,
+    budgetConflict,
+    openBudget: () => {
+      if (savingRef.current || !budget.data) return;
+      setDraft(null);
+      setBudgetValidation(null);
+      if (!budgetConflict) save.reset();
+      setNotice(null);
+      setEditingBudget(true);
+    },
+    cancelBudget: () => {
+      if (savingRef.current) return;
+      setEditingBudget(false);
+      setDraft(null);
+      setBudgetValidation(null);
+      if (!budgetConflict) save.reset();
+    },
     changeBudget: (field: "amount" | "tokens", value: string) => {
       setDraft({ ...form, [field]: value });
       setNotice(null);
@@ -158,7 +182,11 @@ export default function useAiManagement() {
     saving: save.isPending,
     notice,
     validation,
-    saveError: errorMessage(save.error),
+    saveError:
+      budgetValidation ||
+      (budgetConflict
+        ? "Cấu hình đã được thay đổi. Hãy tải lại cấu hình trước khi lưu tiếp."
+        : errorMessage(save.error)),
     reportError: errorMessage(report.error),
     statusError: errorMessage(status.error),
     budgetError: errorMessage(budget.error),
