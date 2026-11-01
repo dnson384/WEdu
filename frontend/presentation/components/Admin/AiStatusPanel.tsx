@@ -10,11 +10,13 @@ function LimitProgress({
   used,
   remaining,
   percent,
+  limit,
 }: {
   label: string;
   used: string;
   remaining: string;
   percent: number | null;
+  limit: string;
 }) {
   return (
     <div>
@@ -38,7 +40,7 @@ function LimitProgress({
         />
       </div>
       <p className="mt-2 text-xs text-slate-600">
-        Đã dùng {used} · Còn lại {remaining}
+        Giới hạn {limit} · Đã dùng {used} · Còn lại {remaining}
       </p>
     </div>
   );
@@ -80,6 +82,7 @@ export default function AiStatusPanel({ status }: { status: AiStatus }) {
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <LimitProgress
           label="Budget USD · chi phí ước tính"
+          limit={status.budget.monthlyBudgetUsd === null ? "Chưa đặt" : aiUsd(status.budget.monthlyBudgetUsd)}
           used={aiUsd(status.usage.estimatedCostUsd)}
           remaining={
             status.remainingBudgetUsd === null
@@ -90,6 +93,7 @@ export default function AiStatusPanel({ status }: { status: AiStatus }) {
         />
         <LimitProgress
           label="Quota tổng token"
+          limit={status.budget.monthlyTokenQuota === null ? "Chưa đặt" : `${aiNumber(status.budget.monthlyTokenQuota)} token`}
           used={aiNumber(status.usage.totalTokens)}
           remaining={
             status.remainingTokens === null

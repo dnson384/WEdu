@@ -40,7 +40,7 @@ export default function AiManagementPage() {
           className="rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
           {ai.statusError}
-          {ai.status.data ? " — Số liệu bên dưới chưa cập nhật." : ""}
+          {ai.notice ? " — Cấu hình đã lưu, nhưng trạng thái hạn mức chưa cập nhật. Chọn Làm mới để thử lại." : ai.status.data ? " — Số liệu bên dưới chưa cập nhật." : ""}
         </p>
       )}
       {ai.status.isPending && (
@@ -220,6 +220,11 @@ export default function AiManagementPage() {
         </p>
       )}
       <AiBudgetForm
+        budget={ai.budget.data}
+        editing={ai.editingBudget}
+        conflict={ai.budgetConflict}
+        onOpen={ai.openBudget}
+        onCancel={ai.cancelBudget}
         value={ai.form}
         onChange={ai.changeBudget}
         onSubmit={ai.submitBudget}
