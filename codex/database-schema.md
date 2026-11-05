@@ -358,3 +358,9 @@ Source: [UserDocument](../backend/src/main/java/com/wedu/exam_creation/user/infr
 | `accountType` | `String` | — |
 | `createdAt` | `Instant` | `@CreatedDate` |
 | `updatedAt` | `Instant` | `@LastModifiedDate` |
+
+## Backend payment persistence — 2026-11-05
+
+Users adds nullable Instant plusExpiresAt. Legacy PLUS/null remains effective; expired PLUS is read as FREE. PaymentOrders stores random64hex _id, idempotencyKeyHash=SHA256(userId+":"+key), userId/email snapshot, amount=20000,durationDays=30,status,createdAt,expiresAt,paidAt,plusExpiresAt,transactionNo,responseCode,transactionStatus,clientIp,manualReview,revision,lastVerifiedAt. Legacy orders use deterministic _id; request lookup falls back to that _id. No migration/backfill.
+
+PaymentEmails stores _id=orderId:status,orderId,email,status,plusExpiresAt,manualReview,attempts,nextAttemptAt,sentAt,leaseToken. Indexes: PaymentOrders(idempotencyKeyHash) unique+sparse, PaymentOrders(status,expiresAt), PaymentEmails(sentAt,nextAttemptAt); no TTL deletion. Mongo transaction and conditional revision atomically save order, entitlement and outbox. Late verified success may promote EXPIRED/FAILED/CANCELLED to SUCCEEDED; SUCCEEDED cannot be downgraded. Deleting a record removes its reconciliation/idempotency evidence. [Documents](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentOrderDocument.java), [repository](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/repository/PaymentRepositoryImpl.java).

@@ -215,3 +215,18 @@ POST /exporter/exam → exportAsWord → GenerateWordFileUsecase.execute; [app m
 ## Backend question-file content — 2026-10-25
 
 GET /moderator/question-files/content?key=<S3 key> yêu cầu ROLE_MODERATOR, trả 200 binary DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document), Cache-Control private, no-store và X-Content-Type-Options nosniff. Key thuộc question-files/, không thư mục hoặc segment . / .., đuôi .docx không phân biệt hoa/thường. Thiếu/key sai trả 400; S3 404 trả 404; lỗi S3 khác trả 500 với message chung. Không đổi DTO danh sách hoặc schema. [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
+
+## Backend VNPay contract — 2026-11-05
+
+JWT/ROLE_TEACHER required except GET IPN; owner mismatch returns 404; responses are private/no-store.
+
+| Spring route | Contract |
+| --- | --- |
+| GET /payment/plan | {amount:20000,currency:VND,durationDays:30,available:boolean} |
+| POST /payment/orders | Idempotency-Key header: 16–80 alphanumeric/hyphen characters, no body; returns own PaymentDTO.Order. Same user/key returns existing order; a deleted record is recreated with a different provider reference. |
+| GET /payment/orders/{id} | Owned order, expires pending records when necessary. |
+| POST /payment/orders/{id}/verify | No body. Querydr throttled per order/30s; unavailable or unverified provider response returns 503 {message,code:PAYMENT_VERIFICATION_UNAVAILABLE}, Retry-After:30. |
+| POST /payment/orders/{id}/return | PaymentDTO.ReturnConfirmation {parameters:[[name,value],...]}; max32 unique vnp_* pairs, name suffix1–64 alphanumeric/underscore, value max1024 characters. Backend validates receipt then applies transaction; invalid400, missing/other owner404. |
+| GET /payment/vnpay/ipn | Public server callback, rejects duplicate query keys. {RspCode,Message}:00 accepted,01 missing,02 already confirmed,04 amount mismatch,97 invalid signature/parameters,99 retry. |
+
+PaymentDTO.Order: {orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualReview}; statuses PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. New expiry is createdAt+300s; checkout URL exists only while payable. Common user DTOs add nullable plusExpiresAt; accountType is effective FREE after expiry. JWT claims/roles stay unchanged. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/PaymentController.java), [DTO](../backend/src/main/java/com/wedu/exam_creation/payment/dto/PaymentDTO.java).

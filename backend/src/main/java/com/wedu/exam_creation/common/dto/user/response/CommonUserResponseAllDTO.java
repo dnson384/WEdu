@@ -21,4 +21,5 @@ public class CommonUserResponseAllDTO {
     private String accountType;
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant plusExpiresAt;
 }

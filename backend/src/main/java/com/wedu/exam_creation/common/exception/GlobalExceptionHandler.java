@@ -16,6 +16,14 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<?> handleServiceUnavailable(ServiceUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header("Retry-After", "30")
+                .header("Cache-Control", "private, no-store")
+                .body(Map.of("message", ex.getMessage(), "code", "PAYMENT_VERIFICATION_UNAVAILABLE"));
+    }
+
     @ExceptionHandler(AiAccessException.class)
     public ResponseEntity<?> handleAiAccess(AiAccessException ex) {
         return ResponseEntity.status(ex.getStatus()).body(Map.of("message", ex.getMessage(), "code", ex.getCode()));

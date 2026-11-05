@@ -147,3 +147,15 @@ QuestionFileRow.onPreview → useQuestionFiles.previewFile → [QuestionFilePrev
 ## Backend question-file content — 2026-10-25
 
 GET /moderator/question-files/content?key=... → [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → [ModeratorUsecase.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) → [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) → S3Client.getObjectAsBytes. ROLE_MODERATOR, binary DOCX no-store; không đổi DTO/schema. [Contract](api-reference.md).
+
+## Backend payment module — 2026-11-05
+
+- PaymentController: plan/create/get/verify/confirmReturn/ipn, routes at [API reference](api-reference.md#backend-vnpay-contract--2026-11-05).
+- PaymentUsecase: idempotencyKeyHash/findAttempt/newOrderId, owned orders, Return validation, shared transaction/process, expiry and outbox.
+- VnpayGateway/VnpayProperties/VnpayQueryException: checkout/signatures/querydr/configuration/safe diagnostic stages.
+- PaymentOrderEntity/Document, PaymentEmailEntity/Document, PaymentMapper, IPaymentRepository/PaymentRepositoryImpl: persistence and conditional writes.
+- PaymentSchedulingConfig/PaymentJobs: indexes, expiry, leased email delivery.
+- PlusEntitlement, UserService/UserUsecase.grantPaidPlus and UserRepositoryImpl.grantPlus/updateRole/updatePassword: effective entitlement and field-specific writes. Common user DTOs add plusExpiresAt.
+- ServiceUnavailableException/GlobalExceptionHandler.handleServiceUnavailable:503 mapping; MailService.sendPaymentResultEmail:result delivery.
+
+[Payment source](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java).

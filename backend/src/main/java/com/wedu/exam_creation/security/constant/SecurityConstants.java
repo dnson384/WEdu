@@ -2,6 +2,7 @@ package com.wedu.exam_creation.security.constant;
 
 public final class SecurityConstants {
     public static final String[] PUBLIC_PATHS = {
+            "/payment/vnpay/ipn",
             "/auth/login",
             "/auth/register",
             "/auth/logout",

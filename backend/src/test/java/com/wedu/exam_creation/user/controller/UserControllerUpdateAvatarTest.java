@@ -76,7 +76,8 @@ public class UserControllerUpdateAvatarTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
     }
 

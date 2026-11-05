@@ -13,6 +13,20 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final String fromEmail;
 
+    public void sendPaymentResultEmail(String toEmail, String orderId, String result) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromEmail, "WEdu Support");
+            helper.setTo(toEmail);
+            helper.setSubject("Kết quả thanh toán WEdu PLUS");
+            helper.setText("Mã đơn: " + orderId + "\n\n" + result, false);
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new InternalServerException("Không thể gửi email kết quả thanh toán");
+        }
+    }
+
     public MailService(
             JavaMailSender mailSender,
             @Value("${spring.mail.username}") String fromEmail

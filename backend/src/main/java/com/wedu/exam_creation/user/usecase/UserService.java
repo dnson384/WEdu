@@ -5,6 +5,7 @@ import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +54,10 @@ public class UserService {
 
     public CommonUserResponseAllDTO lockUser(String userId) {
         return userUsecase.lockUser(userId);
+    }
+
+    public Instant grantPaidPlus(String userId, Instant now, int days) {
+        return userUsecase.grantPaidPlus(userId, now, days);
     }
 
     // DELETE

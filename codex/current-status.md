@@ -234,3 +234,11 @@ npm install báo 7 vulnerabilities (1 low, 4 high, 2 critical) trong dependency 
 Implemented theo source: GET /moderator/question-files/content giới hạn ROLE_MODERATOR và key question-files/ có đuôi .docx, trả binary DOCX no-store, 404 khi object không tồn tại và lỗi storage chung. Không đổi schema hoặc triển khai approval/UI. [Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
 
 Validation backend: mvn -q test đạt 207 tests, 0 failures/errors, gồm 15 tests content mới (binary/MIME/cache, key, quyền, 404 và lỗi S3) và regression xóa. S3Client được mock; chưa đọc AWS thật. git diff --cached --check đạt cho snapshot backend.
+
+## Backend payment snapshot — 2026-11-05
+
+Implemented in source: teacher-only20k/30d purchases,5min new-order expiry, random provider references with separate idempotency hash, legacy-compatible lookup, signed checkout, verified IPN/querydr/authenticated Return, atomic PLUS/outbox, effective entitlement expiry, bounded email retries and safe503 query unavailability. [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [tests](../backend/src/test/java/com/wedu/exam_creation/payment/PaymentUsecaseTest.java).
+
+Validation 2026-11-05: payment/entitlement/gateway suite 64 passed, 5 Mongo integration tests skipped (no dedicated replica set). Full mvn -q test: 445 tests, 438 passed, 2 existing failures (AiUsageRepositoryImplTest.updatesOnlyExpectedRevisionAndAllowsClearingOneLimit; ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite), 5 skipped. No real VNPay/SMTP end-to-end certification.
+
+Known operational limits: sandbox querydr may return unsigned99 and IPN registration/delivery must be verified with VNPay. A code commit does not certify payment environment, reconstruct a deleted order or recover a lost signed Return receipt. Two existing AI/moderator test failures are outside payment scope.
