@@ -248,3 +248,9 @@ Preview chỉ đọc đi qua UI → hook → ModeratorService → Next GET conte
 ## Backend đọc DOCX cho preview — 2026-10-25
 
 [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → ModeratorUsecase.getQuestionFileContent → S3Service.readDocumentFile → S3Client.getObjectAsBytes. Backend quyết định quyền MODERATOR, kiểm prefix/key/.docx rồi trả binary no-store. Storage giữ ranh giới AWS; không gọi importer/Pandoc hoặc ghi database. validateQuestionFileKey được dùng chung với xóa, giữ nguyên điều kiện xóa. [API](api-reference.md).
+
+## Backend payment boundaries — 2026-11-05
+
+PaymentController → PaymentUsecase → IPaymentRepository/PaymentRepositoryImpl; VnpayGateway signs checkout, verifies IPN/Return HMAC and queries VNPay via RestClient. Controller is thin; HTTP DTOs, entities and Mongo documents are separate, with PaymentMapper. UserService.grantPaidPlus links entitlement and MailService sends durable outbox results.
+
+PaymentUsecase shares process/TransactionTemplate across verified sources, retries transient transaction conflicts up to3, and never holds a transaction during VNPay HTTP/SMTP. Conditional order revision plus outbox identity prevent duplicate entitlement/email. ServiceUnavailableException is mapped by GlobalExceptionHandler to safe503/code/Retry-After30. IPN alone is public; Return API is JWT teacher/owner protected. Receipts/provider payloads/secrets are not logged. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/PaymentController.java), [gateway](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayGateway.java).

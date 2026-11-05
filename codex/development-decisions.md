@@ -711,3 +711,9 @@ Cập nhật `development-decisions.md` khi:
 Không tự chuyển trạng thái chỉ vì code đã được thay đổi ngoài tài liệu.
 
 Khi một decision thay đổi implementation, cập nhật đồng thời các tài liệu liên quan theo `AGENTS.md`.
+
+## Backend payment / PLUS — 2026-11-05
+
+Approved scope: ROLE_TEACHER buys PLUS for 20,000 VND/30 days, additive from max(now,current expiry), no recurring charge. New payment orders expire in 5 minutes; retries preserve stored expiry. New references are random 64 lowercase hex; idempotencyKeyHash is stored separately with a unique sparse index. Legacy references and PLUS without expiry remain compatible.
+
+Only backend-verified IPN, querydr or signed Return receipts may update payment and grant entitlement. The approved Return endpoint requires JWT/teacher/ownership and checks signature, merchant, reference, amount and result before using the same transaction/outbox as IPN. Browser status alone is not evidence. No refund, tax invoice, backfill or payment admin UI. Deleted orders are not reconstructed as paid. Querydr unavailability returns 503/Retry-After 30 without granting access. Evidence: [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java).

@@ -78,7 +78,8 @@ public class UserControllerUpdateUsernameTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
     }
@@ -485,7 +486,8 @@ public class UserControllerUpdateUsernameTest {
                 false,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);

@@ -63,7 +63,8 @@ class UserUsecaseMeTest {
                 true,
                 "FREE",
                 CREATED_AT,
-                UPDATED_AT
+                UPDATED_AT,
+                null
         );
 
         mockUserRes = new CommonUserResponseDTO(
@@ -75,7 +76,8 @@ class UserUsecaseMeTest {
                 true,
                 "FREE",
                 CREATED_AT,
-                UPDATED_AT
+                UPDATED_AT,
+                null
         );
     }
 

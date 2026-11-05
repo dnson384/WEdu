@@ -48,6 +48,23 @@ public class UserRepositoryImpl implements IUserRepository {
         return mapper.toEntity(savedDocument);
     }
 
+    public UserEntity updateRole(String id, String role) {
+        return updateOnly(id, new Update().set("role", role));
+    }
+
+    public UserEntity updatePassword(String id, String password) {
+        return updateOnly(id, new Update().set("hashedPassword", password));
+    }
+
+    public UserEntity grantPlus(String id, Instant expiresAt) {
+        return updateOnly(id, new Update().set("accountType", "PLUS").set("plusExpiresAt", expiresAt));
+    }
+
+    private UserEntity updateOnly(String id, Update update) {
+        return mapper.toEntity(mongoTemplate.findAndModify(Query.query(Criteria.where("_id").is(id)),
+                update.set("updatedAt", Instant.now()), FindAndModifyOptions.options().returnNew(true), UserDocument.class));
+    }
+
     @Override
     public UserEntity updateField(String userId, UserUpdateFields updateFields) {
         Query query = new Query(Criteria.where("_id").is(userId));

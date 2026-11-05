@@ -670,3 +670,11 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 ## Backend preview content symbols — 2026-10-25
 
 [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) là GET /moderator/question-files/content, trả ResponseEntity<byte[]>; [ModeratorUsecase.getQuestionFileContent / validateQuestionFileKey](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) kiểm key/extension và ánh xạ lỗi; [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) đọc binary. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) có 15 cases MVC/security/usecase/storage mock.
+
+## Backend payment symbols — 2026-11-05
+
+Source additions: PaymentController; PaymentDTO.Plan/Order/ReturnConfirmation; PaymentOrderEntity/PaymentEmailEntity; IPaymentRepository; VnpayGateway/VnpayProperties/VnpayQueryException; PaymentSchedulingConfig; PaymentOrderDocument/PaymentEmailDocument; PaymentMapper; PaymentRepositoryImpl; PaymentUsecase/PaymentJobs; PlusEntitlement; ServiceUnavailableException.
+
+Changed symbols: GlobalExceptionHandler.handleServiceUnavailable; CommonUserResponseDTO/CommonUserResponseAllDTO.plusExpiresAt; UserEntity/UserDocument.plusExpiresAt; UserDTOMapper effective accountType; UserRepositoryImpl.grantPlus/updateRole/updatePassword; UserUsecase/UserService.grantPaidPlus; MailService.sendPaymentResultEmail; SecurityConstants public IPN. Auth/storage/user test fixtures include the new nullable DTO field.
+
+New tests: PaymentControllerTest, PaymentJobsTest, PaymentMongoIntegrationTest, PaymentPersistenceTest, PaymentUsecaseTest, PlusEntitlementTest, VnpayGatewayTest and infrastructure/VnpayQueryGatewayTest under [payment tests](../backend/src/test/java/com/wedu/exam_creation/payment/PaymentUsecaseTest.java). [Module map](module-map.md#backend-payment-module--2026-11-05).

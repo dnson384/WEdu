@@ -73,7 +73,8 @@ public class UserControllerMeTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         mockUserRes = new CommonUserResponseDTO(
@@ -85,7 +86,8 @@ public class UserControllerMeTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
     }
 
@@ -258,7 +260,8 @@ public class UserControllerMeTest {
                 false,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);
@@ -342,7 +345,8 @@ public class UserControllerMeTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         CustomUserDetails principalA = new CustomUserDetails(mockUserA);
@@ -356,7 +360,8 @@ public class UserControllerMeTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         String VALID_AT_A = "valid-at-a";

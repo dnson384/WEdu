@@ -77,7 +77,8 @@ public class StorageAvatarControllerTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         file = new MockMultipartFile(
@@ -266,7 +267,8 @@ public class StorageAvatarControllerTest {
                 false,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         CustomUserDetails principal = new CustomUserDetails(mockUserLock);

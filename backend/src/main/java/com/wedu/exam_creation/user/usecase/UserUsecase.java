@@ -140,7 +140,7 @@ public class UserUsecase {
     public CommonUserResponseAllDTO updateRole(CommonUserResponseAllDTO user) {
         UserEntity userEntity = mapper.commonAllToEntity(user);
 
-        UserEntity updatedUser = repo.save(userEntity);
+        UserEntity updatedUser = repo.updateRole(userEntity.getId(), userEntity.getRole());
 
         if (updatedUser == null) {
             throw new InternalServerException("Có lỗi trong quá trình cập nhật vai trò người dùng");
@@ -193,12 +193,19 @@ public class UserUsecase {
     public CommonUserResponseAllDTO updatePassword(CommonUserResponseAllDTO user) {
         UserEntity userEntity = mapper.commonAllToEntity(user);
 
-        UserEntity updatedUser = repo.save(userEntity);
+        UserEntity updatedUser = repo.updatePassword(userEntity.getId(), userEntity.getHashedPassword());
         if (updatedUser == null) {
             throw new InternalServerException("Có lỗi trong quá trình cập nhật vai trò người dùng");
         }
 
         return mapper.toCommonAllDTO(updatedUser);
+    }
+
+    public Instant grantPaidPlus(String userId, Instant now, int days) {
+        UserEntity user = repo.findById(userId);
+        if (user == null) return null;
+        Instant expiry = com.wedu.exam_creation.user.domain.entity.PlusEntitlement.extend(user.getPlusExpiresAt(), now, days);
+        return repo.grantPlus(userId, expiry) == null ? null : expiry;
     }
 
     // DELETE

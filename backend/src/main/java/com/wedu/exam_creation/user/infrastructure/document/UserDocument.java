@@ -32,4 +32,5 @@ public class UserDocument {
 
     @LastModifiedDate
     private Instant updatedAt;
+    private Instant plusExpiresAt;
 }

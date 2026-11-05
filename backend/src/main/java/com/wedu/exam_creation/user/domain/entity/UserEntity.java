@@ -21,4 +21,9 @@ public class UserEntity {
     private String accountType;
     private Instant createdAt;
     private Instant updatedAt;
+    private Instant plusExpiresAt;
+
+    public UserEntity(String id, String email, String hashedPassword, String username, String role, String loginMethod, String avatarUrl, Boolean isActive, String accountType, Instant createdAt, Instant updatedAt) {
+        this(id, email, hashedPassword, username, role, loginMethod, avatarUrl, isActive, accountType, createdAt, updatedAt, null);
+    }
 }

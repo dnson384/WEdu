@@ -190,3 +190,11 @@ Preview không có toolbar soạn thảo trực tiếp; moderator tải xuống 
 ## Backend cung cấp nội dung xem trước — 2026-10-25
 
 Moderator gọi GET /moderator/question-files/content với key từ danh sách → backend kiểm role/key/prefix/.docx → đọc object S3 → trả binary DOCX no-store. Object không còn trả 404; lỗi storage khác trả 500 chung. Đây là đọc nội dung, không sửa/lưu/import tài liệu hoặc chuyển trạng thái duyệt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md).
+
+## Backend VNPay / paid PLUS — 2026-11-05
+
+Teacher creates an idempotent order: server fixes price20k/duration30d and expiry5min, stores a random reference with request hash, then signs a checkout URL. Blank VNPAY_BANK_CODE omits bank selection; configured codes are trimmed and signed.
+
+IPN or authenticated owned Return receipt must pass signature/merchant/reference/amount/result checks. Querydr must have a verified response; query response00 alone is not payment success, transaction status00 is also required. One shared Mongo transaction updates order, extends PLUS, and queues one email per result; replay and concurrent callbacks cannot grant twice. A deleted user produces paid/manualReview without recreating an account. Late confirmed success is accepted.
+
+Querydr failures leave payment unconfirmed and return503/Retry-After30, with DB throttle30s/order. Expiry worker runs60s; mail worker15s with max5 attempts and300s lease, retry after60s. Password/role writes update only their own fields so they cannot overwrite paid entitlement. [Use case](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [jobs](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentJobs.java).

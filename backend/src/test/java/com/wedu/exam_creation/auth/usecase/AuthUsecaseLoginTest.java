@@ -69,7 +69,8 @@ public class AuthUsecaseLoginTest {
                 true, // isActive
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         userResponseDTO = new UserResponseDTO(
@@ -150,7 +151,8 @@ public class AuthUsecaseLoginTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(googleUser));
 
@@ -176,7 +178,8 @@ public class AuthUsecaseLoginTest {
                 false,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(lockedUser));
 

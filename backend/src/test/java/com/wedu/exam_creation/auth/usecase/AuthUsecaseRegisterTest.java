@@ -72,7 +72,8 @@ public class AuthUsecaseRegisterTest {
                 true,
                 "FREE",
                 Instant.now(),
-                Instant.now()
+                Instant.now(),
+                null
         );
 
         userResponseDTO = new UserResponseDTO(
