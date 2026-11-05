@@ -215,3 +215,20 @@ POST /exporter/exam → exportAsWord → GenerateWordFileUsecase.execute; [app m
 ## Backend question-file content — 2026-10-25
 
 GET /moderator/question-files/content?key=<S3 key> yêu cầu ROLE_MODERATOR, trả 200 binary DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document), Cache-Control private, no-store và X-Content-Type-Options nosniff. Key thuộc question-files/, không thư mục hoặc segment . / .., đuôi .docx không phân biệt hoa/thường. Thiếu/key sai trả 400; S3 404 trả 404; lỗi S3 khác trả 500 với message chung. Không đổi DTO danh sách hoặc schema. [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
+
+## Frontend payment contracts — 2026-11-05
+
+Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit.
+
+Next BFF requires accessToken cookie, forwards server-side bearer authentication and returns private/no-store responses. Backend still enforces teacher/ownership.
+
+| Next route | Expected backend contract |
+| --- | --- |
+| GET /api/payment/plan | GET /payment/plan → {amount,currency,durationDays,available} |
+| POST /api/payment/orders | POST /payment/orders with validated Idempotency-Key(16–80 alphanumeric/hyphen), no body → PaymentOrder |
+| GET /api/payment/orders/{id} | GET /payment/orders/{id}; id64 lowercase hex; own order only |
+| POST /api/payment/orders/{id}/verify | POST /payment/orders/{id}/verify;503 preserves safe PAYMENT_VERIFICATION_UNAVAILABLE and Retry-After30 |
+| POST /api/payment/orders/{id}/return | POST /payment/orders/{id}/return; {parameters:[[name,value],...]},1–32 unique vnp_* pairs, name suffix1–64 alphanumeric/underscore, value max1024 chars |
+| GET /payment/vnpay/ipn | Exact public GET rewrite to BACKEND_URL/payment/vnpay/ipn, preserving callback query. No new Next route for IPN. |
+
+PaymentOrder={orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualReview}, status PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. UserEntity adds optional nullable plusExpiresAt. Return data are untrusted until a backend response;400/403/404 do not trigger client-side grant. Missing owned order404 is distinct from network/500/HTML404 and can offer an explicit new purchase. [Handler](../frontend/app/api/payment/handler.ts), [types](../frontend/domain/entities/payment.entity.ts).

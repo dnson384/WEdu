@@ -711,3 +711,9 @@ Cập nhật `development-decisions.md` khi:
 Không tự chuyển trạng thái chỉ vì code đã được thay đổi ngoài tài liệu.
 
 Khi một decision thay đổi implementation, cập nhật đồng thời các tài liệu liên quan theo `AGENTS.md`.
+
+## Frontend payment / PLUS — 2026-11-05
+
+Approved scope: teacher upgrade page at /me/bill with the shared navbar, a single20k VND/30day plan, and VNPay checkout in a separate tab. Backend decides availability, payment state and PLUS entitlement. New orders use the backend-provided5min expiry; frontend never extends it or grants access from a browser status code.
+
+Retain idempotency keys across retry/reload, open the payment tab synchronously, and preserve the original page for tracking. An owned-order404 permits only an explicit new purchase with a fresh key while retaining the old reference for reconciliation. Signed Return pairs go to authenticated backend validation and stay in tab memory only. Forward public GET IPN at the exact callback path; keep all other payment APIs protected. Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts).

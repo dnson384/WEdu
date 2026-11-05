@@ -55,11 +55,11 @@ export default function useNavBar() {
         router.push("/me");
       },
     },
-    ...(user.role === "ROLE_ADMIN"
+    ...(user.role !== "ROLE_TEACHER"
       ? []
       : [
           {
-            label: "Thanh toán",
+            label: "Nâng cấp tài khoản",
             icon: icons.creditCard,
             onClick: () => {
               router.push("/me/bill");

@@ -147,3 +147,15 @@ QuestionFileRow.onPreview → useQuestionFiles.previewFile → [QuestionFilePrev
 ## Backend question-file content — 2026-10-25
 
 GET /moderator/question-files/content?key=... → [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → [ModeratorUsecase.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) → [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) → S3Client.getObjectAsBytes. ROLE_MODERATOR, binary DOCX no-store; không đổi DTO/schema. [Contract](api-reference.md).
+
+## Frontend payment module — 2026-11-05
+
+- app/(site)/me/bill/page.tsx: plan, account, missing order, result and retry rendering. BillingLayout:shared Navbar.
+- usePayment: restore key/reference, openPaymentTab, beginPayment/startPayment/startNewPayment/continuePayment/verifyPayment, pendingReturn/reconcileOrder, updateOrder, polling/focus/overlap cleanup.
+- PaymentResult:status, verify and resume interactions.
+- PaymentService, PaymentUsecase, IPaymentRepository, PaymentRepositoryImpl: layer-specific plan/create/order/verify/confirmReturn calls.
+- app/api/payment/handler.ts and plan/orders/{id}/verify/return routes: authenticated BFF validation and safe503 handling.
+- PaymentPlan/PaymentOrder/PaymentReturnParameters:HTTP types; UserEntity.plusExpiresAt:nullable expiry.
+- useAuth:effective expiry/cache refresh; useNavBar:teacher upgrade navigation; next.config/proxy:exact public IPN forward.
+
+Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit. [Routes](api-reference.md#frontend-payment-contracts--2026-11-05), [hook](../frontend/presentation/hooks/Payment/usePayment.ts).

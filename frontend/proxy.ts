@@ -19,6 +19,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
+    (request.method === "GET" && pathname === "/payment/vnpay/ipn") ||
     publicPaths.some((p) => pathname.startsWith(p)) ||
     pathname.includes(".")
   ) {

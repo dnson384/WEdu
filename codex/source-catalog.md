@@ -670,3 +670,9 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 ## Backend preview content symbols — 2026-10-25
 
 [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) là GET /moderator/question-files/content, trả ResponseEntity<byte[]>; [ModeratorUsecase.getQuestionFileContent / validateQuestionFileKey](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) kiểm key/extension và ánh xạ lỗi; [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) đọc binary. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) có 15 cases MVC/security/usecase/storage mock.
+
+## Frontend payment inventory — 2026-11-05
+
+New files: BillingLayout; PaymentResult; usePayment; PaymentService; frontend PaymentUsecase; IPaymentRepository/PaymentRepositoryImpl; payment.entity.ts(PaymentPlan/PaymentOrder/PaymentReturnParameters); app/api/payment/handler.ts; plan/route.ts; orders/route.ts; orders/[id]/route.ts; orders/[id]/verify/route.ts; orders/[id]/return/route.ts.
+
+Changed files: Bill page; UserEntity.plusExpiresAt; useAuth expiry cache effect; useNavBar teacher navigation; next.config allowedDevOrigins/rewrites; proxy exact public GET IPN. No dependency/lockfile change. Validation uses six temporary harnesses without a tracked test runner. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [BFF](../frontend/app/api/payment/handler.ts), [Return route](../frontend/app/api/payment/orders/[id]/return/route.ts). Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit.

@@ -248,3 +248,9 @@ Preview chỉ đọc đi qua UI → hook → ModeratorService → Next GET conte
 ## Backend đọc DOCX cho preview — 2026-10-25
 
 [ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) → ModeratorUsecase.getQuestionFileContent → S3Service.readDocumentFile → S3Client.getObjectAsBytes. Backend quyết định quyền MODERATOR, kiểm prefix/key/.docx rồi trả binary no-store. Storage giữ ranh giới AWS; không gọi importer/Pandoc hoặc ghi database. validateQuestionFileKey được dùng chung với xóa, giữ nguyên điều kiện xóa. [API](api-reference.md).
+
+## Frontend payment boundaries — 2026-11-05
+
+Bill renders UI; usePayment owns popup/storage/query/reconciliation state. PaymentService → Next handlePayment → frontend PaymentUsecase → IPaymentRepository/PaymentRepositoryImpl → backend API. PaymentReturnParameters keeps URL key pairs intact for duplicate rejection. BFF bounds/validates requests, keeps bearer tokens server-side and masks provider failures. Backend alone validates signatures and grants PLUS.
+
+BillingLayout reuses Navbar. useNavBar offers upgrade only to ROLE_TEACHER; backend remains authority. next.config rewrites exact /payment/vnpay/ipn to BACKEND_URL; proxy bypasses JWT only for that exact GET, preserving protection for adjacent routes and private APIs. Return receipt lives only in a hook ref; React Query caches only server-returned state and protects SUCCEEDED from stale downgrade. Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit. [Service](../frontend/presentation/services/PaymentService.ts), [adapter](../frontend/infrastructure/repositories/PaymentRepositoryImpl.ts).

@@ -234,3 +234,11 @@ npm install báo 7 vulnerabilities (1 low, 4 high, 2 critical) trong dependency 
 Implemented theo source: GET /moderator/question-files/content giới hạn ROLE_MODERATOR và key question-files/ có đuôi .docx, trả binary DOCX no-store, 404 khi object không tồn tại và lỗi storage chung. Không đổi schema hoặc triển khai approval/UI. [Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
 
 Validation backend: mvn -q test đạt 207 tests, 0 failures/errors, gồm 15 tests content mới (binary/MIME/cache, key, quyền, 404 và lỗi S3) và regression xóa. S3Client được mock; chưa đọc AWS thật. git diff --cached --check đạt cho snapshot backend.
+
+## Frontend payment snapshot — 2026-11-05
+
+Implemented: teacher-only upgrade navigation, navbar/layout,20k/30day plan and account expiry display, new-tab checkout, persisted retry key/reference, owned-order polling,30s reconciliation/focus throttle, explicit recovery after missing-order404, signed Return forwarding, safe verify503 and exact GET IPN rewrite. Backend authority and authenticated BFF remain intact. Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit.
+
+Validation 2026-11-05: npm run build, TypeScript --noEmit --incremental false and ESLint for all20 frontend payment files passed. Six temporary harnesses passed: missing-order, signed Return, Return BFF, new-tab, reconciliation and IPN proxy. They mock services/React JSDOM and do not certify live sandbox payment, SMTP delivery or a browser checkout.
+
+Scope does not include backend code or merchant configuration. A missing/deleted order cannot be recovered as paid from its reference alone. A lost Return receipt still needs verified IPN/querydr; the provider's unsigned99 is not proof of payment. [Implementation](../frontend/presentation/hooks/Payment/usePayment.ts), [API](api-reference.md#frontend-payment-contracts--2026-11-05).

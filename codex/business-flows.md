@@ -190,3 +190,11 @@ Preview không có toolbar soạn thảo trực tiếp; moderator tải xuống 
 ## Backend cung cấp nội dung xem trước — 2026-10-25
 
 Moderator gọi GET /moderator/question-files/content với key từ danh sách → backend kiểm role/key/prefix/.docx → đọc object S3 → trả binary DOCX no-store. Object không còn trả 404; lỗi storage khác trả 500 chung. Đây là đọc nội dung, không sửa/lưu/import tài liệu hoặc chuyển trạng thái duyệt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md).
+
+## Frontend upgrade/payment flow — 2026-11-05
+
+Teacher chooses upgrade → /me/bill with shared navbar → read plan and effective account. Click opens a blank tab before awaiting create, clears opener, persists idempotency attempt, creates order, then navigates the new tab. Blocked popups create no order; failed create closes the tab and preserves key. An early closed tab retains the order and offers resume.
+
+Restore order reference from Return query, localStorage, then valid session attempt. Poll PENDING every5s; reconcile every30s/focus with overlap guards and backend throttle. Return pairs are captured before cleaning browser URL; after loading an owned order, backend confirmation is preferred to querydr. Cache grants success only from backend; transient receipt failures retry in tab, invalid400/403/404 receipts are discarded. Receipts/signatures are never persisted.
+
+On owned-order404, hide stale checkout and stop automatic reconciliation for that order; show the old reference and an explicit new-purchase action. Only that action retires the key; retain old references in localStorage as support data, not payment history. Querydr503 means awaiting confirmation, not failure. SUCCEEDED refreshes user cache; useAuth updates effective FREE at plusExpiresAt. Runtime payment requires the matching backend endpoints from [backend/feature/payment](https://github.com/dnson384/WEdu/tree/backend/feature/payment). This frontend branch is based on main and does not include that backend commit. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [result](../frontend/presentation/components/Payment/PaymentResult.tsx).
