@@ -159,3 +159,15 @@ GET /moderator/question-files/content?key=... → [ModeratorController.getQuesti
 - ServiceUnavailableException/GlobalExceptionHandler.handleServiceUnavailable:503 mapping; MailService.sendPaymentResultEmail:result delivery.
 
 [Payment source](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java).
+
+## Frontend payment module — 2026-11-06
+
+- app/(site)/me/bill/page.tsx: plan, account, missing order, result and retry rendering. BillingLayout:shared Navbar.
+- usePayment: restore key/reference, openPaymentTab, beginPayment/startPayment/startNewPayment/continuePayment/verifyPayment, pendingReturn/reconcileOrder, updateOrder, polling/focus/overlap cleanup.
+- PaymentResult:status, verify and resume interactions.
+- PaymentService, PaymentUsecase, IPaymentRepository, PaymentRepositoryImpl: layer-specific plan/create/order/verify/confirmReturn calls.
+- app/api/payment/handler.ts and plan/orders/{id}/verify/return routes: authenticated BFF validation and safe503 handling.
+- PaymentPlan/PaymentOrder/PaymentReturnParameters:HTTP types; UserEntity.plusExpiresAt:nullable expiry.
+- useAuth:effective expiry/cache refresh; useNavBar:teacher upgrade navigation; next.config/proxy:exact public IPN forward.
+
+Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Routes](api-reference.md#frontend-payment-contracts--2026-11-06), [hook](../frontend/presentation/hooks/Payment/usePayment.ts).

@@ -242,3 +242,11 @@ Implemented in source: teacher-only20k/30d purchases,5min new-order expiry, rand
 Validation 2026-11-05: payment/entitlement/gateway suite 64 passed, 5 Mongo integration tests skipped (no dedicated replica set). Full mvn -q test: 445 tests, 438 passed, 2 existing failures (AiUsageRepositoryImplTest.updatesOnlyExpectedRevisionAndAllowsClearingOneLimit; ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite), 5 skipped. No real VNPay/SMTP end-to-end certification.
 
 Known operational limits: sandbox querydr may return unsigned99 and IPN registration/delivery must be verified with VNPay. A code commit does not certify payment environment, reconstruct a deleted order or recover a lost signed Return receipt. Two existing AI/moderator test failures are outside payment scope.
+
+## Frontend payment snapshot — 2026-11-06
+
+Implemented: teacher-only upgrade navigation, navbar/layout,20k/30day plan and account expiry display, new-tab checkout, persisted retry key/reference, owned-order polling,30s reconciliation/focus throttle, explicit recovery after missing-order404, signed Return forwarding, safe verify503 and exact GET IPN rewrite. Backend authority and authenticated BFF remain intact. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base.
+
+Validation 2026-11-06: npm run build, TypeScript --noEmit --incremental false and ESLint for all20 frontend payment files passed. Six temporary harnesses passed: missing-order, signed Return, Return BFF, new-tab, reconciliation and IPN proxy. They mock services/React JSDOM and do not certify live sandbox payment, SMTP delivery or a browser checkout.
+
+Scope does not include backend code or merchant configuration. A missing/deleted order cannot be recovered as paid from its reference alone. A lost Return receipt still needs verified IPN/querydr; the provider's unsigned99 is not proof of payment. [Implementation](../frontend/presentation/hooks/Payment/usePayment.ts), [API](api-reference.md#frontend-payment-contracts--2026-11-06).

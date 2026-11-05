@@ -147,3 +147,11 @@ No new dependency. Java HmacSHA512/SecureRandom, Spring RestClient(connect5s/rea
 Restart backend to load endpoints/index creation; Mongo must support transactions and creating the unique sparse request hash index. Register an externally reachable HTTPS /payment/vnpay/ipn URL with VNPay separately; source code does not configure the merchant. Return receipts and querydr are independently verified by backend. Optional Mongo integration tests require WEDU_PAYMENT_TEST_MONGO_URI pointing to a dedicated test replica set and use a fresh wedu_payment_test_<uuid> database.
 
 Validation 2026-11-05: payment/entitlement/gateway suite 64 passed, 5 Mongo integration tests skipped (no dedicated replica set). Full mvn -q test: 445 tests, 438 passed, 2 existing failures (AiUsageRepositoryImplTest.updatesOnlyExpectedRevisionAndAllowsClearingOneLimit; ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite), 5 skipped. No real VNPay/SMTP end-to-end certification.
+
+## Frontend payment setup — 2026-11-06
+
+No new dependency or package script; Next/React/TypeScript, TanStack Query and Axios remain in use. Set server-side BACKEND_URL to reachable Spring API; the existing adapter also retains development/production backend URL fallbacks. Never put merchant credentials in NEXT_PUBLIC variables. Rewrite creation requires BACKEND_URL and a frontend restart/build after config edits. Current development origin allows pessimism-shimmy-expansive.ngrok-free.dev.
+
+Register the externally reachable HTTPS /payment/vnpay/ipn URL with VNPay separately. /me/bill is the Return page, not the IPN endpoint. Signed receipts are kept in memory and stripped from the browser address; reload/closing the tab can lose an unconfirmed receipt, so IPN/querydr still matter. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base.
+
+Validation 2026-11-06: npm run build, TypeScript --noEmit --incremental false and ESLint for all20 frontend payment files passed. Six temporary harnesses passed: missing-order, signed Return, Return BFF, new-tab, reconciliation and IPN proxy. They mock services/React JSDOM and do not certify live sandbox payment, SMTP delivery or a browser checkout.

@@ -678,3 +678,9 @@ Source additions: PaymentController; PaymentDTO.Plan/Order/ReturnConfirmation; P
 Changed symbols: GlobalExceptionHandler.handleServiceUnavailable; CommonUserResponseDTO/CommonUserResponseAllDTO.plusExpiresAt; UserEntity/UserDocument.plusExpiresAt; UserDTOMapper effective accountType; UserRepositoryImpl.grantPlus/updateRole/updatePassword; UserUsecase/UserService.grantPaidPlus; MailService.sendPaymentResultEmail; SecurityConstants public IPN. Auth/storage/user test fixtures include the new nullable DTO field.
 
 New tests: PaymentControllerTest, PaymentJobsTest, PaymentMongoIntegrationTest, PaymentPersistenceTest, PaymentUsecaseTest, PlusEntitlementTest, VnpayGatewayTest and infrastructure/VnpayQueryGatewayTest under [payment tests](../backend/src/test/java/com/wedu/exam_creation/payment/PaymentUsecaseTest.java). [Module map](module-map.md#backend-payment-module--2026-11-05).
+
+## Frontend payment inventory — 2026-11-06
+
+New files: BillingLayout; PaymentResult; usePayment; PaymentService; frontend PaymentUsecase; IPaymentRepository/PaymentRepositoryImpl; payment.entity.ts(PaymentPlan/PaymentOrder/PaymentReturnParameters); app/api/payment/handler.ts; plan/route.ts; orders/route.ts; orders/[id]/route.ts; orders/[id]/verify/route.ts; orders/[id]/return/route.ts.
+
+Changed files: Bill page; UserEntity.plusExpiresAt; useAuth expiry cache effect; useNavBar teacher navigation; next.config allowedDevOrigins/rewrites; proxy exact public GET IPN. No dependency/lockfile change. Validation uses six temporary harnesses without a tracked test runner. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [BFF](../frontend/app/api/payment/handler.ts), [Return route](../frontend/app/api/payment/orders/[id]/return/route.ts). Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base.
