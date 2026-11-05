@@ -230,3 +230,20 @@ JWT/ROLE_TEACHER required except GET IPN; owner mismatch returns 404; responses 
 | GET /payment/vnpay/ipn | Public server callback, rejects duplicate query keys. {RspCode,Message}:00 accepted,01 missing,02 already confirmed,04 amount mismatch,97 invalid signature/parameters,99 retry. |
 
 PaymentDTO.Order: {orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualReview}; statuses PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. New expiry is createdAt+300s; checkout URL exists only while payable. Common user DTOs add nullable plusExpiresAt; accountType is effective FREE after expiry. JWT claims/roles stay unchanged. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/PaymentController.java), [DTO](../backend/src/main/java/com/wedu/exam_creation/payment/dto/PaymentDTO.java).
+
+## Frontend payment contracts — 2026-11-06
+
+Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base.
+
+Next BFF requires accessToken cookie, forwards server-side bearer authentication and returns private/no-store responses. Backend still enforces teacher/ownership.
+
+| Next route | Expected backend contract |
+| --- | --- |
+| GET /api/payment/plan | GET /payment/plan → {amount,currency,durationDays,available} |
+| POST /api/payment/orders | POST /payment/orders with validated Idempotency-Key(16–80 alphanumeric/hyphen), no body → PaymentOrder |
+| GET /api/payment/orders/{id} | GET /payment/orders/{id}; id64 lowercase hex; own order only |
+| POST /api/payment/orders/{id}/verify | POST /payment/orders/{id}/verify;503 preserves safe PAYMENT_VERIFICATION_UNAVAILABLE and Retry-After30 |
+| POST /api/payment/orders/{id}/return | POST /payment/orders/{id}/return; {parameters:[[name,value],...]},1–32 unique vnp_* pairs, name suffix1–64 alphanumeric/underscore, value max1024 chars |
+| GET /payment/vnpay/ipn | Exact public GET rewrite to BACKEND_URL/payment/vnpay/ipn, preserving callback query. No new Next route for IPN. |
+
+PaymentOrder={orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualReview}, status PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. UserEntity adds optional nullable plusExpiresAt. Return data are untrusted until a backend response;400/403/404 do not trigger client-side grant. Missing owned order404 is distinct from network/500/HTML404 and can offer an explicit new purchase. [Handler](../frontend/app/api/payment/handler.ts), [types](../frontend/domain/entities/payment.entity.ts).

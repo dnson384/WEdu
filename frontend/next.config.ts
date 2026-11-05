@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["pessimism-shimmy-expansive.ngrok-free.dev"],
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL?.replace(/\/+$/, "");
+    return backendUrl
+      ? [{
+          source: "/payment/vnpay/ipn",
+          destination: `${backendUrl}/payment/vnpay/ipn`,
+        }]
+      : [];
+  },
   experimental: {
     // Match Spring's multipart request limit so a multi-image edit is not truncated by the proxy.
     proxyClientMaxBodySize: 65 * 1024 * 1024,
