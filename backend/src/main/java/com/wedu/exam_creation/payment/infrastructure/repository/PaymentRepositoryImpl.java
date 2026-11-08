@@ -23,6 +23,32 @@ public class PaymentRepositoryImpl implements IPaymentRepository {
     private final MongoTemplate mongoTemplate;
     private final PaymentMapper paymentMapper;
 
+    private Query transactionQuery(String keyword, String status, Instant from, Instant to) {
+        Query query = new Query();
+        if (!keyword.isEmpty()) query.addCriteria(new Criteria().orOperator(
+                Criteria.where("_id").is(keyword), Criteria.where("transactionNo").is(keyword),
+                Criteria.where("email").regex(java.util.regex.Pattern.quote(keyword), "i")));
+        if (!status.isEmpty()) query.addCriteria(Criteria.where("status").is(status));
+        if (from != null || to != null) {
+            Criteria dates = Criteria.where("createdAt");
+            if (from != null) dates.gte(from);
+            if (to != null) dates.lt(to);
+            query.addCriteria(dates);
+        }
+        return query;
+    }
+
+    public List<PaymentOrderEntity> searchTransactions(String keyword, String status, Instant from, Instant to, int page) {
+        Query query = transactionQuery(keyword, status, from, to)
+                .with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt", "_id"))
+                .skip((long) page * 10).limit(10);
+        return mongoTemplate.find(query, PaymentOrderDocument.class).stream().map(paymentMapper::toEntity).toList();
+    }
+
+    public long countTransactions(String keyword, String status, Instant from, Instant to) {
+        return mongoTemplate.count(transactionQuery(keyword, status, from, to), PaymentOrderDocument.class);
+    }
+
     public PaymentOrderEntity find(String id) {
         PaymentOrderDocument paymentOrderDocument = mongoTemplate.findById(id, PaymentOrderDocument.class);
         return paymentMapper.toEntity(paymentOrderDocument);
