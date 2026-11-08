@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import useNavBar from "@/presentation/hooks/layout/useNavBar";
 import useAuth from "@/presentation/hooks/Auth/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Files, ShieldCheck, Library, Activity, Users } from "lucide-react";
+import { Files, ShieldCheck, Library, Activity, Users, CreditCard } from "lucide-react";
 
 interface Data {
   avatarUrl: string;
@@ -89,6 +89,11 @@ export default function NavBar({ avatarUrl, username }: Data) {
             name: "Quản lý AI",
             href: "/admin/ai",
             icon: <Activity size={20} />,
+          },
+          {
+            name: "Quản lý giao dịch",
+            href: "/admin/transactions",
+            icon: <CreditCard size={20} />,
           },
         ]
       : navLinks;
