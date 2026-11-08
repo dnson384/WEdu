@@ -1,5 +1,11 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Luồng hiện tại đã có quản lý tài khoản/AI, kiểm duyệt tệp/câu hỏi AI và mua PLUS. Giá20.000đ/30 ngày; đơn mới có5 phút thanh toán, retry giữ expiry cũ. IPN, querydr hoặc Return có chữ ký được backend kiểm tra mới ghi nhận kết quả.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Cấu hình giới hạn AI — 2026-11-01
 
 1. ADMIN vào `/admin/ai`, xem giới hạn đã lưu và chọn **Cấu hình giới hạn** để mở form tại chỗ. Form điền sẵn cấu hình; Hủy bỏ draft, mở lại dùng dữ liệu đã lưu.
@@ -57,7 +63,7 @@ Luồng chỉ chỉnh sửa, không approve hoặc regenerate. [Editor](../front
 
 Moderator mở `/moderator/review`, UI gọi GET pending qua Next proxy access cookie → Bearer. Backend kiểm tra ROLE_MODERATOR; chỉ đọc Questions.status=PENDING_REVIEW, filter nội dung/chương/bài/loại câu trước count/phân trang cố định 10. Trả mới nhất trước, tên chương/bài và ảnh presigned; không có chương/bài dùng nhãn dự phòng. UI có tổng số, Trang trước/sau, loading/error/retry/empty; đổi bộ lọc trở lại trang 0, tìm kiếm debounce 300 ms. Không lấy từ QuestionsReview.regeneratedQuestions; không backfill legacy null, không thay việc dùng câu AI trong đề.
 
-Duyệt thẳng, Chỉnh sửa, Từ chối – yêu cầu regenerate vẫn chỉ giao diện; không ghi APPROVED/REJECTED, không gọi AI, không tạo snapshot/audit hoặc gửi thông báo. [Contract](api-reference.md), [page](../frontend/app/(site)/moderator/review/page.tsx).
+Tại snapshot 2026-10-27, Duyệt thẳng, Chỉnh sửa, Từ chối – yêu cầu regenerate mới chỉ giao diện; không ghi APPROVED/REJECTED, không gọi AI, không tạo snapshot/audit hoặc gửi thông báo. [Contract](api-reference.md), [page](../frontend/app/(site)/moderator/review/page.tsx).
 
 ## Collection câu hỏi cần duyệt — 2026-10-26
 
@@ -135,7 +141,7 @@ List S3 duyệt tất cả trang bằng continuation token, bỏ object kết th
 
 Quy tắc conditional write dựa trên [AWS S3 conditional writes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html). Trùng tên xét object hiện tại; key đã xóa hoặc có current delete marker có thể được dùng lại, không bảo đảm tên duy nhất trong toàn bộ version history. Lỗi mạng sau khi S3 đã nhận file vẫn có thể khiến người dùng gửi lại thành một bản mới; thay đổi này chống ghi đè, không bổ sung idempotency theo nội dung.
 
-UI list có loading/empty/error/retry/refetch và tải xuống. Query key `["moderator-question-files", user.id]`, enabled theo role MODERATOR, staleTime 0, refetchOnMount always, retry false. Login/root điều hướng moderator tới `/moderator/question-files`; navbar có menu theo role, vào mục files invalidate query prefix. Login/logout dùng QueryClient từ provider, cancel/clear cache để hạn chế dữ liệu người dùng cũ. `/moderator/review` và `/moderator/question-bank` chỉ là placeholders.
+UI list có loading/empty/error/retry/refetch và tải xuống. Query key `["moderator-question-files", user.id]`, enabled theo role MODERATOR, staleTime 0, refetchOnMount always, retry false. Login/root điều hướng moderator tới `/moderator/question-files`; navbar có menu theo role, vào mục files invalidate query prefix. Login/logout dùng QueryClient từ provider, cancel/clear cache để hạn chế dữ liệu người dùng cũ. `/moderator/review` đã nối danh sách/editor/approve/reject/regenerate; chỉ `/moderator/question-bank` còn placeholder.
 
 **Đối chiếu source 2026-10-25:** UI upload hiện ghi 50 MB, backend kiểm 50 MiB; service `uploadFileToQuestionBank` đã khai báo `Promise<string>`/Axios string, khớp S3 key trả về. `/storage/question-bank`, `/api/storage/question-bank` và GET `/storage/documents` đã không còn trong route source hiện tại. Không coi tên method cũ `uploadFileToQuestionBank` là endpoint còn tồn tại.
 
@@ -178,8 +184,8 @@ Bằng chứng: [Next export route](../frontend/app/api/exporter/exam/route.ts),
 ## 10. Giao dịch, PLUS và câu hỏi cần xác nhận
 
 - **Giao dịch dữ liệu implemented:** MongoTransactionManager, annotations trong importer/exam/đổi mật khẩu/repository; không phải payment transaction hoặc distributed transaction. Bằng chứng [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java), `ExamUsecase.generateExam`, `ImporterService.parseDocument`, `AuthUsecase.changePassword`.
-- **Thanh toán missing**, UI **partial**: [Bill](../frontend/app/(site)/me/bill/page.tsx) chỉ hiển thị text; chưa thấy gateway, webhook, invoice/payment collection, trạng thái pending/paid/failed/refund hoặc API upgrade account. `accountType` chỉ được tạo FREE/đọc PLUS trong các luồng đã khảo sát. Không suy ra người dùng mua PLUS được bằng app hiện tại.
-- **unknown cần chủ dự án xác nhận:** file/câu AI phải được duyệt trước khi dùng hay sau khi dùng? Teacher và moderator liên kết submission ra sao? Admin có nên kiêm moderator? Ai cấp PLUS, thời hạn/quota thế nào? Sinh thiếu có được coi thành công? Chính sách matrix mặc định và hỗ trợ Tự luận có chủ đích gì? Reset password có cần thu hồi toàn bộ phiên? Chapter name có duy nhất xuyên môn không? “Giao dịch” mong muốn là thanh toán hay transaction dữ liệu?
+- **Thanh toán implemented trong source:** Bill/usePayment → BFF → PaymentUsecase; PaymentOrders/PaymentEmails, signed checkout, IPN/querydr/Return, transaction cấp PLUS và outbox email. Chưa chứng nhận sandbox end-to-end; xem [trạng thái](current-status.md).
+- **unknown cần chủ dự án xác nhận:** file/câu AI phải được duyệt trước khi dùng hay sau khi dùng? Teacher và moderator liên kết submission ra sao? Admin có nên kiêm moderator? PLUS đã chốt20.000đ/30 ngày, không thêm quota mới; các thay đổi ngoài gói này cần quyết định riêng. Sinh thiếu có được coi thành công? Chính sách matrix mặc định và hỗ trợ Tự luận có chủ đích gì? Reset password có cần thu hồi toàn bộ phiên? Chapter name có duy nhất xuyên môn không? “Giao dịch” mong muốn là thanh toán hay transaction dữ liệu?
 
 ## Xem trước tệp câu hỏi chỉ đọc — 2026-10-25
 

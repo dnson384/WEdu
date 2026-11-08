@@ -1,5 +1,11 @@
 # Kiến trúc WEdu hiện tại
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Các ranh giới dưới đây gồm module payment, quản lý AI và kiểm duyệt câu hỏi đã có source. Payment dùng chung transaction xử lý kết quả IPN/querydr/Return, không coi browser redirect tự nó là xác nhận; ranh giới BFF/JWT và backend owner/role giữ nguyên.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Khu vực ADMIN hai tính năng — 2026-11-01
 
 Frontend thêm khu vực tài khoản ADMIN theo đúng component → hook → service → BFF → usecase → port/adapter → backend hiện có. Phân quyền backend, persistence và wire contract giữ nguyên. AdminUserEntity dùng isActive nullable của CommonUserResponseDTO; không sửa profile UserEntity/isActived toàn hệ thống.
@@ -125,7 +131,7 @@ Constructor injection phổ biến; MapStruct dùng `componentModel = "spring"`,
 | `chapter`, `question` | Chương/bài/thống kê ngân hàng; persistence câu hỏi, chọn câu, phối hợp AI/Telegram. |
 | `draft` | Nháp, chọn chương/bài, matrix/matrixDetails qua `DraftUtil`; dùng chapter service. |
 | `exam` | Đọc draft theo owner, lấy chương/bài, gọi question service, lưu nhóm ID câu hỏi; chi tiết trả ảnh qua presigned URL. |
-| `moderator`, `importer` | Moderator list/download qua S3Service; parse multipart qua Pandoc rồi importer lưu chapter/question. List chưa nối tự động sang parse/review. |
+| `moderator`, `importer` | S3 list/content/approve/reject DOCX đã nối vào UI; câu hỏi AI có review/editor/regenerate qua ReviewPendingQuestionUsecase. Import vẫn gọi Pandoc và lưu chapter/question; importer không được refactor ngoài phạm vi đã duyệt. |
 | `exporter` | ExamService kiểm tra owner/lấy đề; tải ảnh, chuẩn hóa payload rồi gọi Express. |
 | `storage`, `ai`, `notification/telegram`, `mail` | Tích hợp S3, DeepSeek, Telegram và SMTP. |
 
@@ -163,7 +169,7 @@ KaTeX hiển thị công thức. Template `<math_N>`/`<img_N>` cùng variables m
 
 ## 7. S3, import, AI và export
 
-- **S3:** [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) tách uploadImageFile (JPEG/PNG, UUID, avatar 5 MiB) và updateDocumentFile (DOCX ZIP entries, key email-PascalCase filename, 50 MiB). Từ 2026-10-25, uploadUniqueDocumentFile dùng conditional PUT `If-None-Match: *`, thử hậu tố `(n)` khi trùng; chống ghi đè tại S3 kể cả nhiều instance, không cần khóa trong JVM hoặc schema MongoDB. POST `/storage/question-file` lưu `question-files/<subject>/...` và trả key thực tế; GET `/moderator/question-files` list tất cả trang và tạo attachment download URL 60 phút qua ModeratorUsecase. Next `/api/moderator/question-files` no-store và UI `/moderator/question-files` xử lý loading/empty/error/download. UI upload hiện ghi 50 MB và StorageService typed string; chưa có approval state. [Luồng đầy đủ](business-flows.md#5-upload-docx-danh-sách-file-và-kiểm-duyệt).
+- **S3:** [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) tách uploadImageFile (JPEG/PNG, UUID, avatar 5 MiB) và updateDocumentFile (DOCX ZIP entries, key email-PascalCase filename, 50 MiB). Từ 2026-10-25, uploadUniqueDocumentFile dùng conditional PUT `If-None-Match: *`, thử hậu tố `(n)` khi trùng; chống ghi đè tại S3 kể cả nhiều instance, không cần khóa trong JVM hoặc schema MongoDB. POST `/storage/question-file` lưu `question-files/<subject>/...` và trả key thực tế; GET `/moderator/question-files` list tất cả trang và tạo attachment download URL 60 phút qua ModeratorUsecase. Next `/api/moderator/question-files` no-store và UI `/moderator/question-files` xử lý loading/empty/error/download. UI upload ghi50 MB và StorageService typed string; duyệt/từ chối tệp đã có nhưng không có submission state/audit trong database. [Luồng đầy đủ](business-flows.md#5-upload-docx-danh-sách-file-và-kiểm-duyệt).
 - **Import:** `/moderator/parse` chạy executable `pandoc` trên PATH, ghi workspace `static/uploads/pandoc_<uuid>`, chuyển DOCX thành JSON AST, extract media lên S3 `media/`, parse rồi lưu MongoDB. Code dọn workspace. Docker runtime chưa cài Pandoc hoặc chuẩn bị thư mục ghi này.
 - **Sinh đề:** chọn ngẫu nhiên theo lesson, dạng bài, độ khó, learning outcome, loại câu; loại câu đã chọn khỏi pool tránh lặp. Khi thiếu, trả thông tin thiếu; chỉ `accountType == "PLUS"` gọi AI bù. Câu AI được lưu và Telegram báo cần review; QuestionDocument.status lưu PENDING_REVIEW cho AI, APPROVED cho parse; chưa có bộ lọc approved trong luồng chọn này.
 - **DeepSeek:** RestClient gọi `/chat/completions`, model cấu hình `deepseek-flash`, yêu cầu JSON object, parse `choices[0].message.content`. Property timeout 30 giây chưa nối vào HTTP client. Kết quả được gán theo thứ tự/số lượng request; cần giữ hoặc kiểm tra contract đó khi thay đổi.
@@ -197,7 +203,7 @@ Browser gọi Next API với HttpOnly cookies; Next server đổi cookie thành 
 
 Google OAuth là nhánh **partial**, tạo thêm role `ROLE_USER` ngoài các role admin use case chấp nhận; accountType chưa set khi create, cookie snake_case và redirect khác local flow. Không xem OAuth hoặc quyền ADMIN kiêm MODERATOR là hoàn thiện. Nguồn: [CustomOAuth2UserService.loadUser](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java), [OAuth handler](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/handler/OAuth2AuthenticationSuccessHandler.java), [SecurityConstants](../backend/src/main/java/com/wedu/exam_creation/security/constant/SecurityConstants.java).
 
-Moderator đã có list/download file S3 qua UI, nhưng review file/câu AI chưa có persisted state machine: list và multipart parse là hai operation riêng; AI questions được insert và dùng trong exam rồi thông báo Telegram. Payment là **missing** ở backend, **partial** ở trang Bill placeholder. Mongo transaction khác với giao dịch tiền. Nguồn: [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [QuestionService.generateExamQuestions](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [Bill](../frontend/app/(site)/me/bill/page.tsx), [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java).
+Moderator đã có list/content/approve/reject DOCX qua S3 và workflow kiểm duyệt câu hỏi AI với snapshot/revision trong QuestionsReview. Tệp S3 không có persisted submission/audit; đây là giới hạn riêng với workflow câu hỏi. Payment có backend/frontend, PaymentOrders/PaymentEmails, signed IPN/querydr/Return và transaction cấp PLUS/outbox. Mongo transaction của import/exam không rollback các side effects HTTP/S3 đã gửi. Bằng chứng: [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [ReviewPendingQuestionUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java).
 
 ```mermaid
 sequenceDiagram

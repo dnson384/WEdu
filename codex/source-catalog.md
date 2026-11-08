@@ -1,5 +1,33 @@
 # Source catalogue WEdu
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Thống kê source hiện tại (không tính node_modules/.next/target): **260 Java files** dưới backend/src/main/java, **262 .ts/.tsx files** của frontend và **9 TypeScript files** exporter-service/src. Danh mục lịch sử bên dưới được giữ để truy vết; source hiện tại và [module map](module-map.md) quyết định symbol đang dùng.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
+### Inventory payment hiện tại
+
+| File | Nhóm |
+| --- | --- |
+| [common/exception/ServiceUnavailableException.java](../backend/src/main/java/com/wedu/exam_creation/common/exception/ServiceUnavailableException.java) | Backend payment/entitlement |
+| [payment/controller/PaymentController.java](../backend/src/main/java/com/wedu/exam_creation/payment/controller/PaymentController.java) | Backend payment/entitlement |
+| [payment/domain/entity/PaymentEmailEntity.java](../backend/src/main/java/com/wedu/exam_creation/payment/domain/entity/PaymentEmailEntity.java) | Backend payment/entitlement |
+| [payment/domain/entity/PaymentOrderEntity.java](../backend/src/main/java/com/wedu/exam_creation/payment/domain/entity/PaymentOrderEntity.java) | Backend payment/entitlement |
+| [payment/domain/repository/IPaymentRepository.java](../backend/src/main/java/com/wedu/exam_creation/payment/domain/repository/IPaymentRepository.java) | Backend payment/entitlement |
+| [payment/dto/PaymentDTO.java](../backend/src/main/java/com/wedu/exam_creation/payment/dto/PaymentDTO.java) | Backend payment/entitlement |
+| [payment/infrastructure/document/PaymentEmailDocument.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentEmailDocument.java) | Backend payment/entitlement |
+| [payment/infrastructure/document/PaymentOrderDocument.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentOrderDocument.java) | Backend payment/entitlement |
+| [payment/infrastructure/mapper/PaymentMapper.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/mapper/PaymentMapper.java) | Backend payment/entitlement |
+| [payment/infrastructure/PaymentSchedulingConfig.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/PaymentSchedulingConfig.java) | Backend payment/entitlement |
+| [payment/infrastructure/repository/PaymentRepositoryImpl.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/repository/PaymentRepositoryImpl.java) | Backend payment/entitlement |
+| [payment/infrastructure/VnpayGateway.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayGateway.java) | Backend payment/entitlement |
+| [payment/infrastructure/VnpayProperties.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayProperties.java) | Backend payment/entitlement |
+| [payment/infrastructure/VnpayQueryException.java](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayQueryException.java) | Backend payment/entitlement |
+| [payment/usecase/PaymentJobs.java](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentJobs.java) | Backend payment/entitlement |
+| [payment/usecase/PaymentUsecase.java](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java) | Backend payment/entitlement |
+| [user/domain/entity/PlusEntitlement.java](../backend/src/main/java/com/wedu/exam_creation/user/domain/entity/PlusEntitlement.java) | Backend payment/entitlement |
+
 ## Cấu hình giới hạn AI — 2026-11-01
 
 Inventory tính năng gồm 4 file frontend trong commit `476fb98` trên `frontend/feature/ai-management` và 4 docs dưới đây. Commit tài liệu trên main chỉ chứa 4 docs; tại base `11db659`, main chưa chứa frontend `476fb98`. Không đổi backend, contract hoặc schema.
@@ -303,7 +331,7 @@ Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creatio
 [Contracts](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Không thêm model persistence hoặc đổi parser.
 
 
-Snapshot working tree 2026-10-24, gồm staged/unstaged/untracked files. Chỉ mục này xác nhận file tồn tại, không chứng nhận feature hoàn tất hoặc đã deploy. [Module map](module-map.md), [API reference](api-reference.md), [database schema](database-schema.md), [current status](current-status.md). Chỉ đọc feature cần sửa để giảm context.
+Đối chiếu source working tree 2026-11-06, không lấy generated artifacts hoặc thư mục dependency làm implementation. Chỉ mục này xác nhận file tồn tại, không chứng nhận feature hoàn tất hoặc đã deploy. [Module map](module-map.md), [API reference](api-reference.md), [database schema](database-schema.md), [current status](current-status.md). Chỉ đọc feature cần sửa để giảm context.
 
 ## Backend theo feature/layer
 

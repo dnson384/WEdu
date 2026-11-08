@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Đã có cả backend và frontend payment/PLUS trong working tree; các nhãn missing/partial bên dưới đã được sửa theo phạm vi source. Lượt đồng bộ này chỉ đọc source và sửa Markdown, không chạy lại build/tests hoặc gọi VNPay/MongoDB/AWS/SMTP.
+
+Kiểm tra tài liệu 2026-11-06: 1.478 liên kết nội bộ đều trỏ tới file/thư mục tồn tại; không phát hiện anchor trỏ tới heading không tồn tại trong các liên kết đã kiểm tra. Bảng declaration khớp 54 endpoint Spring, 51 handler Next và 12 root collections; code fences cân bằng và `git diff --check` đạt. Chỉ 10 file Markdown trong codex/ thay đổi; không sửa application/config/schema. Các kết quả Maven/build được giữ theo lần chạy trước, không coi đây là một lần chạy mới.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Cấu hình giới hạn AI — 2026-11-01
 
 Snapshot implementation/validation bên dưới thuộc commit `476fb98` trên `frontend/feature/ai-management`. Khi chuẩn bị commit tài liệu, `main`/`origin/main` đang ở `11db659`, chưa chứa commit frontend này; đây không phải xác nhận tính năng đã merge hoặc deploy trên main.
@@ -126,6 +134,8 @@ Khảo sát source trong working tree ngày 2026-10-24, gồm thay đổi chưa 
 - **missing:** không tìm thấy implementation trong phạm vi source/manifest/route/document đã khảo sát; không khẳng định dịch vụ ngoài repo không tồn tại.
 - **unknown:** source không đủ để kết luận (deployment, dữ liệu/index thật, quy trình con người, ý định sản phẩm).
 
+Các số test gắn với ngày cũ chỉ mô tả lần chạy đó, không phải kết quả của snapshot hôm nay.
+
 “Đang triển khai” không thể suy ra thời gian/kế hoạch từ file tồn tại; dùng **partial** cho phần code dở dang, không tự gán roadmap. Bản đồ symbols/API ở [module-map.md](module-map.md); dữ liệu ở [database-schema.md](database-schema.md).
 
 ## Ma trận tính năng
@@ -138,7 +148,7 @@ Khảo sát source trong working tree ngày 2026-10-24, gồm thay đổi chưa 
 | Google OAuth2 end-to-end | partial | [OAuth service](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java), [success handler](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/handler/OAuth2AuthenticationSuccessHandler.java); role/cookie/path/redirect/persistence khác local flow. |
 | Profile, username, avatar | profile/username implemented; avatar partial | [UserUsecase](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [avatar adapter](../frontend/infrastructure/repositories/userRepositoryImpl.ts), [hook](../frontend/presentation/hooks/Me/useUpdateAvatar.ts); frontend avatar endpoint/cache còn lệch, không chứng nhận e2e. |
 | Admin user APIs | implemented | [AdminController](../backend/src/main/java/com/wedu/exam_creation/admin/controller/AdminController.java), [AdminUsecase](../backend/src/main/java/com/wedu/exam_creation/admin/usecase/AdminUsecase.java), [Next admin routes](../frontend/app/api/admin); search/list/role/lock/unlock/delete. |
-| Admin management screen | missing | App Router page inventory trong [module-map.md](module-map.md) chưa có admin page; có API/services/usecases không đồng nghĩa có screen. |
+| Admin management screen | implemented | [AdminUsersPage](<../frontend/app/(site)/admin/users/page.tsx>), [AiManagementPage](<../frontend/app/(site)/admin/ai/page.tsx>), layout/role navigation; ADMIN có hai tính năng chính quản lý tài khoản và AI. |
 | Chapter listing | implemented | [ChapterController](../backend/src/main/java/com/wedu/exam_creation/chapter/controller/ChapterController.java), [ChapterRepositoryImpl](../backend/src/main/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImpl.java). |
 | Draft create/read/update chapter/lesson/delete | implemented | [DraftUsecase](../backend/src/main/java/com/wedu/exam_creation/draft/usecase/DraftUsecase.java), [DraftRepositoryImpl](../backend/src/main/java/com/wedu/exam_creation/draft/infrastructure/repository/DraftRepositoryImpl.java), [generate pages](../frontend/app/(site)/generate). |
 | Matrix/matrixDetails auto-generation | implemented | [DraftUtil](../backend/src/main/java/com/wedu/exam_creation/draft/usecase/util/DraftUtil.java), generate endpoints; deterministic ratios/allocation, không stock-aware. |
@@ -152,12 +162,12 @@ Khảo sát source trong working tree ngày 2026-10-24, gồm thay đổi chưa 
 | Upload DOCX | implemented theo source; hàng chờ persisted missing | [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java) dùng updateDocumentFile, `.docx` + ZIP entries, ≤50 MiB; UI hiện 50 MB và StorageService typed string S3 key. Tên trùng thêm `(n)` qua conditional PUT. Không có submission state. |
 | Moderator parse/import DOCX | implemented (source), vận hành unknown | [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [ImporterService](../backend/src/main/java/com/wedu/exam_creation/importer/service/ImporterService.java), [PandocConverter](../backend/src/main/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverter.java). Input multipart trực tiếp; phụ thuộc Pandoc. |
 | Moderator list/download question files | implemented theo source | [ModeratorUsecase.listQuestionFiles](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [S3Service.listQuestionFiles](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [Next GET](../frontend/app/api/moderator/question-files/route.ts), [files page](../frontend/app/(site)/moderator/question-files/page.tsx); role MODERATOR, pagination S3, signed download URL, loading/empty/error/retry/refetch. |
-| File approve/reject implemented; câu hỏi/AI và audit missing | partial | Có approve/reject API cho file; không submission/review fields hoặc audit; [review page](../frontend/app/(site)/moderator/review/page.tsx) và [bank page](../frontend/app/(site)/moderator/question-bank/page.tsx) mới placeholder. |
+| Kiểm duyệt tệp và câu hỏi AI | implemented trong phạm vi đã duyệt; audit bền vững missing | Duyệt/từ chối DOCX qua S3; [ReviewPendingQuestionUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java) và [review page](<../frontend/app/(site)/moderator/review/page.tsx>) đã nối approve/reject/regenerate/editor, guard revision và tối đa5 lượt. Question-bank page còn placeholder; không đồng nhất với review page. |
 | Telegram review/cleanup notifications | implemented | [TelegramNotificationService](../backend/src/main/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationService.java), call sites QuestionService/UserUsecase; chỉ gửi message, không review state machine. |
-| PLUS entitlement/accountType read | implemented | User tạo FREE; QuestionService đọc PLUS. |
-| Mua/nâng PLUS, payment/webhook/invoice | missing; UI partial | [Bill](../frontend/app/(site)/me/bill/page.tsx) chỉ placeholder; không payment module/collection/dependency trong inventory. Cách PLUS được cấp ngoài repo unknown. |
+| PLUS entitlement/accountType read | implemented | [PlusEntitlement](../backend/src/main/java/com/wedu/exam_creation/user/domain/entity/PlusEntitlement.java): plusExpiresAt, FREE hiệu lực khi hết hạn, giữ PLUS legacy không có hạn; grant từ kết quả thanh toán đã xác thực. |
+| Thanh toán VNPay / PLUS | implemented trong source; vận hành sandbox chưa chứng nhận | [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [usePayment](../frontend/presentation/hooks/Payment/usePayment.ts): gói 20.000đ/30 ngày, đơn mới5 phút, checkout tab mới, IPN/querydr/Return backend xác thực, transaction cấp PLUS/outbox. Querydr lỗi trả503; signed Return cần receipt đầy đủ, IPN phải đăng ký riêng. |
 | MongoDB transactions | implemented cấu hình/code | [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java); runtime topology và kết quả rollback unknown. Không phải distributed transaction. |
-| Automatic tests | partial | Backend có auth/user/storage, thêm [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java), `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại). Có test legacy route đã bị xóa; chưa chạy tests trong lượt cập nhật tài liệu. Frontend/exporter chưa có test suite thực. |
+| Automatic tests | partial | Backend có JUnit/Mockito/MockMvc và Mongo integration tests tùy chọn. Lần chạy full backend trước lượt tài liệu: 445 tests,438 đạt, 2 lỗi AI/moderator có sẵn, 5 skipped; payment 64 đạt/5 skipped. Frontend có build/TypeScript/ESLint và 6 harness tạm đã đạt; không có test script trong package.json, exporter test là placeholder. Không chạy lại trong lượt này. |
 
 ## Vấn đề kỹ thuật được xác minh bằng đọc code
 
@@ -181,7 +191,7 @@ Khảo sát source trong working tree ngày 2026-10-24, gồm thay đổi chưa 
 | SSR/cache profile lệch | [layout](../frontend/app/layout.tsx), [useAuth](../frontend/presentation/hooks/Auth/useAuth.ts), [UserService](../frontend/presentation/services/UserService.ts) | prefetch key user-profile vs user, relative Axios URL và chưa chuyển server cookie. |
 | Helper route profile cũ | [services/userService.ts](../frontend/services/userService.ts) | Gọi /api/auth/me, inventory hiện có /api/user/me; kiểm tra call site trước tái sử dụng. |
 | Trộn Jackson namespace | [JacksonConfig](../backend/src/main/java/com/wedu/exam_creation/config/JacksonConfig.java), [PandocConverter](../backend/src/main/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverter.java), [JWT filter](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilter.java) | com.fasterxml.jackson và tools.jackson là các types khác; compatibility cần compile xác minh. |
-| Mongo transaction không bọc side effects | `ImporterService`, `ExamUsecase`, `ExporterUsecase`, `TelegramNotificationService` | Media/HTTP đã gửi không rollback; chưa thấy outbox/queue/idempotency workflow. |
+| Import/exam/export transaction không bọc side effects ngoài | `ImporterService`, `ExamUsecase`, `ExporterUsecase`, `TelegramNotificationService` | Media/HTTP của import/exam/export đã gửi không rollback; payment riêng có Mongo outbox/idempotency, không suy rộng sang các feature khác. |
 | Reset token TTL/index | [PasswordResetTokenDocument](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/infrastructure/document/PasswordResetTokenDocument.java) | expireAfter 10m tính từ expiryDate (đã cộng 15m); không phải hạn sử dụng 10m. Logic expiry vẫn 15m. |
 | Xóa user không cascade toàn bộ dữ liệu | [UserUsecase.deleteUser](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java) | Xóa user và RT, chưa xóa draft/exam/reset token/media. Retention policy unknown. |
 | Logging có dữ liệu nhạy cảm trong vài nhánh | [AuthService.resetPassword](../frontend/presentation/services/AuthService.ts), `ExporterUsecase.fetchImagesAsBase64` | Source log payload reset và URL ảnh lỗi; chỉ ghi nhận, không sao chép giá trị thực vào docs. |
@@ -208,7 +218,7 @@ Backend DOCX không còn dùng image-only uploader: `uploadImageFile` cho avatar
 ## Nghiệp vụ cần chủ dự án xác nhận
 
 1. **Review:** file/câu AI có được dùng trước khi duyệt? Review diễn ra trong app hay ngoài Telegram? Ai approve/reject, cần lưu audit gì?
-2. **Submission:** teacher upload S3 rồi moderator tải lại và gửi parse thủ công, hay cần một submission ID nối hai bước? UI còn 25 MB, backend 50 MiB: giới hạn sản phẩm cần thống nhất là gì?
+2. **Submission:** luồng S3 approve/reject đã được chốt và có code; không có submission ID/audit bền vững. Chỉ mở lại phần persistence khi có yêu cầu riêng; upload hiện dùng50 MiB và string S3 key.
 3. **Roles:** ADMIN có nên có MODERATOR permissions? ROLE_USER của Google có cần hợp nhất với TEACHER? Ai tạo admin đầu tiên?
 4. **PLUS/payment:** PLUS được cấp thủ công hay thanh toán? Có hạn dùng/quota không? “Giao dịch” là payment hay DB transaction?
 5. **Exam generation:** thiếu câu vẫn lưu đề có đúng không? Nếu AI bù đủ, errors thiếu ban đầu có cần giữ? Tỉ lệ ma trận và Tự luận có yêu cầu chính thức nào?

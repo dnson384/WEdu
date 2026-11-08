@@ -1,5 +1,11 @@
 # Bàn giao kiểm duyệt tệp câu hỏi — 2026-10-25
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Đây là báo cáo bàn giao lịch sử2026-10-25, không phải danh sách toàn bộ file hoặc kết quả tests hiện tại. Đã đối chiếu các file/link còn tồn tại. Luồng approve/reject DOCX vẫn ở ModeratorUsecase; review câu hỏi AI hiện là workflow khác đã có code, không còn thuộc phạm vi chưa triển khai của báo cáo cũ. [Trạng thái hiện tại](current-status.md), [API](api-reference.md).
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 Trước thay đổi: có danh sách/download/preview, parse multipart độc lập. Sau thay đổi: modal hỗ trợ duyệt bản gốc hoặc bản chỉnh sửa qua ModeratorUsecase.parseDocument rồi xóa gốc; từ chối nhập lý do, xóa S3 rồi gửi email. Email lỗi chỉ ghi log, vẫn thành công; không Telegram/retry. Backend `f2ea136` và frontend `d3a6473` đã commit/push, được merge vào main qua PR #113/#114; tài liệu được chuẩn bị thành commit riêng trên main. Test frontend đã được xóa theo yêu cầu trước commit frontend.
 
 ## Contract và giới hạn

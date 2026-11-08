@@ -1,5 +1,11 @@
 # WEdu Development Decisions
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Đồng bộ implementation theo source mà không mở rộng business scope: ADMIN/users+AI, review AI và VNPay/PLUS đã có các phê duyệt ở các mục theo ngày. Bảng quyết định tại mục21 và payment tại mục17 được cập nhật tương ứng; các ràng buộc FROZEN/DEFERRED/OUT_OF_SCOPE/INVESTIGATE_ONLY không liên quan vẫn giữ.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Khu vực ADMIN hai tính năng — 2026-11-01
 
 Người dùng xác nhận ADMIN chỉ có hai tính năng chính: Quản lý tài khoản người dùng và Quản lý AI. Triển khai trang `/admin/users` dùng API tài khoản đã có; menu ADMIN không ghép menu giáo viên. Sau đăng nhập hoặc vào `/`, ADMIN về `/admin/users`; `/admin` cũng redirect tới trang này. Thông tin cá nhân/đăng xuất giữ trong menu tài khoản, ẩn Thanh toán cho ADMIN.
@@ -178,7 +184,7 @@ Ghi nhận lịch sử trước snapshot 24/10: luồng upload question-bank có
 - UI thể hiện giới hạn khoảng 25 MB;
 - tại snapshot cũ, backend upload validation thiên về JPEG/PNG và giới hạn nhỏ hơn.
 
-Backend hiện đã tách validation DOCX 50 MiB theo snapshot trên; frontend còn mismatch response type/nhãn dung lượng. Quyết định PLANNED được giữ nguyên cho phạm vi chưa hoàn tất, không tự xác nhận feature đã nghiệm thu.
+Backend hiện đã tách validation DOCX 50 MiB theo snapshot trên; frontend hiện trả string S3 key và hiển thị50 MB; các mismatch của snapshot trước không còn dùng để đánh giá contract hiện tại. Quyết định PLANNED được giữ nguyên cho phạm vi chưa hoàn tất, không tự xác nhận feature đã nghiệm thu.
 
 ### Phạm vi khi sửa
 
@@ -216,7 +222,9 @@ Quyết định này thay thế PLANNED trước đây cho thao tác kiểm duy�
 
 # 6. AI Question Moderation
 
-**Trạng thái: `PLANNED`**
+**Trạng thái: phạm vi kiểm duyệt đã duyệt 2026-10-31; xem mục cập nhật kiểm duyệt ở đầu file.**
+
+Các câu hỏi thiết kế dưới đây là lịch sử trước phê duyệt; không phủ nhận workflow đang có source hoặc mở thêm phạm vi audit/quyền sử dụng câu hỏi.
 
 AI-generated question hiện chưa có moderation state hoàn chỉnh.
 
@@ -538,40 +546,15 @@ Các logging statement vi phạm nguyên tắc trên có thể được loại b
 
 # 17. Payment và PLUS
 
-**Trạng thái: `PLANNED`**
+**Trạng thái: đã duyệt và có implementation trong source; vận hành chưa được chứng nhận.**
 
-Payment hiện chưa được coi là implemented.
+- Chỉ ROLE_TEACHER mua một gói 20.000 VND/30 ngày, cộng từ max(now,hạn hiện tại), không tự trừ tiền và không thêm quota.
+- Đơn mới5 phút; random64hex reference, hash idempotency riêng/unique sparse index, giữ đơn legacy và expiry đã lưu khi retry.
+- Backend kiểm IPN/querydr hoặc signed Return qua API teacher/owner trước khi ghi kết quả, cấp PLUS và enqueue email trong cùng Mongo transaction. URL00 của browser tự nó không cấp quyền.
+- Success hợp lệ đến muộn được xử lý, callback lặp không grant lần hai; querydr chưa xác thực trả503, không suy ra thành công. Return receipt chỉ giữ trong memory của tab, IPN phải đăng ký với VNPay riêng.
+- PLUS có hạn đọc thành FREE khi hết hạn; PLUS legacy/null được giữ. Không invoice thuế/refund tự động hoặc khôi phục đơn đã xóa chỉ từ mã giao dịch.
 
-UI liên quan bill/payment không chứng minh hệ thống đã có:
-
-- payment gateway;
-- payment transaction;
-- webhook;
-- invoice;
-- payment status lifecycle;
-- idempotency;
-- automatic account upgrade.
-
-`accountType == PLUS` hiện chỉ là trạng thái được sử dụng bởi business logic.
-
-Không suy ra PLUS provisioning từ field này.
-
-Payment/PLUS upgrade sẽ được thiết kế thành feature riêng.
-
-Trước implementation cần xác định:
-
-- payment provider;
-- transaction states;
-- webhook verification;
-- idempotency;
-- upgrade condition;
-- PLUS duration;
-- renewal;
-- expiration;
-- quota nếu có;
-- refund/cancellation behavior.
-
-Không tự implement payment trong task không liên quan.
+[PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [usePayment](../frontend/presentation/hooks/Payment/usePayment.ts), [API](api-reference.md). Giới hạn sandbox/runtime xem [current-status](current-status.md).
 
 ---
 
@@ -648,25 +631,9 @@ Không dùng một bug nhỏ làm lý do thực hiện refactor diện rộng.
 
 # 20. Thứ tự ưu tiên khi thông tin xung đột
 
-Khi có xung đột giữa source, docs và task, áp dụng thứ tự:
+Khi xác định **business intent/phạm vi phát triển**, ưu tiên yêu cầu người dùng → development-decisions → AGENTS → business-flows. Source không tự mở lại quyết định FROZEN/DEFERRED/OUT_OF_SCOPE/INVESTIGATE_ONLY.
 
-1. Yêu cầu trực tiếp mới nhất của người dùng.
-2. `development-decisions.md`.
-3. `AGENTS.md`.
-4. `business-flows.md`.
-5. `architecture.md`.
-6. `current-status.md`.
-7. Các tài liệu inventory/reference.
-8. Source code hiện tại.
-
-Source code là nguồn sự thật về **implementation hiện tại**, nhưng không tự quyết định **business intent hoặc development roadmap**.
-
-Nếu source khác docs:
-
-- xác minh source;
-- báo mismatch;
-- cập nhật docs phù hợp nếu task thay đổi implementation;
-- không tự thay business decision chỉ vì implementation hiện tại khác decision.
+Khi xác định **implementation hiện tại**, ưu tiên source/config → current-status → architecture → module-map → inventory/reference. Khi docs lệch source: đối chiếu bằng chứng, cập nhật tài liệu theo phạm vi task và giữ nguyên business decision nếu người dùng chưa đổi. [AGENTS.md](../AGENTS.md) quy định workflow phê duyệt và commit.
 
 ---
 
@@ -678,11 +645,11 @@ Nếu source khác docs:
 | Google OAuth2                        | `OUT_OF_SCOPE`                            |
 | DOCX/Pandoc importer                 | `FROZEN`                                  |
 | Multi-subject chapter isolation      | `ACCEPTED_CURRENT_SCOPE` / future scaling |
-| DOCX upload validation               | `PLANNED`                                 |
-| File moderation                      | `PLANNED`                                 |
-| AI question moderation               | `PLANNED`                                 |
+| DOCX upload validation | Source có DOCX 50 MiB/string S3 key; phạm vi mở rộng còn `PLANNED`, không tự mở lại |
+| File moderation | `ACCEPTED_CURRENT_SCOPE`: S3 approve/reject đã duyệt 2026-10-25, không persisted submission/audit |
+| AI question moderation | Đã duyệt 2026-10-31: editor/approve/reject/regenerate, tối đa5 lượt và revision guards |
 | AI validation/retry                  | `DEFERRED`                                |
-| AI timeout/cost policy               | `DEFERRED`                                |
+| AI timeout/cost policy | Generation timeout/retry vẫn `DEFERRED`; usage/budget/cost tracking đã duyệt 2026-11-01 |
 | Question unique Mongo index          | `INVESTIGATE_ONLY`                        |
 | Automatic matrix generation          | `FROZEN`                                  |
 | Manual matrix editing                | `DEFERRED`                                |
@@ -693,7 +660,7 @@ Nếu source khác docs:
 | Password-reset session policy        | `DEFERRED`                                |
 | Frontend/backend contract mismatches | `FIX_ALLOWED` after verification          |
 | Sensitive logging                    | `FIX_ALLOWED`                             |
-| Payment/PLUS provisioning            | `PLANNED`                                 |
+| Payment/PLUS provisioning | Đã duyệt: teacher 20.000đ/30 ngày, đơn5 phút, IPN/querydr/signed Return xác thực, outbox; runtime chưa chứng nhận |
 
 ---
 

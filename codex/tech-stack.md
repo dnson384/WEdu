@@ -1,5 +1,11 @@
 # Tech stack và môi trường WEdu
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Phiên bản khai báo và lockfile được tách rõ: frontend Next ^16.1.6 → lock 16.3.5, React 19.2.3, TypeScript ^5 → lock 5.9.3; backend Spring Boot 4.0.6/Java 17; exporter Express 5.2.1/TypeScript 6.0.3. Không suy phiên bản triển khai thực từ node_modules. Payment không thêm dependency; dùng RestClient/Mongo transaction/JavaMailSender sẵn có.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Validation checkout sạch — 2026-11-01
 
 Các staged snapshot frontend tại `9c997a0`/`1e36f83` qua Webpack compile nhưng thất bại ở TypeScript với TS1261: Git lưu [draftRepositoryImpl.ts](../frontend/infrastructure/repositories/draftRepositoryImpl.ts) và [userRepositoryImpl.ts](../frontend/infrastructure/repositories/userRepositoryImpl.ts), trong khi imports dùng PascalCase. Working tree Windows có thể mang casing khác nên kết quả build tại working tree không chứng nhận checkout từ Git. Không đổi tên file hoặc sửa import trong lượt tài liệu; ghi nhận kết quả ở [current-status](current-status.md#snapshot-main-sau-merge-ai-và-quản-lý-tài-khoản--2026-11-01).
@@ -24,7 +30,7 @@ Không thêm dependency. Editor dùng KaTeX/React Query hiện có. [next.config
 
 ## Phạm vi bằng chứng
 
-Snapshot source ngày 2026-10-24. Phiên bản trong bảng là range/giá trị **khai báo**, không phải phiên bản runtime đã triển khai. Trạng thái `implemented/partial/missing/unknown` được định nghĩa tại [current-status.md](current-status.md). Không truy cập production, `.env` hoặc secrets.
+Đối chiếu manifest/config/lockfile ngày 2026-11-06. Phiên bản trong bảng là range/giá trị **khai báo**, không phải phiên bản runtime đã triển khai. Trạng thái `implemented/partial/missing/unknown` được định nghĩa tại [current-status.md](current-status.md). Không truy cập production, `.env` hoặc secrets.
 
 ## Backend
 
@@ -39,7 +45,7 @@ Nguồn chính: [pom.xml](../backend/pom.xml), [Maven wrapper](../backend/.mvn/w
 | Security, security-oauth2-client | Do Boot quản lý | JWT filter, method security, Google OAuth2. |
 | Data MongoDB, starter-mongodb | Do Boot quản lý | MongoTemplate, document mapping. Cả hai starter hiện cùng được khai báo. |
 | `spring-boot-transaction` | Do Boot quản lý | Transaction annotations/manager. |
-| `spring-boot-starter-mail` | Do Boot quản lý | JavaMailSender gửi link reset. |
+| `spring-boot-starter-mail` | Do Boot quản lý | JavaMailSender gửi reset password, từ chối DOCX và kết quả payment; payment có outbox retry riêng. |
 | JJWT api/impl/jackson | 0.13.0 | HMAC JWT, claims, parse/validate token. |
 | AWS SDK `s3` | 2.46.16 | Upload/list/delete S3 và presigned GET. |
 | Apache Tika core | 3.3.1 | Detect MIME ảnh; DOCX dùng extension và ZIP-entry checks của Java ZipInputStream. |
@@ -98,7 +104,7 @@ Nguồn: [package.json](../exporter-service/package.json), [tsconfig.json](../ex
 
 Không thêm dependency mới cho question-file flow. Java ZipInputStream kiểm DOCX có `[Content_Types].xml`/`word/document.xml`, Normalizer/Locale chuẩn hóa filename; Spring ContentDisposition tạo tên tải UTF-8. AWS S3 list dùng continuation token, signed GET 60 phút với attachment. React Query/Lucide phục vụ UI moderator. [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [files UI](../frontend/app/(site)/moderator/question-files/page.tsx).
 
-Backend avatar giới hạn 5 MiB; question-file 50 MiB, Spring multipart vẫn 50 MB/file và 65 MB/request theo configuration. Frontend upload page còn text 25 MB, chưa đồng bộ type string key ở StorageService. Không coi đây là một package MIME/DOCX mới.
+Backend avatar giới hạn 5 MiB; question-file 50 MiB, Spring multipart vẫn 50 MB/file và 65 MB/request theo configuration. Frontend upload page ghi50 MB; StorageService.uploadFileToQuestionBank trả Promise<string> tương ứng S3 key. Không coi đây là một package MIME/DOCX mới.
 
 Có test source mới [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java), `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại). Có test legacy endpoint chưa khớp controller hiện tại; lượt này chỉ kiểm tra tài liệu và source, không chạy build/test hoặc gọi AWS.
 ## Lệnh thực tế

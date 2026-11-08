@@ -1,5 +1,11 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Có **12 root collections** theo @Document hiện tại; embedded models không được tính thành collection riêng. PaymentOrders/PaymentEmails và Users.plusExpiresAt đã có code. Đây là schema suy ra từ source; chưa truy vấn database hoặc xác minh index/topology thật.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Quản lý usage/budget AI — 2026-11-01
 
 Hai collection mới, không backfill hoặc đổi Questions/QuestionsReview:
@@ -51,7 +57,7 @@ Không thêm collection/field/index, submission, audit hoặc receipt S3. Sự h
 
 ## Phạm vi
 
-Đây là schema suy ra trực tiếp từ **document classes và repository**, snapshot 2026-10-24, không phải dump database. Không kết nối MongoDB; dữ liệu/index/version thực đều **unknown**. Collection nằm trong [application.yml](../backend/src/main/resources/application.yml) với database cấu hình `test001`, MongoDB SRV. Repository dùng MongoTemplate; [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java) tạo MongoTransactionManager.
+Đây là schema suy ra trực tiếp từ **document classes và repository**, đối chiếu 2026-11-06, không phải dump database. Không kết nối MongoDB; dữ liệu/index/version thực đều **unknown**. Collection nằm trong [application.yml](../backend/src/main/resources/application.yml) với database cấu hình `test001`, MongoDB SRV. Repository dùng MongoTemplate; [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java) tạo MongoTransactionManager.
 
 Các mục field phía dưới trích tên/Java type, không đưa dữ liệu người dùng/secrets. `@Id String id` là property Java ánh xạ `_id`; annotations ObjectId được ghi rõ, không mặc định mọi String BSON đều lưu như nhau. `List<>`/Map là embedded data, không phải collection riêng nếu không có `@Document`.
 
@@ -67,6 +73,10 @@ Các mục field phía dưới trích tên/Java type, không đưa dữ liệu n
 | Exams | [ExamDocument](../backend/src/main/java/com/wedu/exam_creation/exam/infrastructure/document/ExamDocument.java) / ExamEntity | userId→Users; chapter/lesson snapshot; groups questionType/difficultyLevel/questionIds. questionIds annotated OBJECT_ID→Questions. |
 | RefreshTokens | [RefreshTokenDocument](../backend/src/main/java/com/wedu/exam_creation/refreshToken/infrastructure/document/RefreshTokenDocument.java) / RefreshTokenEntity | jti, userId OBJECT_ID→Users, expiresAt/issuedAt. Lưu metadata, không lưu refresh JWT plaintext trong document. |
 | PasswordResetToken | [PasswordResetTokenDocument](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/infrastructure/document/PasswordResetTokenDocument.java) / PasswordResetTokenEntity | tokenHash SHA-256, userId String không annotation OBJECT_ID, expiryDate, used, createdAt. |
+| AiBudget | [AiBudgetDocument](../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiBudgetDocument.java) | Cấu hình giới hạn chung, revision chống ghi đè. |
+| AiUsage | [AiUsageDocument](../backend/src/main/java/com/wedu/exam_creation/ai/infrastructure/document/AiUsageDocument.java) | Usage/outcome/giá snapshot và chi phí ước tính. |
+| PaymentOrders | [PaymentOrderDocument](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentOrderDocument.java) | Random64hex _id, hash idempotency riêng; userId→Users; expiry5 phút cho đơn mới, không TTL xóa. |
+| PaymentEmails | [PaymentEmailDocument](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentEmailDocument.java) | Outbox _id=orderId:status, lease/retry và sentAt. |
 
 ```mermaid
 erDiagram
@@ -74,6 +84,8 @@ erDiagram
   Users ||--o{ Exams : userId
   Users ||--o{ RefreshTokens : userId
   Users ||--o{ PasswordResetToken : userId
+  Users ||--o{ PaymentOrders : userId
+  PaymentOrders ||--o{ PaymentEmails : orderId
   Chapters ||--o{ Questions : chapterId_lessonId
   Questions }o--o{ Exams : questionIds
   Questions ||--o| QuestionsReview : same_id
@@ -85,14 +97,14 @@ erDiagram
 
 | Dữ liệu | Giá trị/transitions có trong source | Điều không được suy ra |
 | --- | --- | --- |
-| User local | create active=true, ROLE_TEACHER, FREE; admin lock false/unlock true; role change | Chưa có membership expiry/quota hoặc payment upgrade state. |
+| User local | create active=true,ROLE_TEACHER,FREE; admin lock/unlock/đổi role | plusExpiresAt nullable; role/password dùng partial update để không ghi đè entitlement đã thanh toán. |
 | User Google | loginMethod GOOGLE, ROLE_USER, active=true; picture URL | accountType/timestamps không set tại create branch; không mặc định FREE. |
-| accountType | FREE mặc định local; PLUS được kiểm tra ở sinh đề | Không phải enum hoặc billing lifecycle. |
+| accountType | FREE/PLUS là String; DTO trả quyền hiệu lực theo plusExpiresAt | Không phải Spring role. PLUS/null giữ legacy; PLUS hết hạn đọc thành FREE; grant chỉ sau kết quả payment hợp lệ. |
 | Reset token | used=false → used=true; expiryDate now+15m; request mới xóa token cũ của user | Cleanup TTL không phải logic expiry; chưa atomic consume. |
 | Refresh metadata | save khi local auth → delete lúc logout/thu hồi | Không thấy refresh rotation hoặc access blacklist. |
 | Draft/exam | Suy ra giai đoạn từ cấu trúc chapters/matrix/details hoặc document có tồn tại | Không có status DRAFT/FINAL/PUBLISHED/PROCESSING. |
 | File/câu hỏi/AI | File là S3 object; Question.status: parse APPROVED, AI PENDING_REVIEW | Có trạng thái ban đầu APPROVED/PENDING_REVIEW; chưa có REJECTED, source, reviewer, submittedBy hoặc review audit. |
-| Giao dịch tiền | Không thấy collection/model payment/transaction | Không tự tạo pending/paid/refund hoặc suy ra PLUS đã được mua. |
+| Giao dịch tiền | PaymentOrders/PaymentEmails; PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED | Mongo transaction + revision và outbox; không có refund/invoice thuế. |
 
 Bằng chứng: [UserUsecase](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [CustomOAuth2UserService](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java), [PasswordResetTokenUsecase](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/usecase/PasswordResetTokenUsecase.java), [AuthUsecase](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), document catalogue bên dưới.
 
@@ -358,6 +370,8 @@ Source: [UserDocument](../backend/src/main/java/com/wedu/exam_creation/user/infr
 | `accountType` | `String` | — |
 | `createdAt` | `Instant` | `@CreatedDate` |
 | `updatedAt` | `Instant` | `@LastModifiedDate` |
+| `plusExpiresAt` | `Instant` | Nullable; hạn PLUS, null giữ legacy |
+
 
 ## Backend payment persistence — 2026-11-05
 

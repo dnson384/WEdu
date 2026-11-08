@@ -1,5 +1,11 @@
 # Bản đồ module, symbols và API
 
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Entry points hiện có:11 Spring controllers,25 App Router pages,49 Next route files/51 HTTP handlers và1 Express route. AdminUsersPage/AiManagementPage, moderator review/editor và Bill/usePayment đều có source; không dùng các mô tả placeholder của snapshot cũ để kết luận hiện trạng.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
 ## Cấu hình giới hạn AI — 2026-11-01
 
 - `AiManagementPage` nối `openBudget/cancelBudget`, trạng thái editing/conflict và budget đã lưu từ `useAiManagement` vào `AiBudgetForm`. Component render summary và chỉ mở form khi chọn Cấu hình giới hạn.
@@ -46,7 +52,7 @@ Edit usecase phối hợp S3Service.uploadImageFile/deleteFile. QuestionImageRef
 
 ## Giao diện review — 2026-10-27
 
-`ReviewPage` → `usePendingQuestions` → `ModeratorService.getPendingQuestions` → Next GET `/api/moderator/questions/pending` → `GetPendingQuestionsUsecase` → `IModeratorRepository/ModeratorRepositoryImpl` → `ModeratorController.listPendingQuestions` → `ModeratorUsecase.listPendingQuestions` → `QuestionService.findPending` → `IQuestionRepository.findPending/countPending` → `QuestionRepositoryImpl` → Questions. Repository trả `List<QuestionEntity>` và long riêng, hai query dùng chung `pendingQuery`; QuestionService gọi mapper chuyển `PendingQuestionDTO`, tạo `PendingQuestionPageDTO` và tính totalPages. Không QuestionPageEntity hoặc DTO trong kết quả infrastructure. ModeratorUsecase dùng `ChapterService.getAll` map tên/tìm chương-bài và S3Service ký ảnh trên DTO. Hook quản lý filters/debounce/page/query/cache theo user và thông báo; card giữ form sửa thử. Ba thao tác write chưa nối API.
+`ReviewPage` → `usePendingQuestions` → `ModeratorService.getPendingQuestions` → Next GET `/api/moderator/questions/pending` → `GetPendingQuestionsUsecase` → `IModeratorRepository/ModeratorRepositoryImpl` → `ModeratorController.listPendingQuestions` → `ModeratorUsecase.listPendingQuestions` → `QuestionService.findPending` → `IQuestionRepository.findPending/countPending` → `QuestionRepositoryImpl` → Questions. Repository trả `List<QuestionEntity>` và long riêng, hai query dùng chung `pendingQuery`; QuestionService gọi mapper chuyển `PendingQuestionDTO`, tạo `PendingQuestionPageDTO` và tính totalPages. Không QuestionPageEntity hoặc DTO trong kết quả infrastructure. ModeratorUsecase dùng `ChapterService.getAll` map tên/tìm chương-bài và S3Service ký ảnh trên DTO. Hook quản lý filters/debounce/page/query/cache theo user và thông báo; card giữ form sửa thử. Approve/reject đã nối POST [action], edit nối PATCH multipart; xem section kiểm duyệt câu hỏi AI phía trên.
 
 [Page](../frontend/app/(site)/moderator/review/page.tsx), [card](../frontend/presentation/components/Moderator/PendingQuestionCard.tsx), [hook](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts), [Next route](../frontend/app/api/moderator/questions/pending/route.ts), [API](api-reference.md).
 
@@ -72,7 +78,7 @@ Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creatio
 [API](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [kiểm tra](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Các dòng snapshot bên dưới mô tả trước khi bổ sung workflow này.
 
 
-Snapshot working tree 2026-10-24. Danh mục declaration/API lấy từ source, không từ endpoint server đang chạy. Endpoint tồn tại không chứng minh end-to-end pass; [current-status.md](current-status.md) ghi trạng thái và hạn chế. Links source dùng đường dẫn tương đối từ codex/.
+Inventory đối chiếu working tree 2026-11-06. Danh mục declaration/API lấy từ source, không từ endpoint server đang chạy. Endpoint tồn tại không chứng minh end-to-end pass; [current-status.md](current-status.md) ghi trạng thái và hạn chế. Links source dùng đường dẫn tương đối từ codex/.
 
 ## 1. Entry points và ranh giới
 
@@ -130,15 +136,35 @@ Danh mục source từng feature trong source-catalog.md là bằng chứng cho 
 
 ## 4. API backend và Next.js
 
-Quyền: mặc định backend authenticated; exceptions theo `SecurityConstants.PUBLIC_PATHS`; admin/moderator theo annotation controller/method, owner theo principal/usecase/repository. Next API thường đọc cookie rồi chuyển Bearer. HTTP method Next có thể khác backend: ví dụ change password/profile PUT → PATCH, delete thêm segment `/delete`. Đọc cả hai bảng và repository tương ứng.
+Danh sách method/path/symbol hiện tại được gom tại [API reference](api-reference.md):54 Spring endpoints và 51 Next handlers trong 49 route files. Payment BFF gồm plan,orders,orders/[id],verify,return (5 route files); handler.ts là helper, IPN là rewrite và không tính như Next handler.
 
-API response lỗi đa số `{message}`, bean validation Java là field map; route Next có thể bọc/đổi status. Không xem TypeScript type là runtime validation response. [GlobalExceptionHandler](../backend/src/main/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandler.java), [frontend repositories](../frontend/infrastructure/repositories).
+Frontend App Router pages:
 
-Danh mục tách theo chủ đề để tránh nạp toàn bộ source index mỗi phiên:
-
-- [api-reference.md](api-reference.md): 36 Spring endpoints, 35 Next handlers, Express route, signatures và wiring.
-- [source-catalog.md](source-catalog.md): toàn bộ backend domain/DTO/repository/usecase/controller/helpers, frontend pages/ports/adapters/hooks/services/components và exporter files.
-- [database-schema.md](database-schema.md): 7 collection declarations, 20 document classes (7 root, 13 embedded) và 99 field declarations.
+- [(site)/admin/ai/page.tsx](<../frontend/app/(site)/admin/ai/page.tsx>)
+- [(site)/admin/page.tsx](<../frontend/app/(site)/admin/page.tsx>)
+- [(site)/admin/users/page.tsx](<../frontend/app/(site)/admin/users/page.tsx>)
+- [(site)/auth/forgot-password/page.tsx](<../frontend/app/(site)/auth/forgot-password/page.tsx>)
+- [(site)/auth/login/page.tsx](<../frontend/app/(site)/auth/login/page.tsx>)
+- [(site)/auth/register/page.tsx](<../frontend/app/(site)/auth/register/page.tsx>)
+- [(site)/auth/reset-password/page.tsx](<../frontend/app/(site)/auth/reset-password/page.tsx>)
+- [(site)/exam/all/page.tsx](<../frontend/app/(site)/exam/all/page.tsx>)
+- [(site)/exam/[examId]/page.tsx](<../frontend/app/(site)/exam/[examId]/page.tsx>)
+- [(site)/generate/new/page.tsx](<../frontend/app/(site)/generate/new/page.tsx>)
+- [(site)/generate/page.tsx](<../frontend/app/(site)/generate/page.tsx>)
+- [(site)/generate/[draftId]/chapter/page.tsx](<../frontend/app/(site)/generate/[draftId]/chapter/page.tsx>)
+- [(site)/generate/[draftId]/details/page.tsx](<../frontend/app/(site)/generate/[draftId]/details/page.tsx>)
+- [(site)/generate/[draftId]/matrix/page.tsx](<../frontend/app/(site)/generate/[draftId]/matrix/page.tsx>)
+- [(site)/generate/[draftId]/page.tsx](<../frontend/app/(site)/generate/[draftId]/page.tsx>)
+- [(site)/generate/[draftId]/[chapterId]/page.tsx](<../frontend/app/(site)/generate/[draftId]/[chapterId]/page.tsx>)
+- [(site)/landing-page/page.tsx](<../frontend/app/(site)/landing-page/page.tsx>)
+- [(site)/me/bill/page.tsx](<../frontend/app/(site)/me/bill/page.tsx>)
+- [(site)/me/page.tsx](<../frontend/app/(site)/me/page.tsx>)
+- [(site)/moderator/page.tsx](<../frontend/app/(site)/moderator/page.tsx>)
+- [(site)/moderator/question-bank/page.tsx](<../frontend/app/(site)/moderator/question-bank/page.tsx>)
+- [(site)/moderator/question-files/page.tsx](<../frontend/app/(site)/moderator/question-files/page.tsx>)
+- [(site)/moderator/review/page.tsx](<../frontend/app/(site)/moderator/review/page.tsx>)
+- [(site)/upload/page.tsx](<../frontend/app/(site)/upload/page.tsx>)
+- [page.tsx](<../frontend/app/page.tsx>)
 
 ## Luồng xem trước DOCX — 2026-10-25
 
