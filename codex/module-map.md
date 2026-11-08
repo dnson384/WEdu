@@ -1,5 +1,7 @@
 # Bản đồ module, symbols và API
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Entry points hiện có:11 Spring controllers,25 App Router pages,49 Next route files/51 HTTP handlers và1 Express route. AdminUsersPage/AiManagementPage, moderator review/editor và Bill/usePayment đều có source; không dùng các mô tả placeholder của snapshot cũ để kết luận hiện trạng.
@@ -197,3 +199,9 @@ GET /moderator/question-files/content?key=... → [ModeratorController.getQuesti
 - useAuth:effective expiry/cache refresh; useNavBar:teacher upgrade navigation; next.config/proxy:exact public IPN forward.
 
 Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Routes](api-reference.md#frontend-payment-contracts--2026-11-06), [hook](../frontend/presentation/hooks/Payment/usePayment.ts).
+
+## ADMIN transaction lookup — 2026-11-08
+
+- Backend payment: AdminTransactionController → AdminTransactionUsecase → IPaymentRepository.searchTransactions/countTransactions/find and VnpayGateway.query. AdminTransactionDTO separates list/lookup output; AdminTransactionException provides safe lookup codes. AdminTransactionIndexConfig creates read indexes independently of payment enablement.
+- Frontend: Navbar → /admin/transactions → /admin/transactions/search; TransactionFilters/Table/Detail render useAdminTransactions state. AdminTransactionService → BFF handleAdminTransactions → AdminTransactionUsecase → IAdminTransactionRepository/AdminTransactionRepositoryImpl → backend.
+- New contracts/types: TransactionFilters, AdminTransaction, TransactionPage, TransactionLookup; GET /admin/transactions and POST /admin/transactions/{id}/lookup, with matching /api BFF routes. See [API reference](api-reference.md#admin-transaction-lookup--2026-11-08) and [source inventory](source-catalog.md#admin-transaction-lookup--2026-11-08).

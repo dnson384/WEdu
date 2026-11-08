@@ -1,5 +1,7 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Đã có cả backend và frontend payment/PLUS trong working tree; các nhãn missing/partial bên dưới đã được sửa theo phạm vi source. Lượt đồng bộ này chỉ đọc source và sửa Markdown, không chạy lại build/tests hoặc gọi VNPay/MongoDB/AWS/SMTP.
@@ -260,3 +262,13 @@ Implemented: teacher-only upgrade navigation, navbar/layout,20k/30day plan and a
 Validation 2026-11-06: npm run build, TypeScript --noEmit --incremental false and ESLint for all20 frontend payment files passed. Six temporary harnesses passed: missing-order, signed Return, Return BFF, new-tab, reconciliation and IPN proxy. They mock services/React JSDOM and do not certify live sandbox payment, SMTP delivery or a browser checkout.
 
 Scope does not include backend code or merchant configuration. A missing/deleted order cannot be recovered as paid from its reference alone. A lost Return receipt still needs verified IPN/querydr; the provider's unsigned99 is not proof of payment. [Implementation](../frontend/presentation/hooks/Payment/usePayment.ts), [API](api-reference.md#frontend-payment-contracts--2026-11-06).
+
+## ADMIN transaction lookup — 2026-11-08
+
+**Implemented in source:** ADMIN navigation and landing/search pages, paginated local filters, authenticated BFF/backend, selected-order signed VNPay lookup, independent local/provider statuses, amount mismatch warning, explicit empty/not-found/unavailable states. Lookup has no payment/entitlement/outbox writes. [Usecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java), [hook](../frontend/presentation/hooks/Admin/useAdminTransactions.ts).
+
+Validation: targeted Maven suite AdminTransaction*Test, Payment*Test, PlusEntitlementTest, Vnpay*Test: 84 tests, 79 passed, 5 existing Mongo integration tests skipped. Includes 15 new ADMIN controller/usecase/repository tests. Frontend npm run build, tsc --noEmit --incremental false and ESLint on all changed frontend files passed. Temporary React/JSDOM/BFF harness passed list-without-VNPay, duplicate suppression, stale-response rejection, date validation, error/loading/empty states, auth/input validation, no-store and safe provider-error masking.
+
+Initial sandbox checks failed accessing Maven cache/Google Fonts; checks passed outside sandbox. A new repository test assertion was corrected to compare Mongo regex Pattern content, then the suite passed. Full backend suite was not rerun; prior unrelated AI/moderator failures are not certified resolved.
+
+**Unknown/runtime limits:** no live VNPay, browser/manual acceptance, deployed Mongo index validation or load test performed. Unsigned provider errors remain unavailable, not proof of absence. Missing local orders cannot be queried. Email substring queries may scan; local/provider statuses can differ by design.

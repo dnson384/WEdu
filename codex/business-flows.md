@@ -1,5 +1,7 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Luồng hiện tại đã có quản lý tài khoản/AI, kiểm duyệt tệp/câu hỏi AI và mua PLUS. Giá20.000đ/30 ngày; đơn mới có5 phút thanh toán, retry giữ expiry cũ. IPN, querydr hoặc Return có chữ ký được backend kiểm tra mới ghi nhận kết quả.
@@ -212,3 +214,11 @@ Teacher chooses upgrade → /me/bill with shared navbar → read plan and effect
 Restore order reference from Return query, localStorage, then valid session attempt. Poll PENDING every5s; reconcile every30s/focus with overlap guards and backend throttle. Return pairs are captured before cleaning browser URL; after loading an owned order, backend confirmation is preferred to querydr. Cache grants success only from backend; transient receipt failures retry in tab, invalid400/403/404 receipts are discarded. Receipts/signatures are never persisted.
 
 On owned-order404, hide stale checkout and stop automatic reconciliation for that order; show the old reference and an explicit new-purchase action. Only that action retires the key; retain old references in localStorage as support data, not payment history. Querydr503 means awaiting confirmation, not failure. SUCCEEDED refreshes user cache; useAuth updates effective FREE at plusExpiresAt. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [result](../frontend/presentation/components/Payment/PaymentResult.tsx).
+
+## ADMIN transaction lookup flow — 2026-11-08
+
+ADMIN navigation now additionally includes Quản lý giao dịch. Open /admin/transactions, choose Tra cứu giao dịch, then filter/search /admin/transactions/search. Default is all stored statuses/dates, newest first,10 rows per page. Email is the purchase-time snapshot, not the user's current email.
+
+Filtering only reads local PaymentOrders. Select Tra cứu VNPay on one row: backend reads its stored reference/createdAt, calls signed querydr and validates the response. Display provider and internal results separately, flag amount mismatch and show lookup time. No matching local rows produces an empty-state message; missing provider transaction and temporary/unverified failure have distinct errors.
+
+Lookup never calls payment processing or changes PLUS, order status, lastVerifiedAt or email outbox. Existing IPN/teacher reconciliation may independently update the order. Deleted local records cannot be queried by this flow. [Usecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java), [UI](<../frontend/app/(site)/admin/transactions/search/page.tsx>).

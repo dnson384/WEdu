@@ -1,5 +1,7 @@
 # API reference WEdu
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Inventory declaration hiện tại: **54 Spring endpoints** trong 11 controllers; **51 Next HTTP handlers** trong 49 route files; **1 Express endpoint**. Đây là declaration, không phải kết quả gọi server; POST [action] của review là một handler chọn approve/reject.
@@ -283,3 +285,20 @@ Next BFF requires accessToken cookie, forwards server-side bearer authentication
 | GET /payment/vnpay/ipn | Exact public GET rewrite to BACKEND_URL/payment/vnpay/ipn, preserving callback query. No new Next route for IPN. |
 
 PaymentOrder={orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualReview}, status PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. UserEntity adds optional nullable plusExpiresAt. Return data are untrusted until a backend response;400/403/404 do not trigger client-side grant. Missing owned order404 is distinct from network/500/HTML404 and can offer an explicit new purchase. [Handler](../frontend/app/api/payment/handler.ts), [types](../frontend/domain/entities/payment.entity.ts).
+
+## ADMIN transaction lookup — 2026-11-08
+
+Both backend endpoints require ROLE_ADMIN. Existing ROLE_TEACHER payment endpoints retain their owner/role rules. BFF reads accessToken cookie and forwards bearer server-side; all BFF responses use private,no-store.
+
+| Backend | BFF | Contract |
+| --- | --- | --- |
+| GET /admin/transactions | GET /api/admin/transactions | keyword (trimmed, max254), status, from/to (yyyy-MM-dd), page (zero-based, default0). Returns {items,page,pageSize:10,totalElements,totalPages}. |
+| POST /admin/transactions/{id}/lookup | POST /api/admin/transactions/{id}/lookup | No body; id64 lowercase hex. Returns {order,provider,amountMismatch,queriedAt}. No persistence mutations. |
+
+Item/order = {orderId,email,amount,status,createdAt,transactionNo}; nullable email/createdAt/transactionNo. Amount is VND. Provider = {transactionNo,amount,bankCode,paidAt,responseCode,transactionStatus}; optional information is nullable. Amount converts VNPay minor units by dividing100; dates are ISO instants. queriedAt is backend response time, not provider update time.
+
+Keyword OR-matches exact order ID, exact stored VNPay transactionNo, or escaped case-insensitive email substring. Combine keyword/status/date constraints with AND. Dates use Asia/Ho_Chi_Minh; inclusive UI end date maps to exclusive next midnight. Sort createdAt DESC,_id DESC. Status filters use stored PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. Empty list is200, not an upstream call.
+
+Lookup requires signature verification by VnpayGateway, matching merchant/reference/command, and valid amount/status/date on successful query. Query response00 is distinct from transaction status00. A verified91 maps to404 VNPAY_TRANSACTION_NOT_FOUND; missing local order maps to404 ORDER_NOT_FOUND. Unavailable configuration, network errors, unverified/malformed responses or other provider errors map to503 TRANSACTION_LOOKUP_UNAVAILABLE. Invalid input400, unauthenticated/unauthorized401/403 through existing security. No raw provider payload, checkout URL, clientIp or signatures are exposed.
+
+Evidence: [controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/AdminTransactionController.java), [DTO](../backend/src/main/java/com/wedu/exam_creation/payment/dto/AdminTransactionDTO.java), [BFF](../frontend/app/api/admin/transactions/handler.ts). Provider reference: [VNPay querydr](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html).

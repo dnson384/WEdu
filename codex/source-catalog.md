@@ -1,5 +1,7 @@
 # Source catalogue WEdu
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Thống kê source hiện tại (không tính node_modules/.next/target): **260 Java files** dưới backend/src/main/java, **262 .ts/.tsx files** của frontend và **9 TypeScript files** exporter-service/src. Danh mục lịch sử bên dưới được giữ để truy vết; source hiện tại và [module map](module-map.md) quyết định symbol đang dùng.
@@ -712,3 +714,38 @@ New tests: PaymentControllerTest, PaymentJobsTest, PaymentMongoIntegrationTest, 
 New files: BillingLayout; PaymentResult; usePayment; PaymentService; frontend PaymentUsecase; IPaymentRepository/PaymentRepositoryImpl; payment.entity.ts(PaymentPlan/PaymentOrder/PaymentReturnParameters); app/api/payment/handler.ts; plan/route.ts; orders/route.ts; orders/[id]/route.ts; orders/[id]/verify/route.ts; orders/[id]/return/route.ts.
 
 Changed files: Bill page; UserEntity.plusExpiresAt; useAuth expiry cache effect; useNavBar teacher navigation; next.config allowedDevOrigins/rewrites; proxy exact public GET IPN. No dependency/lockfile change. Validation uses six temporary harnesses without a tracked test runner. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [BFF](../frontend/app/api/payment/handler.ts), [Return route](../frontend/app/api/payment/orders/[id]/return/route.ts). Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base.
+
+## ADMIN transaction lookup — 2026-11-08
+
+New/changed source inventory (no route or symbol removals):
+
+| File | Symbols / purpose |
+| --- | --- |
+| [AdminTransactionController.java](<../backend/src/main/java/com/wedu/exam_creation/payment/controller/AdminTransactionController.java>) | ADMIN-only search/lookup endpoints and safe error mapping |
+| [AdminTransactionDTO.java](<../backend/src/main/java/com/wedu/exam_creation/payment/dto/AdminTransactionDTO.java>) | Item, Page, Provider and Lookup response DTOs |
+| [AdminTransactionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java>) | Filter validation, read-only provider lookup and result normalization |
+| [AdminTransactionException.java](<../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionException.java>) | Typed lookup status/code |
+| [AdminTransactionIndexConfig.java](<../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/AdminTransactionIndexConfig.java>) | Independent read-index initialization |
+| [IPaymentRepository.java](<../backend/src/main/java/com/wedu/exam_creation/payment/domain/repository/IPaymentRepository.java>) | Added searchTransactions/countTransactions |
+| [PaymentRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/repository/PaymentRepositoryImpl.java>) | Shared search/count filters and stable pagination |
+| [AdminTransactionControllerTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionControllerTest.java>) | Role/authentication and error contracts |
+| [AdminTransactionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionUsecaseTest.java>) | Dates, provider validation and no writes |
+| [AdminTransactionRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionRepositoryTest.java>) | Literal regex, pagination/count and indexes |
+| [page.tsx](<../frontend/app/(site)/admin/transactions/page.tsx>) | Transaction management landing |
+| [page.tsx](<../frontend/app/(site)/admin/transactions/search/page.tsx>) | Search page composition |
+| [handler.ts](<../frontend/app/api/admin/transactions/handler.ts>) | Authenticated BFF validation/error masking |
+| [route.ts](<../frontend/app/api/admin/transactions/route.ts>) | GET list BFF |
+| [route.ts](<../frontend/app/api/admin/transactions/[id]/lookup/route.ts>) | POST lookup BFF |
+| [adminTransaction.entity.ts](<../frontend/domain/entities/adminTransaction.entity.ts>) | TransactionFilters/AdminTransaction/TransactionPage/TransactionLookup |
+| [IAdminTransactionRepository.ts](<../frontend/domain/repositories/IAdminTransactionRepository.ts>) | Frontend repository interface |
+| [AdminTransactionRepositoryImpl.ts](<../frontend/infrastructure/repositories/AdminTransactionRepositoryImpl.ts>) | Bearer-authenticated backend adapter |
+| [AdminTransactionUsecase.ts](<../frontend/usecases/admin/AdminTransactionUsecase.ts>) | Frontend usecase boundary |
+| [AdminTransactionService.ts](<../frontend/presentation/services/AdminTransactionService.ts>) | Abortable browser HTTP calls |
+| [useAdminTransactions.ts](<../frontend/presentation/hooks/Admin/useAdminTransactions.ts>) | Search/lookup state and stale response protection |
+| [TransactionFilters.tsx](<../frontend/presentation/components/Admin/TransactionFilters.tsx>) | Reusable filter form |
+| [TransactionTable.tsx](<../frontend/presentation/components/Admin/TransactionTable.tsx>) | Local results and pagination |
+| [TransactionDetail.tsx](<../frontend/presentation/components/Admin/TransactionDetail.tsx>) | Provider/internal details and mismatch warning |
+| [transactionDisplay.ts](<../frontend/presentation/utils/transactionDisplay.ts>) | Vietnam dates, currency and status labels |
+| [Navbar.tsx](<../frontend/presentation/components/layout/Navbar.tsx>) | Added ADMIN transaction navigation |
+
+Validation: 15 new backend tests; targeted payment suite79 passed/5 skipped; frontend build/TypeScript/targeted ESLint and temporary React/JSDOM/BFF harness passed. See [current status](current-status.md#admin-transaction-lookup--2026-11-08).

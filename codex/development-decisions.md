@@ -1,5 +1,7 @@
 # WEdu Development Decisions
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Đồng bộ implementation theo source mà không mở rộng business scope: ADMIN/users+AI, review AI và VNPay/PLUS đã có các phê duyệt ở các mục theo ngày. Bảng quyết định tại mục21 và payment tại mục17 được cập nhật tương ứng; các ràng buộc FROZEN/DEFERRED/OUT_OF_SCOPE/INVESTIGATE_ONLY không liên quan vẫn giữ.
@@ -690,3 +692,11 @@ Only backend-verified IPN, querydr or signed Return receipts may update payment 
 Approved scope: teacher upgrade page at /me/bill with the shared navbar, a single20k VND/30day plan, and VNPay checkout in a separate tab. Backend decides availability, payment state and PLUS entitlement. New orders use the backend-provided5min expiry; frontend never extends it or grants access from a browser status code.
 
 Retain idempotency keys across retry/reload, open the payment tab synchronously, and preserve the original page for tracking. An owned-order404 permits only an explicit new purchase with a fresh key while retaining the old reference for reconciliation. Signed Return pairs go to authenticated backend validation and stay in tab memory only. Forward public GET IPN at the exact callback path; keep all other payment APIs protected. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts).
+
+## ADMIN transaction lookup — 2026-11-08
+
+Approved by the user: add Quản lý giao dịch → Tra cứu giao dịch for ROLE_ADMIN. This supersedes the earlier two-feature ADMIN navigation restriction and the payment-admin-UI exclusion only for read-only lookup.
+
+Search existing PaymentOrders by exact order ID/transactionNo or case-insensitive literal email substring; combine with stored status and Vietnam creation dates, 10 rows/page. Select one order to call VNPay querydr. Never update order/lastVerifiedAt, grant PLUS or enqueue email from this feature. No deleted-order recovery, refunds, exports or batch reconciliation.
+
+Evidence: [AdminTransactionUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java), [UI hook](../frontend/presentation/hooks/Admin/useAdminTransactions.ts). Existing teacher payment and other deferred decisions remain unchanged.

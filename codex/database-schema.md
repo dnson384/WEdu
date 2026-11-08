@@ -1,5 +1,7 @@
 # MongoDB schema và trạng thái dữ liệu
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Có **12 root collections** theo @Document hiện tại; embedded models không được tính thành collection riêng. PaymentOrders/PaymentEmails và Users.plusExpiresAt đã có code. Đây là schema suy ra từ source; chưa truy vấn database hoặc xác minh index/topology thật.
@@ -378,3 +380,9 @@ Source: [UserDocument](../backend/src/main/java/com/wedu/exam_creation/user/infr
 Users adds nullable Instant plusExpiresAt. Legacy PLUS/null remains effective; expired PLUS is read as FREE. PaymentOrders stores random64hex _id, idempotencyKeyHash=SHA256(userId+":"+key), userId/email snapshot, amount=20000,durationDays=30,status,createdAt,expiresAt,paidAt,plusExpiresAt,transactionNo,responseCode,transactionStatus,clientIp,manualReview,revision,lastVerifiedAt. Legacy orders use deterministic _id; request lookup falls back to that _id. No migration/backfill.
 
 PaymentEmails stores _id=orderId:status,orderId,email,status,plusExpiresAt,manualReview,attempts,nextAttemptAt,sentAt,leaseToken. Indexes: PaymentOrders(idempotencyKeyHash) unique+sparse, PaymentOrders(status,expiresAt), PaymentEmails(sentAt,nextAttemptAt); no TTL deletion. Mongo transaction and conditional revision atomically save order, entitlement and outbox. Late verified success may promote EXPIRED/FAILED/CANCELLED to SUCCEEDED; SUCCEEDED cannot be downgraded. Deleting a record removes its reconciliation/idempotency evidence. [Documents](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentOrderDocument.java), [repository](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/repository/PaymentRepositoryImpl.java).
+
+## ADMIN transaction lookup indexes — 2026-11-08
+
+No collection or field additions. PaymentOrders remains the local source; status is the stored value and email is its purchase snapshot. Lookup does not write lastVerifiedAt or provider results.
+
+[AdminTransactionIndexConfig.indexes](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/AdminTransactionIndexConfig.java) creates non-unique indexes (createdAt DESC,_id DESC), (status ASC,createdAt DESC,_id DESC) and (transactionNo ASC) at ApplicationReadyEvent, independent of payment.vnpay.enabled. Existing indexes remain. Requires Mongo index-creation permission; no backfill/TTL. Production index presence/performance has not been verified. Literal contains-email matching may still scan.

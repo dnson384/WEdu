@@ -1,5 +1,7 @@
 # Kiến trúc WEdu hiện tại
 
+> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Các ranh giới dưới đây gồm module payment, quản lý AI và kiểm duyệt câu hỏi đã có source. Payment dùng chung transaction xử lý kết quả IPN/querydr/Return, không coi browser redirect tự nó là xác nhận; ranh giới BFF/JWT và backend owner/role giữ nguyên.
@@ -266,3 +268,9 @@ PaymentUsecase shares process/TransactionTemplate across verified sources, retri
 Bill renders UI; usePayment owns popup/storage/query/reconciliation state. PaymentService → Next handlePayment → frontend PaymentUsecase → IPaymentRepository/PaymentRepositoryImpl → backend API. PaymentReturnParameters keeps URL key pairs intact for duplicate rejection. BFF bounds/validates requests, keeps bearer tokens server-side and masks provider failures. Backend alone validates signatures and grants PLUS.
 
 BillingLayout reuses Navbar. useNavBar offers upgrade only to ROLE_TEACHER; backend remains authority. next.config rewrites exact /payment/vnpay/ipn to BACKEND_URL; proxy bypasses JWT only for that exact GET, preserving protection for adjacent routes and private APIs. Return receipt lives only in a hook ref; React Query caches only server-returned state and protects SUCCEEDED from stale downgrade. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Service](../frontend/presentation/services/PaymentService.ts), [adapter](../frontend/infrastructure/repositories/PaymentRepositoryImpl.ts).
+
+## ADMIN transaction lookup boundary — 2026-11-08
+
+ROLE_ADMIN has a separate read-only payment entrypoint: AdminTransactionController → AdminTransactionUsecase → payment repository for local search/find and VnpayGateway.query for one selected order. Reuses signed query transport without invoking PaymentUsecase.get/verify/process; those methods can expire/reconcile orders and grant entitlement. No Mongo transaction is opened around provider HTTP, and no lastVerifiedAt/payment/outbox write occurs.
+
+Presentation components use useAdminTransactions → AdminTransactionService → authenticated Next BFF → frontend usecase/repository → backend. Backend role enforcement remains authoritative. No automatic VNPay polling/retries; an in-flight ref prevents duplicate UI requests and AbortController/identity checks discard results after closing/changing selection. List queries are user-scoped in React Query. [Hook](../frontend/presentation/hooks/Admin/useAdminTransactions.ts), [backend](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java).
