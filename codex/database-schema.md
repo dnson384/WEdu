@@ -1,6 +1,22 @@
 # MongoDB schema và trạng thái dữ liệu
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund persistence — 2026-11-09
+
+New collections (no TTL/backfill):
+
+| Collection / document | Fields and invariants |
+| --- | --- |
+| RefundRequests / RefundDocument | Random32hex _id, orderId/userId/email snapshot, idempotencyKey, amount VND, status, reason, policyVersion, eligibility, decisionReason, adminId, createdAt/updatedAt/submittedAt/lastCheckedAt, requestId, providerCode/providerStatus/refundTransactionNo, pollingStopped, revision, history[{at,status,actor,reason}], checks[{key,result,reason}]. |
+| RefundAccounts / RefundAccountDocument | _id=userId string, trackedSince, lastAiUsedAt, activeAi attempt IDs, holds refund IDs, revision. CAS/transactions serialize per-user operations. Unknown attempts are not expired as unused. |
+| RefundAiReceipts / RefundAiReceiptDocument | _id=attempt UUID, userId string, createdAt; inserted in the exam transaction only for persisted AI-generated questions. |
+
+Refund status: PENDING_REVIEW / NEEDS_VERIFICATION / PROCESSING / REFUNDED / REJECTED / FAILED / CANCELLED. Eligibility: ELIGIBLE / INELIGIBLE / UNKNOWN; check result: PASSED / FAILED / UNKNOWN. Unique (userId,idempotencyKey) prevents request replay. Active/previously refunded order checks are serialized through RefundAccounts; they are not inferred from accountType.
+
+PaymentOrders adds nullable plusStartsAt/refundedAt and booleans refundTracked/plusLegacyProtected (legacy absent=false). Newly verified grants record their entitlement interval and AI-evidence coverage. Future intervals may shift after a preceding refund; original status remains SUCCEEDED. Legacy start may be derived from plusExpiresAt-durationDays only when consistent. A purchase originating from indefinite legacy PLUS is flagged to prevent automatic destructive revocation. PaymentEmails adds nullable refundId/message; deterministic refund event IDs share its existing send lease/retry indexes. Users keeps its existing accountType/plusExpiresAt shape; mutations update only entitlement fields.
+
+[RefundIndexConfig](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/RefundIndexConfig.java) ensures RefundRequests unique(userId,idempotencyKey), (orderId,status), (createdAt DESC,_id DESC), (userId,createdAt DESC), (status,lastCheckedAt); RefundAccounts(trackedSince); RefundAiReceipts(userId,createdAt DESC); PaymentOrders(userId,paidAt). Indexes initialize independently of refund enablement and create the collections before transaction use. Replica-set transaction support and index permissions are required; deployed presence remains unverified.
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

@@ -1,6 +1,14 @@
 # Kiến trúc WEdu hiện tại
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund boundaries — 2026-11-09
+
+RefundController → RefundUsecase → IRefundRepository/RefundRepositoryImpl; RefundEntitlementService uses payment repository plus UserService facades, not user infrastructure directly. Controllers enforce teacher/admin roles and pass authenticated ownership. Domain entities, Mongo documents, MapStruct mapper and HTTP DTOs remain separate. The shared RefundManager/RefundDetail render interaction; useRefunds owns queries/state/mutations through RefundService → private/no-store BFF → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl.
+
+RefundTransactions runs short REQUIRES_NEW Mongo transactions with bounded retry for known transient aborts; unknown commit results are not replayed. Per-user RefundAccounts revisions serialize AI starts, refund holds and payment grants. QuestionService starts a durable AI attempt in a separate short transaction immediately before provider HTTP, stores RefundAiReceipts in the existing exam transaction, then clears the attempt after a known completion. Committed results set a usage timestamp; unknown completion retains the attempt. The gate rereads effective PLUS inside its transaction, preventing stale principals from using revoked rights. Moderator regeneration does not pass through this teacher gate.
+
+Provider preflight and refund/query HTTP execute outside refund database transactions. Send intent is durable before refund HTTP; only the winning revision sends. Reconciliation never repeats refund submission. Verified completion atomically updates refund, shifts later entitlement intervals, revokes remaining purchased time, removes the relevant AI hold and inserts an email event. PaymentJobs sends refund emails using the existing lease/retry infrastructure. [Implementation inventory](refund-implementation-report.md).
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

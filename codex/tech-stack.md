@@ -1,5 +1,13 @@
 # Tech stack và môi trường WEdu
 
+## Refund configuration and checks — 2026-11-09
+
+No new package dependencies. Source rechecked on main `cbcb49a` (2026-11-10): `payment.refund.enabled=${REFUND_ENABLED}` controls refund mutations/provider polling and requires an explicit runtime environment value; application.yml has no fallback. Set false to disable mutations/polling, true to enable. RefundSettings.enabled is a Java boolean initialized false, but this does not supply a missing YAML placeholder. Spring does not automatically load backend/.env; the launcher/IDE/container must provide it. Owned history remains readable when disabled, and teacher AI tracking remains active for future evidence. Do not enable until index initialization and VNPay sandbox verification are complete. Refund uses existing backend VNPay merchant credentials/query URL and RestClient timeouts; no credential is exposed through NEXT_PUBLIC variables.
+
+RefundJobs runs every 60 seconds with a 300-second persisted per-request query throttle; unresolved records stop automatic polling after 24 hours. Refund emails reuse PaymentJobs (15 seconds, maximum five attempts, 300-second lease, 60-second retry). Existing scheduling enablement and VNPay enabled configuration still apply. No long transaction wraps refund/query HTTP.
+
+Targeted command: `mvn -q '-Dtest=Refund*Test,VnpayRefundGatewayTest,Payment*Test,VnpayGatewayTest,VnpayQueryGatewayTest,AdminTransaction*Test,PlusEntitlementTest' test`. Real concurrent Mongo tests require explicit `WEDU_PAYMENT_TEST_MONGO_URI` to a dedicated replica set and create/drop only a generated `wedu_refund_test_*` database. No URI was available in this session. Frontend checks use build, TypeScript and targeted ESLint. Exact results and limitations are in the [implementation report](refund-implementation-report.md).
+
 ## Snapshot hiện tại — 2026-11-06
 
 Đối chiếu source/config tại commit `abcde6e`. Phiên bản khai báo và lockfile được tách rõ: frontend Next ^16.1.6 → lock 16.3.5, React 19.2.3, TypeScript ^5 → lock 5.9.3; backend Spring Boot 4.0.6/Java 17; exporter Express 5.2.1/TypeScript 6.0.3. Không suy phiên bản triển khai thực từ node_modules. Payment không thêm dependency; dùng RestClient/Mongo transaction/JavaMailSender sẵn có.

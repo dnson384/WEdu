@@ -1,6 +1,18 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## PLUS refunds — 2026-11-09
+
+Source rechecked 2026-11-10 on main `cbcb49a`: backend `bf42f2b` (PR #137), tests `0c619db` (PR #138) and frontend `f1064c4` (PR #139) are merged. This documentation preparation does not rerun application builds/tests or certify deployment; results below retain their original execution context.
+
+Validation: targeted payment/refund suite **133 tests:125 passed,8 Mongo integration skipped,0 failures/errors**; frontend build, TypeScript and targeted ESLint passed; temporary React SSR/JSDOM/BFF harness passed24 checks. Full-suite run in this session had the two previously documented assertion failures plus a MongoDB TLS context-load error; see report for timing and limits.
+
+Implemented in source: teacher-owned order history, refund submission/cancellation/status; ADMIN list/detail, eligibility checks, approval/legacy-AI exception/rejection; signed VNPay full refund, reconciliation, per-order remaining PLUS revocation and durable email outbox. Reuses the existing payment feature without downgrading SUCCEEDED orders or regranting refunded entitlement on callback replay. [RefundUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [shared UI](../frontend/presentation/components/Payment/RefundManager.tsx).
+
+AI evidence now records committed exam usage per teacher, with a per-user gate serializing starts against refund holds. In-flight or unknown commits remain unknown. Old orders are not backfilled as unused. Finite legacy intervals are reconstructed only when non-overlapping and matching the user's expiry; indefinite/unknown legacy entitlement requires investigation. Data disagreement discovered after provider completion retains the AI hold and an ADMIN investigation state rather than silently dropping other entitlement.
+
+Runtime enablement and real VNPay/Mongo/SMTP end-to-end remain **unknown/unverified**. Current application.yml requires explicit `REFUND_ENABLED`; there is no YAML default. False disables refund mutations/polling, true enables them; launcher/IDE/container must provide the value. There is intentionally no UI force-success, clear-unknown-AI or refund resend action. A crash after a persisted send intent but before provider submission can therefore require operational investigation. See [report](refund-implementation-report.md) for the complete changed-file list, checks run and existing full-suite failures; historical validation below is not a certification of this change.
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

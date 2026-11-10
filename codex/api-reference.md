@@ -1,6 +1,27 @@
 # API reference WEdu
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund APIs — 2026-11-09
+
+All routes are authenticated; backend enforces ROLE_TEACHER ownership or ROLE_ADMIN. BFF path is `/api` + backend path. No bearer/signature/provider payload is exposed. Amounts are VND integers; timestamps ISO instants. Read-only ADMIN transaction lookup remains unchanged.
+
+| Backend (same BFF method) | Authorization / request | Response |
+| --- | --- | --- |
+| GET /payment/orders | Teacher, page default0 | Orders{items:[Order{id,amount,status,createdAt,paidAt}],page,hasNext}; 10 rows/page. |
+| POST /payment/orders/{id}/refunds | Teacher owner; Idempotency-Key alphanumeric/hyphen16–80; {reason,policyVersion:"plus-refund-v1"} | Item; reason trimmed3–1000. Same key returns same request; another active request/already refunded order409. |
+| GET /payment/refunds | Teacher; page | Page restricted to authenticated user. |
+| GET /payment/refunds/{id} | Teacher owner | Item, absent/not owned404. |
+| POST /payment/refunds/{id}/cancel | Teacher owner; {revision} | Item; only pending/verification states. |
+| GET /admin/refunds | ADMIN; keyword,status,from,to,page | Page; escaped literal email substring OR exact request/order ID; status/date constraints AND. |
+| GET /admin/refunds/{id} | ADMIN | Item. |
+| POST /admin/refunds/{id}/approve | ADMIN; {revision,legacyException?:boolean,reason?:string} | Item; legacy exception requires reason, cannot override hard ineligibility or other unknowns. |
+| POST /admin/refunds/{id}/reject | ADMIN; {revision,reason} | Item; mandatory reason3–1000. |
+| POST /admin/refunds/{id}/reconcile | ADMIN; no body required | Item; query only, 300-second throttle. |
+
+Item = {id,orderId,email,amount,status,reason,policyVersion,eligibility,decisionReason,createdAt,updatedAt,paidAt,lastAiUsedAt,activeAi,projectedPlusExpiresAt,entitlementVerifiable,providerCode,providerStatus,refundTransactionNo,revision,history:[{at,status,actor,reason}],checks:[{key,result,reason}]}. Nullable timestamps/provider fields and email are allowed; projected expiry is unavailable for completed/unverifiable grants. Check keys PAYMENT/WINDOW/NOT_REFUNDED/AI_UNUSED/ENTITLEMENT; results PASSED/FAILED/UNKNOWN. Eligibility/checks are saved at submission/decision, not recomputed by GET.
+
+Page = {items,page,pageSize:10,totalElements,totalPages,enabled,policyVersion}; page zero-based0–1000000. Dates yyyy-MM-dd in Asia/Ho_Chi_Minh with inclusive UI end date converted to exclusive next midnight; newest creation then ID descending. Keyword max254. IDs: order64 lowercase hex, refund32 lowercase hex. Mutations require current revision; stale/incompatible state409; invalid input400; anonymous/role failures401/403. Safe application error code REFUND_ERROR; uncertain provider errors retain PROCESSING instead of returning a false terminal result. Feature-disabled mutations503. BFF bounds JSON body to8192 characters and masks server failures. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/RefundController.java), [provider reference](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html).
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

@@ -1,6 +1,16 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund processing — 2026-11-09
+
+Teacher opens Thanh toán → Giao dịch và hoàn tiền (`/me/bill/refunds`), selects an owned SUCCEEDED order, enters a reason and accepts the versioned 48-hour/unused-AI policy and AI-hold/no-compensation terms. Submission is idempotent; a deterministic failed condition saves REJECTED plus email. Otherwise it saves PENDING_REVIEW or NEEDS_VERIFICATION and a per-user AI hold. Multiple requests may hold one user; clearing one does not clear the others. Cancellation is allowed only before PROCESSING.
+
+ADMIN opens `/admin/transactions` → Xử lý yêu cầu hoàn tiền → `/admin/transactions/refunds`. Search/filter local requests by ID/order/email/status/Vietnam submission dates, 10/page. Detail shows snapshot checks, current AI uncertainty, projected expiry and history. Reject requires a reason. Approve verifies the original VNPay payment, reevaluates business rules using the original submission timestamp and checks revision. Old missing AI evidence may be explicitly excepted with a reason; other unknowns cannot be bypassed. A newly known AI result auto-rejects. No provider failure is mapped to business-policy rejection.
+
+Approval commits PROCESSING and request ID, then sends a single full refund. Codes for acceptance/in-progress retain PROCESSING. Timeout, unverified/mismatched responses and original-payment query results cannot complete a refund. RefundJobs checks due records every 60 seconds, claims at most one query per request/300 seconds and stops automatic querying after 24 hours unresolved. ADMIN may still query manually, subject to the throttle. Only a verified matching type-02 completed refund revokes entitlement and becomes REFUNDED; a definite provider refusal becomes FAILED and releases the hold.
+
+Expiry keeps running while held. Completion removes only the refunded grant's remaining time and shifts subsequent grants, preserving other purchases; consumed time is never deducted from other orders. All user-visible transitions enqueue a plaintext email in the same transaction and remain readable in the status page if delivery fails. SMTP retries follow the existing five-attempt outbox policy. [Usecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [validation/limitations](refund-implementation-report.md).
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

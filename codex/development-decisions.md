@@ -1,6 +1,16 @@
 # WEdu Development Decisions
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## PLUS refund workflow — 2026-11-09
+
+User-approved implementation supersedes the earlier refund exclusion and read-only ADMIN payment scope **only for this workflow**. Teacher submits an owned paid order; ADMIN processes it under Quản lý giao dịch → Xử lý yêu cầu hoàn tiền. Full refund only, within 48 hours of stored paidAt (the local entitlement grant time), assessed at submission. A persisted teacher AI exam result after that grant disqualifies; moderator regeneration, bank-only selection and failed/rolled-back generation do not count.
+
+Accepted pending requests hold new AI generation, including requests from stale authenticated PLUS principals; PLUS expiry continues without compensation. Teacher may cancel before provider processing. Legacy AI evidence is unknown, with a reason-required ADMIN exception; missing payment evidence, in-flight/unknown AI or unverifiable entitlement cannot be overridden. Deterministic ineligibility auto-rejects with a policy reason, never on GET. Provider/network uncertainty is not business ineligibility.
+
+Refund status is separate from payment status. Verified completion removes only the refunded order's remaining entitlement, preserving other purchases. No partial refund, in-app notification inbox, time compensation, or automatic resend of an ambiguous refund. Notify via durable email and the teacher status page. Rollout keeps refund mutations disabled until indexes and sandbox validation are verified; AI tracking runs independently of that flag. Source rechecked 2026-11-10 on main `cbcb49a` requires explicit REFUND_ENABLED with no YAML fallback; this source fact does not certify runtime activation or change the rollout prerequisite. An ambiguous send/commit retains processing for reconciliation/manual investigation; this UI cannot force-mark a refund successful or force-clear unknown AI attempts.
+
+Evidence: [RefundUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [RefundAiService](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundAiService.java), [RefundEntitlementService](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundEntitlementService.java). Implementation/validation details: [refund report](refund-implementation-report.md). No real VNPay refund or production activation is certified.
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

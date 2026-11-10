@@ -1,6 +1,10 @@
 # Source catalogue WEdu
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund implementation — 2026-11-09
+
+The [refund implementation report](refund-implementation-report.md) inventories every application, test, configuration and documentation file added/changed for this feature, with a per-file description. Public flow/symbol inventory is in [module map](module-map.md#refund-module--2026-11-09), all new routes/DTO contracts in [API reference](api-reference.md#refund-apis--2026-11-09), document fields/indexes in [schema](database-schema.md#refund-persistence--2026-11-09). Historical declarations/counts below predate this addition.
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 

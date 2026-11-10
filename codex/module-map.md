@@ -1,6 +1,14 @@
 # Bản đồ module, symbols và API
 
-> Cập nhật mới nhất 2026-11-08: xem mục ADMIN transaction ở cuối tài liệu cho phạm vi tra cứu giao dịch chỉ đọc. Các snapshot trước đó giữ giá trị lịch sử.
+## Refund module — 2026-11-09
+
+- Teacher `/me/bill/refunds` and ADMIN `/admin/transactions/refunds` → reusable RefundManager/RefundDetail → useRefunds → RefundService → Next handleRefund → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl → backend RefundController/RefundUsecase. Parent transaction/billing pages link the new entrypoints. All BFF responses are private,no-store.
+- RefundUsecase.orders/search/get/create/decide/reconcile/reconcileDue coordinates IRefundRepository.find/findAttempt/activeForOrder/insert/update/search/count/due/claimPoll/account/saveAccount/recordAi/lastAiUse and IPaymentRepository.ordersForUser. RefundTransactions.run owns short transaction boundaries. RefundMapper maps RefundEntity/RefundAccountEntity and their documents, including separate EventDocument/CheckDocument snapshots; RefundDTO defines Create/Decision/Item/Page/Order/Orders/Event/Check. No document or HTTP model imports domain snapshot types.
+- ExamUsecase.generateExam → QuestionService.generateExamQuestions overload with userId → RefundAiService.begin → teacher gate; persisted questions insert RefundAiReceipts. Moderator AI remains separate. PaymentUsecase.process initializes the same account and records plusStartsAt/refundTracked/plusLegacyProtected for new grants.
+- RefundEntitlementService.preview/revoke uses ordered payment grants and UserService.paidPlusExpiry/hasLegacyPlus/revokePaidTime → UserUsecase → UserRepositoryImpl.revokePaidTime. VnpayGateway.refund/validRefund/queryRefund extend provider transport without changing ordinary lookup's read-only contract.
+- RefundJobs.reconcile schedules reconciliation; RefundIndexConfig.indexes initializes indexes. Refund events enqueue PaymentEmailEntity.refundId/message; PaymentJobs chooses MailService.sendRefundResultEmail. [API](api-reference.md#refund-apis--2026-11-09), [schema](database-schema.md#refund-persistence--2026-11-09), [complete file inventory](refund-implementation-report.md).
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 
 ## Snapshot hiện tại — 2026-11-06
 
