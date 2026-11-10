@@ -27,4 +27,8 @@ public class PaymentOrderDocument {
     private boolean manualReview;
     private long revision;
     private Instant lastVerifiedAt;
+    private Instant plusStartsAt;
+    private Instant refundedAt;
+    private boolean refundTracked;
+    private boolean plusLegacyProtected;
 }

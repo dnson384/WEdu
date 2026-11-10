@@ -14,13 +14,21 @@ public class MailService {
     private final String fromEmail;
 
     public void sendPaymentResultEmail(String toEmail, String orderId, String result) {
+        sendResult(toEmail, "Kết quả thanh toán WEdu PLUS", "Mã đơn: " + orderId + "\n\n" + result);
+    }
+
+    public void sendRefundResultEmail(String toEmail, String refundId, String result) {
+        sendResult(toEmail, "Tình trạng yêu cầu hoàn tiền WEdu PLUS", "Mã yêu cầu: " + refundId + "\n\n" + result);
+    }
+
+    private void sendResult(String toEmail, String subject, String content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
             helper.setFrom(fromEmail, "WEdu Support");
             helper.setTo(toEmail);
-            helper.setSubject("Kết quả thanh toán WEdu PLUS");
-            helper.setText("Mã đơn: " + orderId + "\n\n" + result, false);
+            helper.setSubject(subject);
+            helper.setText(content, false);
             mailSender.send(message);
         } catch (MessagingException | java.io.UnsupportedEncodingException e) {
             throw new InternalServerException("Không thể gửi email kết quả thanh toán");

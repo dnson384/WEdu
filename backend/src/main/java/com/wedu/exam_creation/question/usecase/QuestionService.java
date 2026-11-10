@@ -25,6 +25,8 @@ import java.util.*;
 
 @Service
 public class QuestionService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.wedu.exam_creation.payment.usecase.RefundAiService refundAiService;
     private final IQuestionRepository repo;
     private final QuestionDTOMapper mapper;
     private final AIQuestionGenerationService aiQuestionGenerationService;
@@ -142,6 +144,10 @@ public class QuestionService {
 
     @Transactional(rollbackFor = Exception.class)
     public ExamGeneratedDTO generateExamQuestions(String accountType, List<ChapterResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) throws JsonProcessingException {
+        return generateExamQuestions(accountType, categories, matrixDetails, null);
+    }
+
+    public ExamGeneratedDTO generateExamQuestions(String accountType, List<ChapterResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails, String userId) throws JsonProcessingException {
         List<String> errors = new ArrayList<>();
 
         List<GenerateQuestionRequestDTO> aiRequests = new ArrayList<>();
@@ -258,11 +264,13 @@ public class QuestionService {
 
         // Gọi AI Generate câu hỏi nếu là tài khoản plus
         if (accountType.equals("PLUS") && !aiRequests.isEmpty()) {
+            Runnable aiPersisted = userId == null ? () -> { } : refundAiService.begin(userId);
             List<AIQuestionResponseDTO> generatedQuestions = aiQuestionGenerationService.generateQuestions(aiRequests);
 
             List<NewQuestionDTO> aiQuestions = toNewQuestionDTO(generatedQuestions);
             List<String> newQuestionIds = this.insert(aiQuestions, "PENDING_REVIEW");
             questionReviewService.createForQuestions(newQuestionIds);
+            if (!newQuestionIds.isEmpty()) aiPersisted.run();
 
             telegramNotificationService.notifyPendingReview(newQuestionIds);
 

@@ -23,6 +23,12 @@ public class PaymentRepositoryImpl implements IPaymentRepository {
     private final MongoTemplate mongoTemplate;
     private final PaymentMapper paymentMapper;
 
+    public List<PaymentOrderEntity> ordersForUser(String userId) {
+        return mongoTemplate.find(Query.query(Criteria.where("userId").is(userId))
+                .with(org.springframework.data.domain.Sort.by("paidAt", "_id")), PaymentOrderDocument.class)
+                .stream().map(paymentMapper::toEntity).toList();
+    }
+
     private Query transactionQuery(String keyword, String status, Instant from, Instant to) {
         Query query = new Query();
         if (!keyword.isEmpty()) query.addCriteria(new Criteria().orOperator(
@@ -68,7 +74,9 @@ public class PaymentRepositoryImpl implements IPaymentRepository {
         Update update = new Update().set("status", order.getStatus()).set("paidAt", order.getPaidAt())
                 .set("plusExpiresAt", order.getPlusExpiresAt()).set("transactionNo", order.getTransactionNo())
                 .set("responseCode", order.getResponseCode()).set("transactionStatus", order.getTransactionStatus())
-                .set("manualReview", order.isManualReview()).inc("revision", 1);
+                .set("manualReview", order.isManualReview()).set("plusStartsAt", order.getPlusStartsAt())
+                .set("refundedAt", order.getRefundedAt()).set("refundTracked", order.isRefundTracked())
+                .set("plusLegacyProtected", order.isPlusLegacyProtected()).inc("revision", 1);
         return mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(order.getId())
                 .and("revision").is(expectedRevision)), update, PaymentOrderDocument.class).getModifiedCount() == 1;
     }

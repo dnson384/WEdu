@@ -1,6 +1,7 @@
 package com.wedu.exam_creation.payment.infrastructure;
 
 import com.wedu.exam_creation.payment.domain.entity.PaymentOrderEntity;
+import com.wedu.exam_creation.payment.domain.entity.RefundEntity;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -96,6 +97,14 @@ public class VnpayGateway {
     }
 
     public Map<String, String> query(PaymentOrderEntity order) {
+        return query(order, null);
+    }
+
+    public Map<String, String> queryRefund(PaymentOrderEntity order, String transactionNo) {
+        return query(order, transactionNo);
+    }
+
+    private Map<String, String> query(PaymentOrderEntity order, String transactionNo) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("vnp_RequestId", UUID.randomUUID().toString().replace("-", ""));
         values.put("vnp_Version", "2.1.0");
@@ -106,6 +115,7 @@ public class VnpayGateway {
         values.put("vnp_CreateDate", DATE.format(Instant.now()));
         values.put("vnp_IpAddr", properties.getServerIp());
         values.put("vnp_OrderInfo", "Kiem tra WEdu " + order.getId());
+        if (transactionNo != null) values.put("vnp_TransactionNo", transactionNo);
         values.put("vnp_SecureHash", sign(join(values, "vnp_RequestId", "vnp_Version", "vnp_Command",
                 "vnp_TmnCode", "vnp_TxnRef", "vnp_TransactionDate", "vnp_CreateDate", "vnp_IpAddr", "vnp_OrderInfo")));
         Map<String, String> result;
@@ -126,6 +136,40 @@ public class VnpayGateway {
         LOG.debug("VNPay query verified: providerCode={} transactionStatus={}",
                 providerCode, safeCode(result.get("vnp_TransactionStatus")));
         return result;
+    }
+
+    public boolean validRefund(Map<String, String> values) {
+        return properties.available() && validSignature(join(values, "vnp_ResponseId", "vnp_Command", "vnp_ResponseCode",
+                "vnp_Message", "vnp_TmnCode", "vnp_TxnRef", "vnp_Amount", "vnp_BankCode", "vnp_PayDate",
+                "vnp_TransactionNo", "vnp_TransactionType", "vnp_TransactionStatus", "vnp_OrderInfo"), values.get("vnp_SecureHash"));
+    }
+
+    public Map<String, String> refund(PaymentOrderEntity order, RefundEntity refund) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("vnp_RequestId", refund.getRequestId());
+        values.put("vnp_Version", "2.1.0");
+        values.put("vnp_Command", "refund");
+        values.put("vnp_TmnCode", properties.getTmnCode());
+        values.put("vnp_TransactionType", "02");
+        values.put("vnp_TxnRef", order.getId());
+        values.put("vnp_Amount", Long.toString(Math.multiplyExact(refund.getAmount(), 100)));
+        values.put("vnp_TransactionNo", order.getTransactionNo());
+        values.put("vnp_TransactionDate", DATE.format(order.getCreatedAt()));
+        values.put("vnp_CreateBy", refund.getAdminId());
+        values.put("vnp_CreateDate", DATE.format(refund.getSubmittedAt()));
+        values.put("vnp_IpAddr", properties.getServerIp());
+        values.put("vnp_OrderInfo", "Hoan tien WEdu " + refund.getId());
+        values.put("vnp_SecureHash", sign(join(values, "vnp_RequestId", "vnp_Version", "vnp_Command", "vnp_TmnCode",
+                "vnp_TransactionType", "vnp_TxnRef", "vnp_Amount", "vnp_TransactionNo", "vnp_TransactionDate",
+                "vnp_CreateBy", "vnp_CreateDate", "vnp_IpAddr", "vnp_OrderInfo")));
+        try {
+            Map<String, String> result = client.post().uri(properties.getQueryUrl()).contentType(MediaType.APPLICATION_JSON)
+                    .body(values).retrieve().body(new ParameterizedTypeReference<Map<String, String>>() { });
+            if (result == null || !validRefund(result)) throw queryFailure("REFUND_UNVERIFIED", "UNKNOWN", null);
+            return result;
+        } catch (RestClientException e) {
+            throw queryFailure("REFUND_TRANSPORT", "UNKNOWN", null);
+        }
     }
 
     private VnpayQueryException queryFailure(String stage, String providerCode, Integer httpStatus) {
