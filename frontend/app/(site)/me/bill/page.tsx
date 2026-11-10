@@ -19,6 +19,7 @@ export default function Bill() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
       <header>
+        <Link href="/me/bill/refunds" className="mb-4 inline-block text-blue-700 underline">Giao dịch và hoàn tiền</Link>
         <p className="text-sm font-medium uppercase tracking-wider text-blue-600">
           WEdu PLUS
         </p>
