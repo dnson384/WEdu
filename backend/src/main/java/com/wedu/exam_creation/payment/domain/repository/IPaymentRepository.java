@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 
 public interface IPaymentRepository {
+    List<PaymentOrderEntity> ordersForUser(String userId);
     List<PaymentOrderEntity> searchTransactions(String keyword, String status, Instant from, Instant to, int page);
 
     long countTransactions(String keyword, String status, Instant from, Instant to);

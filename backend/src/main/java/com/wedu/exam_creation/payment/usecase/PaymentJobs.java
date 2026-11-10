@@ -37,7 +37,8 @@ public class PaymentJobs {
             if (email == null) return;
             boolean sent = false;
             try {
-                mail.sendPaymentResultEmail(email.getEmail(), email.getOrderId(), message(email));
+                if (email.getRefundId() != null) mail.sendRefundResultEmail(email.getEmail(), email.getRefundId(), email.getMessage());
+                else mail.sendPaymentResultEmail(email.getEmail(), email.getOrderId(), message(email));
                 sent = true;
             } catch (RuntimeException e) {
                 LOG.warn("Payment email attempt failed (attempt {})", email.getAttempts());

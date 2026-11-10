@@ -60,6 +60,11 @@ public class UserRepositoryImpl implements IUserRepository {
         return updateOnly(id, new Update().set("accountType", "PLUS").set("plusExpiresAt", expiresAt));
     }
 
+    public UserEntity revokePaidTime(String id, Instant expiresAt) {
+        return updateOnly(id, new Update().set("accountType", expiresAt.isAfter(Instant.now()) ? "PLUS" : "FREE")
+                .set("plusExpiresAt", expiresAt));
+    }
+
     private UserEntity updateOnly(String id, Update update) {
         return mapper.toEntity(mongoTemplate.findAndModify(Query.query(Criteria.where("_id").is(id)),
                 update.set("updatedAt", Instant.now()), FindAndModifyOptions.options().returnNew(true), UserDocument.class));

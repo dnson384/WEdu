@@ -33,6 +33,8 @@ import java.util.function.Supplier;
 
 @Service
 public class PaymentUsecase {
+    @org.springframework.beans.factory.annotation.Autowired
+    private RefundAiService refundAiService;
     private final IPaymentRepository repository;
     private final UserService userService;
     private final VnpayGateway gateway;
@@ -278,10 +280,16 @@ public class PaymentUsecase {
 
             Instant now = Instant.now();
             if (success) {
+                if (refundAiService != null) {
+                    refundAiService.lockedAccount(order.getUserId());
+                    order.setRefundTracked(true);
+                    order.setPlusLegacyProtected(userService.hasLegacyPlus(order.getUserId()));
+                }
                 order.setPaidAt(now);
 
                 Instant expiry = userService.grantPaidPlus(order.getUserId(), now, order.getDurationDays());
                 order.setPlusExpiresAt(expiry);
+                if (expiry != null) order.setPlusStartsAt(expiry.minusSeconds(order.getDurationDays() * 86400L));
                 order.setManualReview(expiry == null);
             }
 

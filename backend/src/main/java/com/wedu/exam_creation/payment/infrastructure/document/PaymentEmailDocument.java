@@ -17,4 +17,6 @@ public class PaymentEmailDocument {
     private Instant nextAttemptAt;
     private Instant sentAt;
     private String leaseToken;
+    private String refundId;
+    private String message;
 }

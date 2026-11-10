@@ -208,6 +208,20 @@ public class UserUsecase {
         return repo.grantPlus(userId, expiry) == null ? null : expiry;
     }
 
+    public Instant paidPlusExpiry(String userId) {
+        UserEntity user = repo.findById(userId);
+        return user == null ? null : user.getPlusExpiresAt();
+    }
+
+    public boolean hasLegacyPlus(String userId) {
+        UserEntity user = repo.findById(userId);
+        return user != null && "PLUS".equals(user.getAccountType()) && user.getPlusExpiresAt() == null;
+    }
+
+    public boolean revokePaidTime(String userId, Instant expiry) {
+        return repo.revokePaidTime(userId, expiry) != null;
+    }
+
     // DELETE
     public boolean deleteUser(String userId) {
         boolean isDeleted = repo.delete(userId);

@@ -92,7 +92,7 @@ public class ExamUsecase {
         List<String> chapterIds = draft.getChapters().stream().map(ChapterDraftDTO::getId).toList();
         List<ChapterResponseDTO> categories = chapterService.getByIds(chapterIds);
 
-        ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(accountType, categories, examMatrixDetailDTOS);
+        ExamGeneratedDTO examGeneratedResult = questionService.generateExamQuestions(accountType, categories, examMatrixDetailDTOS, userId);
 
         if (examGeneratedResult == null) {
             throw new InternalServerException("Lỗi trong quá trình sinh đề");
