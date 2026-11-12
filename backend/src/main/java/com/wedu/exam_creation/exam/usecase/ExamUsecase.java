@@ -8,6 +8,8 @@ import com.wedu.exam_creation.common.dto.draft.response.DraftDTO;
 import com.wedu.exam_creation.common.dto.draft.response.LessonDraftDTO;
 import com.wedu.exam_creation.common.dto.draft.response.MatrixDetailItemDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
+import com.wedu.exam_creation.common.dto.exam.response.ExamMatrixDTO;
+import com.wedu.exam_creation.common.exception.UnprocessableEntityException;
 import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
@@ -140,6 +142,33 @@ public class ExamUsecase {
         List<QuestionDTO> questions = questionService.findByIds(questionIds);
 
         return mapperResponseDTO.convertToExamDetailResponse(exam, questions, s3Service);
+    }
+
+    public ExamMatrixDTO getExamMatrixById(String userId, String examId) {
+        ExamEntity exam = repo.getExamById(userId, examId);
+        List<ExamMatrixDTO.MatrixRowDTO> matrix = new ArrayList<>();
+        List<ExamMatrixDTO.MatrixDetailRowDTO> details = new ArrayList<>();
+        if (exam.getChapters() != null) {
+            for (ChapterExamEntity chapter : exam.getChapters()) {
+                if (chapter.getLessons() == null) continue;
+                for (LessonExamEntity lesson : chapter.getLessons()) {
+                    if (lesson.getMatrix() == null || lesson.getMatrixDetails() == null
+                            || lesson.getMatrix().isEmpty() || lesson.getMatrixDetails().isEmpty()) {
+                        throw new UnprocessableEntityException("Đề kiểm tra thiếu ma trận hoặc bản đặc tả ma trận đề");
+                    }
+                    lesson.getMatrix().forEach(row -> matrix.add(new ExamMatrixDTO.MatrixRowDTO(
+                            chapter.getName(), lesson.getName(), row.getQuestionType(),
+                            row.getDifficultyLevel(), row.getSelectedCount())));
+                    lesson.getMatrixDetails().forEach(row -> details.add(new ExamMatrixDTO.MatrixDetailRowDTO(
+                            chapter.getName(), lesson.getName(), row.getQuestionType(),
+                            row.getDifficultyLevel(), row.getSelectedCount(), row.getExerciseType(), row.getLearningOutcome())));
+                }
+            }
+        }
+        if (matrix.isEmpty() || details.isEmpty()) {
+            throw new UnprocessableEntityException("Đề kiểm tra thiếu ma trận hoặc bản đặc tả ma trận đề");
+        }
+        return new ExamMatrixDTO(exam.getName(), matrix, details);
     }
 
     public List<ExamDTO> getRecentExams(String userId) {

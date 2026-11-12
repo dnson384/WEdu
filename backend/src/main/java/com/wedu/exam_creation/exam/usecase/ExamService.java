@@ -1,6 +1,7 @@
 package com.wedu.exam_creation.exam.usecase;
 
 import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
+import com.wedu.exam_creation.common.dto.exam.response.ExamMatrixDTO;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,5 +14,9 @@ public class ExamService {
 
     public ExamDetailDTO getExamById(String userId, String examId) {
         return examUsecase.getExamById(userId, examId);
+    }
+
+    public ExamMatrixDTO getExamMatrixById(String userId, String examId) {
+        return examUsecase.getExamMatrixById(userId, examId);
     }
 }
