@@ -1,5 +1,13 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Giáo viên xuất ma trận đề — 2026-11-12
+
+Tại trang xem trước, giáo viên chọn “Xuất ma trận đề”. Hook khóa thao tác lặp, gọi Next rồi Java với examId/examName. Java xác thực role/owner, đọc matrix/matrixDetails đã lưu trong Exam và tên đề từ database, giữ thứ tự cùng dòng số lượng 0. Không dựng lại theo câu hỏi thực tế; đề sinh thiếu có thể khác số lượng snapshot. Thiếu phần dữ liệu trả 422, không xuất tài liệu thiếu.
+
+Java gửi hai danh sách dòng sang Express `/exporter/matrix`. DOCX gồm tiêu đề đánh số, bảng ma trận, ngắt trang, bảng đặc tả theo mẫu trong docs/format_file_ma_tran_de.docx; tên bài kiểm tra không xuất hiện trong nội dung file. Exporter nhóm các dòng theo chương/bài (bản đặc tả thêm dạng bài/yêu cầu cần đạt), đưa số câu vào cột loại câu × mức độ; gộp Vận dụng cao vào Vận dụng ở presentation. Dạng bài và learningOutcome cùng xuất trong cột Yêu cầu cần đạt. Chương/bài số lượng 0 vẫn xuất. Loại câu hoặc nhãn mức độ bổ sung được thêm cột để tránh mất dữ liệu.
+
+Điểm mỗi câu bằng 10/N, N là tổng số câu của matrix snapshot; cả hai bảng dùng chung N. Điểm/tỷ lệ nhóm tính theo số câu, chỉ làm tròn khi hiển thị tối đa 2 số thập phân; N=0 thì điểm/tỷ lệ=0. Tổng của từng bảng phản ánh dữ liệu riêng của bảng đó, không tự sửa khi matrix/matrixDetails lệch nhau. Binary trả qua Java/Next và browser tự tải `<tên đề>_ma trận đề.docx`. Khi lỗi, UI thông báo và mở lại thao tác, không tải JSON thành file. Không ghi DB/S3 hoặc cập nhật đề. [Source và kiểm tra](matrix-export-implementation-report.md).
+
 ## Refund processing — 2026-11-09
 
 Teacher opens Thanh toán → Giao dịch và hoàn tiền (`/me/bill/refunds`), selects an owned SUCCEEDED order, enters a reason and accepts the versioned 48-hour/unused-AI policy and AI-hold/no-compensation terms. Submission is idempotent; a deterministic failed condition saves REJECTED plus email. Otherwise it saves PENDING_REVIEW or NEEDS_VERIFICATION and a per-user AI hold. Multiple requests may hold one user; clearing one does not clear the others. Cancellation is allowed only before PROCESSING.

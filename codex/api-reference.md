@@ -1,5 +1,15 @@
 # API reference WEdu
 
+## Xuất ma trận đề — 2026-11-12
+
+- `POST /api/exporter/matrix`: [Next handler](../frontend/app/api/exporter/matrix/route.ts), cookie accessToken; thiếu cookie 401, JSON/input sai 400. Body `{examId,examName}` bắt buộc chuỗi không rỗng. Trả DOCX binary, `private, no-store`, filename UTF-8 `<examName>_ma trận đề.docx`; giữ HTTP status và message lỗi Java kể cả arraybuffer JSON, network error 502.
+- `POST /exporter/matrix` Java: [ExporterController.exportMatrix](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java), `ExportMatrixRequestDTO`, `@PreAuthorize ROLE_TEACHER`, owner lấy từ principal. Sai role 403, đề không tồn tại/không thuộc owner 404, thiếu snapshot 422, exporter lỗi/trả rỗng/sai MIME 500. Binary/header giống Next. Auth JWT giữ contract hiện tại.
+- `POST /exporter/matrix` Express: router `/matrix` dưới mount `/exporter`, [exportMatrixAsWord](../exporter-service/src/routes/exporter/controller/exporterController.ts). Payload `MatrixWordPayloadRequestDTO`: `{examName,matrix,matrixDetails}`. `matrix[]` có chapterName/lessonName/questionType/difficultyLevel:string và selectedCount:integer>=0; `matrixDetails[]` thêm exerciseType/learningOutcome:string. Hai arrays phải không rỗng. examName Java gửi lấy từ Exam database và chỉ dùng cho attachment filename; không chèn tên bài kiểm tra vào nội dung DOCX. Tên download browser lấy từ examName request. Sai payload 400; tạo DOCX lỗi 500. Không thêm auth middleware vào Express; Java là ranh giới quyền.
+
+Java common [ExamMatrixDTO](../backend/src/main/java/com/wedu/exam_creation/common/dto/exam/response/ExamMatrixDTO.java) dùng cùng wire shape. Không thay endpoint `/exam` hoặc database schema. [Inventory/validation](matrix-export-implementation-report.md).
+
+Output style cập nhật theo docs/format_file_ma_tran_de.docx, wire shape giữ nguyên. Exporter nhóm số câu vào header loại câu × Biết/Hiểu/Vận dụng và gộp Vận dụng cao vào Vận dụng; bổ sung tổng số câu/điểm/tỷ lệ. Điểm từng nhóm=count×10/N, tỷ lệ=count×100/N, N=tổng matrix.selectedCount; N=0 trả 0; hiển thị tối đa 2 chữ số thập phân. Không thêm điểm vào payload/API hoặc cập nhật dữ liệu lưu.
+
 ## Refund APIs — 2026-11-09
 
 All routes are authenticated; backend enforces ROLE_TEACHER ownership or ROLE_ADMIN. BFF path is `/api` + backend path. No bearer/signature/provider payload is exposed. Amounts are VND integers; timestamps ISO instants. Read-only ADMIN transaction lookup remains unchanged.

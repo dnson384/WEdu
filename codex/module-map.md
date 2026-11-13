@@ -1,5 +1,13 @@
 # Bản đồ module, symbols và API
 
+## Xuất ma trận đề — 2026-11-12
+
+Exam page → `useExam.handleExportMatrix` → `ExportService.exportMatrix` → Next `/api/exporter/matrix` → `ExportMatrixUsecase` → `IExporterRepository.exportMatrix/ExporterRepositoryImpl` → Java `ExporterController.exportMatrix/ExporterUsecase.exportMatrix` → `ExamService.getExamMatrixById/ExamUsecase.getExamMatrixById` → owner-filtered `IExamRepository.getExamById` → `ExamMatrixDTO`. Java POST `export.url + "matrix"` → Express `exportMatrixAsWord` → `GenerateMatrixWordFileUsecase` → `buildMatrixTable/buildMatrixDetailsTable` → DOCX binary.
+
+`ExportMatrixRequestDTO` và frontend `ExportMatrixPayload` kiểm tra đầu vào; `UnprocessableEntityException`/GlobalExceptionHandler trả 422 khi thiếu snapshot. `isMatrixWordPayload` kiểm tra payload Express. Frontend `downloadBlob` dùng chung cho xuất đề và ma trận; hook quản lý khóa thao tác/lỗi Blob JSON. [Danh sách file/symbol](matrix-export-implementation-report.md), [contract](api-reference.md#xuất-ma-trận-đề--2026-11-12).
+
+Style theo mẫu: `GenerateMatrixWordFileUsecase` → [prepareMatrixExport](../exporter-service/src/routes/exporter/usecase/util/MatrixExportData.ts) chuẩn bị `MatrixExportData/MatrixExportRow`, nhóm snapshot và ánh xạ mức độ → builders render header/body/summary dùng chung. Utility có `sumCounts`, `levelTotals`, `pointsForCount`, `percentageForCount`, `formatMatrixNumber`; N từ matrix dùng chung cho hai bảng, không tính điểm trong Java/FE. `buildMatrixTable/buildMatrixDetailsTable` nay nhận MatrixExportData thay raw payload; wire DTO không đổi.
+
 ## Refund module — 2026-11-09
 
 - Teacher `/me/bill/refunds` and ADMIN `/admin/transactions/refunds` → reusable RefundManager/RefundDetail → useRefunds → RefundService → Next handleRefund → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl → backend RefundController/RefundUsecase. Parent transaction/billing pages link the new entrypoints. All BFF responses are private,no-store.

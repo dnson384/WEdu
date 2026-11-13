@@ -1,5 +1,17 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Xuất ma trận đề — 2026-11-12
+
+Source đối chiếu 2026-11-13 trên main `5baf5e1`: backend `23a4111` (PR #140), backend tests `ba3f912` (PR #141), exporter `ef66943` (PR #142) và frontend `97e1d67` (PR #143) đã merge. Ba file JUnit nằm trong source. Mẫu DOCX và harness `exporter-service/tests/matrixExport.test.ts` không được lưu trong snapshot repo hiện tại; kết quả exporter 8 tests bên dưới thuộc phiên triển khai, không phải test suite có thể chạy lại từ checkout này. Lượt đồng bộ context chỉ kiểm source/links/diff, không chạy lại application build/tests hoặc chứng nhận production.
+
+Bổ sung theo confirm: đã bỏ tên bài kiểm tra khỏi cả hai phần trong nội dung DOCX; filename vẫn `<tên đề>_ma trận đề.docx`, wire contract giữ nguyên. Test kiểm tra cả document XML và binary qua HTTP để ngăn tên file bị chèn lại vào document. Kết quả kiểm tra lượt bổ sung được ghi trong [report](matrix-export-implementation-report.md#bỏ-tên-bài-kiểm-tra-khỏi-nội-dung-docx).
+
+Implemented trong source theo solution đã duyệt: teacher-only, owner-filtered snapshot export, tự tải tên tiếng Việt, trạng thái chờ và lỗi. Style đã cập nhật theo docs/format_file_ma_tran_de.docx: hai bảng với header 4 hàng, gộp chương/bài, Arial 12, trang Letter ngang, lề 1 inch, viền đen và tổng câu/điểm/tỷ lệ. Vận dụng cao cộng vào Vận dụng khi xuất; mọi câu bằng điểm trên thang 10, N từ tổng matrix, N=0 trả 0. Không đổi schema/thuật toán sinh đề.
+
+Validation lượt style: exporter `npx tsc --noEmit` đạt; 8/8 tests đạt, gồm aggregation không mutate source, merge grids, equal points/rounding/zero, 60 bài với nội dung dài và smoke HTTP matrix/exam. Chưa kiểm ảnh render: không có managed document runtime, LibreOffice/Word hoặc browser khả dụng trong phiên; chỉ chứng nhận cấu trúc OOXML, chưa chứng nhận phân trang/hiển thị Word. Không chạy lại frontend/backend vì lượt style chỉ đổi exporter. Chi tiết ở [report](matrix-export-implementation-report.md#cập-nhật-style-theo-mẫu).
+
+Validation lượt ban đầu: 13 backend tests mới đạt; exporter 3 tests đạt (validation, ZIP/XML, HTTP matrix và smoke route exam); frontend build, TypeScript và ESLint các file thay đổi đạt; exporter TypeScript đạt. Hai harness tạm BFF/download và React hook đạt (status errors, tên file, cleanup, chống bấm lặp, reset sau lỗi). Build/test ban đầu gặp giới hạn sandbox Windows; chạy lại ngoài sandbox thành công. Chưa chứng nhận browser end-to-end với backend/Mongo thật, Word visual layout hay production; không chạy full backend suite. [Báo cáo và danh sách toàn bộ file](matrix-export-implementation-report.md).
+
 ## PLUS refunds — 2026-11-09
 
 Source rechecked 2026-11-10 on main `cbcb49a`: backend `bf42f2b` (PR #137), tests `0c619db` (PR #138) and frontend `f1064c4` (PR #139) are merged. This documentation preparation does not rerun application builds/tests or certify deployment; results below retain their original execution context.

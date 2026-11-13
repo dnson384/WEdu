@@ -1,5 +1,19 @@
 # WEdu Development Decisions
 
+## Format ma trận đề theo mẫu — 2026-11-12
+
+Bổ sung đã confirm: tên bài kiểm tra không xuất hiện trong nội dung DOCX, bỏ khỏi cả hai phần ma trận/đặc tả. Tên file tải xuống vẫn là `<tên đề>_ma trận đề.docx`; examName giữ trong payload để dùng cho filename, không render vào document.
+
+User đã confirm style theo mẫu `docs/format_file_ma_tran_de.docx` cung cấp trong phiên triển khai (file không được lưu trong snapshot repo hiện tại), thay thế phần “style làm sau” của lần triển khai ban đầu. Hai bảng có header nhiều tầng, nhóm chương/bài, Arial 12, viền đen, trang Letter ngang, lề 1 inch. Gộp Vận dụng cao vào Vận dụng **chỉ khi xuất**; Nhận biết/Thông hiểu hiển thị Biết/Hiểu. Mọi câu có trọng số bằng nhau trên thang 10: N là tổng selectedCount của matrix, điểm nhóm = count×10/N, tỷ lệ = count×100/N; N=0 trả 0. Tính đủ độ chính xác, hiển thị tối đa 2 chữ số thập phân theo tiếng Việt. Không dùng tỷ trọng cố định 3/4/3 hoặc các số ví dụ không nhất quán trong mẫu. Không đổi API/schema/dữ liệu lưu.
+
+Nguồn mẫu đã dùng để đối chiếu layout, không bị chỉnh sửa trong phiên. Source đối chiếu 2026-11-13 trên main `5baf5e1` đã gồm backend, backend tests, exporter và frontend qua PR #140–143; không chứng nhận deploy hoặc validation mới. [Chi tiết triển khai và giới hạn validation](matrix-export-implementation-report.md#cập-nhật-style-theo-mẫu).
+
+## Xuất ma trận đề — 2026-11-12
+
+User approved implementation: giáo viên xuất snapshot `matrix` và `matrixDetails` đã lưu trong Exam thành một DOCX gồm hai bảng cơ bản. Giữ thứ tự và dòng có selectedCount=0; không tính lại theo câu thực tế khi sinh thiếu. Style chi tiết làm sau. UI xem trước → Next → Java kiểm ROLE_TEACHER/owner → Express `/exporter/matrix` → binary về browser, tên `<tên đề>_ma trận đề.docx`. Đây là bổ sung trong kiến trúc export hiện tại; matrix generation/manual editing và các bug exporter cũ giữ phạm vi trước đó. Không đổi schema, không lưu file xuất.
+
+Bằng chứng và validation: [báo cáo triển khai](matrix-export-implementation-report.md).
+
 ## PLUS refund workflow — 2026-11-09
 
 User-approved implementation supersedes the earlier refund exclusion and read-only ADMIN payment scope **only for this workflow**. Teacher submits an owned paid order; ADMIN processes it under Quản lý giao dịch → Xử lý yêu cầu hoàn tiền. Full refund only, within 48 hours of stored paidAt (the local entitlement grant time), assessed at submission. A persisted teacher AI exam result after that grant disqualifies; moderator regeneration, bank-only selection and failed/rolled-back generation do not count.

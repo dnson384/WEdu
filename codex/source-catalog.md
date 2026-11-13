@@ -1,5 +1,11 @@
 # Source catalogue WEdu
 
+## Xuất ma trận đề — 2026-11-12
+
+Style bổ sung: [MatrixExportData.ts](../exporter-service/src/routes/exporter/usecase/util/MatrixExportData.ts) khai báo MatrixExportData/MatrixExportRow và prepareMatrixExport/sumCounts/levelTotals/pointsForCount/percentageForCount/formatMatrixNumber. MatrixTableBuilder nhận dữ liệu đã tổng hợp, dựng merge/header/summary; GenerateMatrixWordFileUsecase cấu hình page/font theo mẫu. Harness matrixExport 8 cases đã chạy trong phiên triển khai nhưng không được lưu trong repo hiện tại. Ba backend test classes đã merge qua `ba3f912`; source tính năng đủ trên main `5baf5e1` (đối chiếu 2026-11-13). [Inventory lượt style](matrix-export-implementation-report.md#cập-nhật-style-theo-mẫu).
+
+Inventory application/test/docs và mô tả từng file ở [báo cáo triển khai](matrix-export-implementation-report.md#danh-sách-file); mục harness exporter được đánh dấu là lịch sử, không thuộc checkout hiện tại. Không xóa/rename tracked file của tính năng. Symbols mới: common `ExamMatrixDTO` (MatrixRowDTO, MatrixDetailRowDTO), `UnprocessableEntityException`, `ExportMatrixRequestDTO`; Java `getExamMatrixById`, `exportMatrix`; frontend `ExportMatrixUsecase`, `ExportMatrixPayload`, `/api/exporter/matrix`, `downloadBlob`; Express `MatrixWordPayloadRequestDTO`, `isMatrixWordPayload`, `GenerateMatrixWordFileUsecase`, `buildMatrixTable/buildMatrixDetailsTable`, `exportMatrixAsWord`. Không đổi collection/index/dependency. [API](api-reference.md#xuất-ma-trận-đề--2026-11-12).
+
 ## Refund implementation — 2026-11-09
 
 The [refund implementation report](refund-implementation-report.md) inventories every application, test, configuration and documentation file added/changed for this feature, with a per-file description. Public flow/symbol inventory is in [module map](module-map.md#refund-module--2026-11-09), all new routes/DTO contracts in [API reference](api-reference.md#refund-apis--2026-11-09), document fields/indexes in [schema](database-schema.md#refund-persistence--2026-11-09). Historical declarations/counts below predate this addition.

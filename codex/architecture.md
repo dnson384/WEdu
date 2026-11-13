@@ -1,5 +1,13 @@
 # Kiến trúc WEdu hiện tại
 
+## Ranh giới xuất ma trận đề — 2026-11-12
+
+Giữ UI → hook/service → Next BFF → usecase/repository adapter → Java → Express → binary quay về browser. Java [ExporterController](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java) kiểm ROLE_TEACHER; [ExamUsecase.getExamMatrixById](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java) đọc snapshot qua repository với examId/userId và map common DTO. Không expose domain entity xuyên feature, không đọc Questions/Drafts hoặc gọi S3 cho ma trận. BFF giữ status lỗi arraybuffer; frontend tách tải Blob khỏi component.
+
+Express [GenerateMatrixWordFileUsecase](../exporter-service/src/routes/exporter/usecase/generateMatrixWordFile.ts) dựng DOCX qua builder bảng, không đi qua converter ảnh/math của đề. Không thêm persistence, job, dependency hoặc thay cấu hình service. [Contract](api-reference.md#xuất-ma-trận-đề--2026-11-12), [validation](matrix-export-implementation-report.md).
+
+Style theo mẫu có bước chuẩn bị [MatrixExportData](../exporter-service/src/routes/exporter/usecase/util/MatrixExportData.ts) tách tổng hợp số câu, chuẩn hóa nhãn/gộp mức độ và tính điểm khỏi phần tạo XML bảng. Builder dùng cùng helper cho cell/header/body/summary của hai bảng; page/font cấu hình ở usecase. Tất cả là presentation lúc xuất, không thay domain snapshot hoặc contract liên service.
+
 ## Refund boundaries — 2026-11-09
 
 RefundController → RefundUsecase → IRefundRepository/RefundRepositoryImpl; RefundEntitlementService uses payment repository plus UserService facades, not user infrastructure directly. Controllers enforce teacher/admin roles and pass authenticated ownership. Domain entities, Mongo documents, MapStruct mapper and HTTP DTOs remain separate. The shared RefundManager/RefundDetail render interaction; useRefunds owns queries/state/mutations through RefundService → private/no-store BFF → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl.
