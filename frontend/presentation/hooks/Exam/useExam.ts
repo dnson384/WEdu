@@ -2,11 +2,12 @@ import { ExamDetailReponseEntity } from "@/domain/entities/exam.entity";
 import { ExportPayload } from "@/presentation/schemas/export.schema";
 import { ExamService } from "@/presentation/services/ExamService";
 import { ExportService } from "@/presentation/services/ExportService";
+import { downloadBlob } from "@/presentation/utils/downloadBlob";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const initialExamDetail = (): ExamDetailReponseEntity => ({
   id: "",
@@ -48,6 +49,8 @@ export default function useExam() {
   const [examDetail, setExamDetail] =
     useState<ExamDetailReponseEntity>(initialExamDetail);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const exporting = useRef(false);
+  const [isExportingMatrix, setIsExportingMatrix] = useState(false);
 
   const [syncedExamId, setSyncedExamId] = useState<string | null>(null);
   if (fetchedExamDetail && fetchedExamDetail.id !== syncedExamId) {
@@ -62,6 +65,8 @@ export default function useExam() {
   }, [fetchError, router]);
 
   const handleExportExam = async () => {
+    if (exporting.current || isSubmitted || !examDetail.id) return;
+    exporting.current = true;
     setIsSubmitted(true);
 
     const payload: ExportPayload = {
@@ -72,27 +77,41 @@ export default function useExam() {
     try {
       const blob = await exportService.exportExam(payload);
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${examDetail.name}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      downloadBlob(blob, `${examDetail.name}.docx`);
     } catch (err) {
       console.error("Lỗi khi tải file UI:", err);
     } finally {
+      exporting.current = false;
       setIsSubmitted(false);
     }
   };
 
   const handleExportMatrix = async () => {
+    if (exporting.current || isSubmitted || !examDetail.id) return;
+    exporting.current = true;
     setIsSubmitted(true);
+    setIsExportingMatrix(true);
+    try {
+      const blob = await exportService.exportMatrix({ examId: examDetail.id, examName: examDetail.name });
+      downloadBlob(blob, `${examDetail.name}_ma trận đề.docx`);
+    } catch (error) {
+      let message = "Không thể xuất ma trận đề. Vui lòng thử lại sau";
+      if (error instanceof AxiosError && error.response?.data instanceof Blob) {
+        try {
+          const data = JSON.parse(await error.response.data.text());
+          if (typeof data.message === "string") message = data.message;
+        } catch { /* Use the default message for non-JSON responses. */ }
+      }
+      setErrorsList([message]);
+    } finally {
+      exporting.current = false;
+      setIsExportingMatrix(false);
+      setIsSubmitted(false);
+    }
   };
 
   const handleDeleteClick = async () => {
-    if (isSubmitted) return;
+    if (isSubmitted || exporting.current) return;
 
     setIsSubmitted(true);
 
@@ -134,6 +153,8 @@ export default function useExam() {
     isLoadingExam,
     errorsList,
     noti,
+    isSubmitted,
+    isExportingMatrix,
     handleExportExam,
     handleExportMatrix,
     handleDeleteClick,

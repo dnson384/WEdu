@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ExportPayload } from "../schemas/export.schema";
+import { ExportPayload, ExportMatrixPayload } from "../schemas/export.schema";
 
 export class ExportService {
   constructor() {}
@@ -9,6 +9,11 @@ export class ExportService {
       responseType: "blob",
     });
 
+    return response.data;
+  }
+
+  async exportMatrix(payload: ExportMatrixPayload): Promise<Blob> {
+    const response = await axios.post<Blob>("/api/exporter/matrix", payload, { responseType: "blob" });
     return response.data;
   }
 }
