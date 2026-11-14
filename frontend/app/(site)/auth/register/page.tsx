@@ -1,4 +1,5 @@
 "use client";
+import GoogleAuthButton from "@/presentation/components/Auth/GoogleAuthButton";
 import Link from "next/link";
 
 import { icons } from "@/presentation/common/icons";
@@ -176,14 +177,7 @@ export default function Register() {
           </div>
 
           {/* Đăng ký với Google */}
-          <button
-            type="button"
-            disabled={isSubmitting}
-            className="w-full py-2.5 border border-gray-300 rounded-lg flex items-center justify-center gap-2 font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm"
-          >
-            {icons.google}
-            <span>Tiếp tục với Google</span>
-          </button>
+          <GoogleAuthButton disabled={isSubmitting} />
 
           <div className="mt-6 flex justify-center gap-1.5 text-sm">
             <span className="text-gray-600">Đã có tài khoản?</span>

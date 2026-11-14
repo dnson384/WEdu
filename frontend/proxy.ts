@@ -8,6 +8,8 @@ const publicPaths = [
   "/auth/register",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/auth/verify-email",
+  "/auth/google-error",
   "/landing-page",
   "/api/auth/login",
   "/api/auth/register",
@@ -20,6 +22,13 @@ export async function proxy(request: NextRequest) {
 
   if (
     (request.method === "GET" && pathname === "/payment/vnpay/ipn") ||
+    [
+      "/api/auth/verification",
+      "/api/auth/verification/verify",
+      "/api/auth/verification/resend",
+      "/api/auth/google/start",
+      "/api/auth/google/callback",
+    ].includes(pathname) ||
     publicPaths.some((p) => pathname.startsWith(p)) ||
     pathname.includes(".")
   ) {

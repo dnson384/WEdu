@@ -1,3 +1,5 @@
+import { AuthFlowResult } from "@/domain/entities/verification.entity";
+import { VerificationRepositoryImpl } from "./VerificationRepositoryImpl";
 import {
   LoginPayloadEntity,
   NewUserRequestEntity,
@@ -44,31 +46,8 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   public async register(
     payload: NewUserRequestEntity,
-  ): Promise<AuthorizedResponseEntity> {
-    const response = await axios.post(
-      `${this.baseUrl}/auth/register`,
-      payload,
-      {
-        withCredentials: true,
-      },
-    );
-
-    const authorizedResponse: AuthorizedResponseEntity = {
-      user: response.data,
-      accessToken: "",
-      refreshToken: "",
-    };
-
-    if (typeof response.headers.getSetCookie === "function") {
-      const cookies: string[] = response.headers.getSetCookie();
-
-      const accessToken = cookies[0].split(";")[0].split("=")[1];
-      const refreshToken = cookies[1].split(";")[0].split("=")[1];
-
-      authorizedResponse.accessToken = accessToken;
-      authorizedResponse.refreshToken = refreshToken;
-    }
-    return authorizedResponse;
+  ): Promise<AuthFlowResult> {
+    return new VerificationRepositoryImpl().register(payload);
   }
 
   public async logout(accessToken: string): Promise<boolean> {
