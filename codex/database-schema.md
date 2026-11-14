@@ -1,5 +1,13 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Auth OTP/Google — 2026-11-13
+
+- Users dùng trực tiếp email đã trim/lowercase (không biến đổi dấu chấm/+ Gmail), unique index đầy đủ trên email. Không dùng field dẫn xuất cho kiểm tra tồn tại. googleSubject nullable có unique partial index, chỉ kiểm tra liên kết sau lookup email. loginMethod LOCAL/GOOGLE/MIXED: LOCAL có mật khẩu liên kết Google thành MIXED; Google-only giữ GOOGLE. Link cập nhật riêng googleSubject/loginMethod/updatedAt và kiểm role/active, giữ password/PLUS.
+- AuthVerifications: _id=SHA256(token ngẫu nhiên256bit), purpose LOCAL_REGISTER/GOOGLE_REGISTER/GOOGLE_LINK/HANDOFF, email/username, hashedPassword BCrypt khi LOCAL, googleSubject/userId khi cần, bindingHash cho handoff, authoritativeEmail, otpHash HMAC-SHA256, attempts/ready/consumed/revision, expiresAt/otpExpiresAt/resendAt. Không lưu OTP/mật khẩu thô/JWT. TTL expiresAt0s; OTP5 phút/session30 phút/handoff60 giây.
+- AuthOtpRateLimits: _id=email đã chuẩn hóa, sentAt danh sách thời điểm gửi trong rolling60 phút, resendAt, revision, expiresAt. CAS reserve trước gửi, max5/60 phút và120 giây; TTL expiresAt0s sau2 giờ không hoạt động. Gửi lỗi vẫn tính quota/cooldown.
+
+[AuthIndexConfig](../backend/src/main/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfig.java) fail startup nếu email chưa chuẩn hóa hoặc còn index dẫn xuất cũ; lỗi hướng dẫn bật --auth.migration.enabled=true. [AuthMigrationUsecase](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecase.java) preflight toàn bộ dữ liệu trước ghi; repository partial update Users.email/loginMethod và unset emailKey, drop legacy index, giữ opaque _id/password/role/PLUS. Không thêm collection/schema đích. AuthMigrationRunner mặc định tắt và chạy trước index guard khi bật; AuthIndexConfig tạo/reuse unique/TTL indexes sau đó. Thay hoàn toàn script JS đã xóa. [Validation](auth-java-migration-implementation-report.md).
+
 ## Refund persistence — 2026-11-09
 
 New collections (no TTL/backfill):

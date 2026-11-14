@@ -1,5 +1,29 @@
 # API reference WEdu
 
+## Migration auth Java — 2026-11-14
+
+Migration không có HTTP endpoint/DTO public; chỉ bật bằng auth.migration.enabled=true, mặc định false. Không đổi API đăng ký/Google/OTP. [Cách chạy và types nội bộ](auth-java-migration-implementation-report.md).
+
+## Auth OTP/Google — 2026-11-13
+
+Kiểm tra tài khoản tồn tại bằng field email đã trim/lowercase, có unique index trực tiếp. Google sub chỉ xác minh liên kết sau lookup email. loginMethod lưu LOCAL/GOOGLE/MIXED; liên kết LOCAL thành công chuyển MIXED, Google-only giữ GOOGLE. Biểu mẫu vẫn chỉ nhận LOCAL, client không được yêu cầu MIXED. Không thêm/đổi endpoint trong chỉnh sửa email/MIXED.
+
+Các declaration mới dưới đây thay contract register cũ. Backend: [VerificationController](../backend/src/main/java/com/wedu/exam_creation/auth/controller/VerificationController.java).
+
+| Backend | Request | Response |
+| --- | --- | --- |
+| POST /auth/register | NewUserRequestDTO; loginMethod bắt buộc LOCAL | 202 VerificationResponseDTO + verificationToken HttpOnly cookie; không JWT |
+| GET /auth/verification | verificationToken cookie | 200 VerificationResponseDTO |
+| POST /auth/verification/resend | verificationToken cookie | 200 VerificationResponseDTO |
+| POST /auth/verification/verify | verificationToken cookie, VerifyOtpRequestDTO {otp:6 chữ số} | 200 UserResponseDTO + accessToken/refreshToken cookies, xóa verificationToken |
+| POST /auth/google/exchange | GoogleExchangeRequestDTO {code,verifier}:64hex | 202 pending metadata/cookie hoặc200 user/JWT cookies; Next gọi phía server |
+| GET /oauth2/authorization/google | binding:SHA256(verifier) | Redirect Google; session tạm |
+| GET /auth/login/oauth2/code/google | Google code/state hoặc error | Redirect Next /api/auth/google/callback với handoff code hoặc error tổng quát |
+
+VerificationResponseDTO: email che bớt, expiresAt, otpExpiresAt, resendAt, remainingAttempts, serverTime (ISO instants). Lỗi OTP có message/code/retryAfter: OTP_INVALID400, OTP_EXPIRED400, OTP_ATTEMPTS_EXHAUSTED400, VERIFICATION_EXPIRED401, OTP_COOLDOWN/OTP_RATE_LIMIT429 + Retry-After, OTP_DELIVERY_FAILED503. Email trùng/OTP replay hoặc thay đổi cạnh tranh409. Google role/active không hợp lệ403.
+
+Next: POST /api/auth/register202; GET /api/auth/verification; POST /api/auth/verification/verify và /resend; GET /api/auth/google/start và /callback. Verify200 bọc {user}; metadata trả trực tiếp; không chuyển cookie/token sang JSON. Mutation kiểm Origin. Pages /auth/verify-email và /auth/google-error. Auth responses no-store. [Rollout/tests](google-auth-implementation-report.md).
+
 ## Xuất ma trận đề — 2026-11-12
 
 - `POST /api/exporter/matrix`: [Next handler](../frontend/app/api/exporter/matrix/route.ts), cookie accessToken; thiếu cookie 401, JSON/input sai 400. Body `{examId,examName}` bắt buộc chuỗi không rỗng. Trả DOCX binary, `private, no-store`, filename UTF-8 `<examName>_ma trận đề.docx`; giữ HTTP status và message lỗi Java kể cả arraybuffer JSON, network error 502.
@@ -167,7 +191,7 @@ Public paths theo SecurityConstants; quyền class/method theo @PreAuthorize và
 | `GET /admin/ai/status` | [AiManagementController.status](../backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java) | `Không body/parameter → ResponseEntity<StatusDTO>` |
 | `GET /admin/ai/budget` | [AiManagementController.budget](../backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java) | `Không body/parameter → ResponseEntity<BudgetDTO>` |
 | `PUT /admin/ai/budget` | [AiManagementController.updateBudget](../backend/src/main/java/com/wedu/exam_creation/ai/controller/AiManagementController.java) | `@RequestBody BudgetDTO input → ResponseEntity<BudgetDTO>` |
-| `POST /auth/register` | [AuthController.register](../backend/src/main/java/com/wedu/exam_creation/auth/controller/AuthController.java) | `@Valid @RequestBody NewUserRequestDTO newUser, HttpServletResponse response → ResponseEntity<UserResponseDTO>` |
+| `POST /auth/register` | [VerificationController.register](../backend/src/main/java/com/wedu/exam_creation/auth/controller/VerificationController.java) | `@Valid @RequestBody NewUserRequestDTO input → ResponseEntity<VerificationResponseDTO> (202)` |
 | `POST /auth/login` | [AuthController.login](../backend/src/main/java/com/wedu/exam_creation/auth/controller/AuthController.java) | `@Valid @RequestBody LoginUserRequestDTO payload, HttpServletResponse response → ResponseEntity<UserResponseDTO>` |
 | `POST /auth/logout` | [AuthController.logout](../backend/src/main/java/com/wedu/exam_creation/auth/controller/AuthController.java) | `@RequestHeader("Authorization") String authorization → ResponseEntity<Boolean>` |
 | `PATCH /auth/change-password` | [AuthController.changePassword](../backend/src/main/java/com/wedu/exam_creation/auth/controller/AuthController.java) | `@AuthenticationPrincipal CustomUserDetails principal, @RequestBody ChangePasswordRequestDTO reqPayload, @RequestHeader("Authorization") String authorization → ResponseEntity<Boolean>` |

@@ -1,5 +1,21 @@
 # Bản đồ module, symbols và API
 
+## Migration auth bằng Java — 2026-11-14
+
+AuthMigrationRunner (ConditionalOnProperty auth.migration.enabled=true, Order.HIGHEST_PRECEDENCE) → AuthMigrationUsecase.migrate → IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply → AuthMigrationRepositoryImpl/MongoTemplate. AuthMigrationUserEntity giữ legacy scalar fields/opaque ID; AuthMigrationChangeEntity chỉ chứa ID/email/optional loginMethod, không phải HTTP DTO hay collection mới. AuthIndexConfig có order tiếp sau để kiểm email và tạo indexes. AuthMigrationUsecaseTest/AuthMigrationRepositoryTest/AuthMigrationRunnerTest thay test Node; hai file backend/scripts/prepare-auth-indexes.* đã xóa. [Inventory/validation](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+SecurityConfig.googleSecurityFilterChain: matcher callback `/auth/login/oauth2/code/google`, oauth2Login.redirectionEndpoint.baseUri `/auth/login/oauth2/code/*`. SecurityConstants.PUBLIC_PATHS và application.yml redirect-uri đồng bộ; xử lý qua Spring filter, không thêm controller. GoogleSecurityConfigTest dùng redirect-uri từ YAML; JwtOAuthCallbackFilterTest kiểm public path mới/khóa path cũ và liền kề. [API](api-reference.md), [validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Auth OTP/Google — 2026-11-13
+
+- VerificationController.register/metadata/resend/verify/exchange → VerificationUsecase.register/metadata/resend/verify/googleHandoff/exchange → IVerificationRepository.insert/find/reserveEmail/replaceOtp/markReady/failAttempt/consumeOtp/consumeHandoff. VerificationMapper tách domain/document; VerificationResponseDTO, VerifyOtpRequestDTO, GoogleExchangeRequestDTO là HTTP types; VerificationException mang code/status/retryAfter.
+- UserService/UserUsecase.hasGoogleLink/linkGoogle → UserRepositoryImpl; UserDocument.email/googleSubject, UserEntity.googleSubject. AuthUsecase.register bị thay bằng VerificationUsecase.register; AuthUsecase.generateToken vẫn phát JWT/lưu refresh. AuthMigrationRunner/Usecase/Repository + AuthIndexConfig quản lý migration Java và indexes.
+- EmailNormalizer.normalize/isCanonical dùng chung cho verification, lookup/save user và startup guard. Bỏ findByGoogleSubject; hasGoogleLink(email,subject) kiểm liên kết sau lookup email; UserRepositoryImpl.linkGoogle(id,subject,loginMethod) ghi sub/phương thức trong cùng partial conditional update.
+- SecurityConfig.googleSecurityFilterChain riêng OAuth; CustomOAuth2UserService giờ là OIDC loader; OAuth2AuthenticationSuccessHandler chỉ tạo handoff. AuthController không còn register declaration.
+- Frontend AuthService.register trả VerificationEntity; IAuthRepository/AuthRepositoryImpl/RegisterUsecase trả AuthFlowResult phía server. IVerificationRepository/VerificationRepositoryImpl/VerificationUsecase thêm metadata/verify/resend/exchange. useRegister chuyển /auth/verify-email; useVerifyEmail giữ countdown/server offset, mutation guard, error/cache/redirect. GoogleAuthButton dùng chung; proxy public đúng routes mới. [API](api-reference.md), [file inventory/validation](google-auth-implementation-report.md).
+
 ## Xuất ma trận đề — 2026-11-12
 
 Exam page → `useExam.handleExportMatrix` → `ExportService.exportMatrix` → Next `/api/exporter/matrix` → `ExportMatrixUsecase` → `IExporterRepository.exportMatrix/ExporterRepositoryImpl` → Java `ExporterController.exportMatrix/ExporterUsecase.exportMatrix` → `ExamService.getExamMatrixById/ExamUsecase.getExamMatrixById` → owner-filtered `IExamRepository.getExamById` → `ExamMatrixDTO`. Java POST `export.url + "matrix"` → Express `exportMatrixAsWord` → `GenerateMatrixWordFileUsecase` → `buildMatrixTable/buildMatrixDetailsTable` → DOCX binary.

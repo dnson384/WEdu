@@ -44,6 +44,15 @@ hook/service/usecase phù hợp với kiến trúc hiện có.
 - Không lặp lại UI hoặc implementation giống nhau ở nhiều nơi. UI/pattern giao diện dùng lại phải tách thành reusable component; logic không thuộc UI bị lặp phải tách thành hook/service dùng chung phù hợp, không copy-paste giữa các component/page.
 - Không ghi/log secrets, password, token hoặc presigned URL; không đặt credentials trong `NEXT_PUBLIC_*`. Không mặc định Spring tự nạp `.env`.
 
+### Code formatting
+
+- Mọi thay đổi code trong `frontend/` và `backend/` phải được format trước validation/test và trước khi chuẩn bị commit.
+- Frontend dùng Prettier để format và ESLint để lint/fix. Chỉ format các file frontend thuộc scope của task.
+- Backend dùng Spotless theo cấu hình Maven của repository; chạy `./mvnw spotless:apply` (Windows: `.\mvnw.cmd spotless:apply`) sau khi sửa Java.
+- Sau khi format backend, kiểm tra diff và không stage các thay đổi formatting ngoài scope của task.
+- Không tự thay đổi formatter, formatter configuration hoặc code style nếu task không yêu cầu.
+- Nếu formatter thất bại, báo lỗi thay vì bỏ qua hoặc tự thay thế bằng formatter khác.
+
 ## Commit và PR
 
 Commit message dùng Conventional Commits với format `<type>(<module>/<feature>): <description>`. `<module>` bắt buộc là `backend`, `frontend`, `exporter-service` hoặc `repo`; `<feature>` phải mô tả rõ tính năng/module đang thay đổi, không dùng scope chung chung hoặc chỉ có module. Mặc định commit body gồm các gạch đầu dòng tóm tắt thay đổi chính; nếu người dùng yêu cầu commit một dòng thì chỉ dùng tiêu đề.

@@ -1,5 +1,23 @@
 # WEdu Development Decisions
 
+## Migration auth chỉ dùng Java — 2026-11-14
+
+User đã confirm thay migration/test JS bằng Java. Migration chỉ chạy khi auth.migration.enabled=true (AUTH_MIGRATION_ENABLED, mặc định false), trước AuthIndexConfig. Giữ preflight trước ghi, normalization email, cleanup emailKey cũ, nâng LOCAL đã liên kết hợp lệ thành MIXED và tính idempotent. Không tự chạy migration trên DB thật trong phiên implement. Không thêm Node/mongosh hoặc dependency/framework migration vào backend. [Implementation/validation](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+User đã yêu cầu chuyển callback backend sang `/auth/login/oauth2/code/google`. YAML redirect template, OAuth processing baseUri, chain matcher và public path đồng bộ; endpoint bắt đầu Google và callback Next giữ nguyên. Không duy trì alias public cho callback cũ. Google Console/environment override phải dùng URL mới. [Implementation/validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Email trực tiếp và MIXED — 2026-11-13
+
+User yêu cầu chỉ dùng field email để kiểm tra tài khoản tồn tại và đã duyệt triển khai MIXED. Thay thế lựa chọn emailKey và giữ loginMethod LOCAL sau link của implementation trước: chuẩn hóa trực tiếp email, unique index email; Google lookup theo email, sub chỉ kiểm liên kết. LOCAL có password liên kết Google thành MIXED; GOOGLE-only không có khả năng LOCAL mới thì giữ GOOGLE. Không bổ sung thiết lập mật khẩu cho Google-only. [Implementation/validation](email-login-method-implementation-report.md).
+
+## Đăng ký OTP và Google dành cho Giáo viên — 2026-11-13
+
+User đã duyệt triển khai: mọi đăng ký mới LOCAL/GOOGLE phải OTP trước khi tạo Users/cấp JWT. OTP 6 chữ số, hạn 5 phút, 5 lần sai/mã; resend120 giây, tối đa5 lần gửi/email trong60 phút gần nhất, dùng chung mọi phương thức; phiên tạm30 phút. User mới ROLE_TEACHER/FREE/active, avatar S3 mặc định.
+
+Google chỉ dành cho Giáo viên đang hoạt động. Cho phép liên kết LOCAL, giữ mật khẩu/dữ liệu/quyền lợi. Gmail/Workspace verified trùng tài khoản thì liên kết trực tiếp; email ngoài chưa liên kết phải OTP một lần. Tìm tài khoản bằng email đã chuẩn hóa; Google sub chỉ kiểm tra liên kết sau lookup email. LOCAL liên kết thành công chuyển MIXED, giữ mật khẩu; Google-only vẫn GOOGLE. Không đổi role/backfill ROLE_USER cũ. Quyết định này thay thế OUT_OF_SCOPE và giới hạn OAuth mục2/bảng quyết định cũ chỉ cho phạm vi này. Chuẩn hóa email/index phải hoàn tất trước rollout; không gộp/xóa user trùng. Backend/frontend triển khai đồng bộ vì register đổi sang202. [Implementation/validation](google-auth-implementation-report.md).
+
 ## Format ma trận đề theo mẫu — 2026-11-12
 
 Bổ sung đã confirm: tên bài kiểm tra không xuất hiện trong nội dung DOCX, bỏ khỏi cả hai phần ma trận/đặc tả. Tên file tải xuống vẫn là `<tên đề>_ma trận đề.docx`; examName giữ trong payload để dùng cho filename, không render vào document.

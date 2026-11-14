@@ -1,5 +1,21 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Chuẩn bị dữ liệu auth bằng Java — 2026-11-14
+
+Trong maintenance window, bật auth.migration.enabled=true rồi khởi động backend: đọc Users → kiểm đủ ID/email, trùng email chuẩn hóa/Google subject và credential nhất quán trên toàn bộ snapshot → drop index emailKey cũ → partial update email, unset emailKey, đổi LOCAL đã có Google link + password thành MIXED → AuthIndexConfig bảo đảm indexes. Không merge/delete tài khoản, không đổi password/role/PLUS, không gọi mail/Google. Tắt flag và khởi động bình thường sau khi hoàn tất. Nếu preflight lỗi thì chưa có ghi migration; lỗi DB trong DDL/bulk có thể để lại tiến độ một phần, chạy lại sau khi xử lý lỗi. [Cách chạy/tests](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+Sau Google consent, browser về backend `/auth/login/oauth2/code/google` để xác minh code/state/nonce rồi mới chuyển Next `/api/auth/google/callback`. Cập nhật Authorized redirect URIs trong Google Console theo URL backend mới; các bước OTP/liên kết/phát JWT giữ nguyên.8 tests OAuth/JWT filter đạt, chưa kiểm Google thật. [Chi tiết](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Đăng ký OTP/Google — 2026-11-13
+
+LOCAL: validate + kiểm tra email → lưu hồ sơ tạm với BCrypt → reserve quota email → gửi OTP → /auth/verify-email → OTP đúng → transaction consume/create user/lưu refresh metadata → JWT cookies → /. Email đã tồn tại trả409, không gửi OTP. Trước OTP không tạo user/JWT. Sai mã tăng attempts bằng conditional update ngoài transaction hoàn tất; resend thay hash/reset attempts. SMTP lỗi không đánh dấu ready, không cấp phiên; vẫn giữ cooldown/quota để tránh lạm dụng.
+
+Google: Next tạo verifier cookie → Spring OIDC state/nonce/session tạm → callback lưu handoff60 giây ràng buộc hash verifier → Next đổi handoff phía server. Tìm tài khoản theo email, kiểm tra sub đã liên kết/teacher/active rồi đăng nhập. Chưa liên kết: Gmail/Workspace verified trùng user thì liên kết trực tiếp; email ngoài phải OTP. User mới luôn OTP trước create. LOCAL giữ mật khẩu và chuyển MIXED khi liên kết thành công; Google mới dùng tên Google, avatar S3 mặc định, không có mật khẩu local. Tài khoản bị khóa/role khác bị từ chối; không migrate ROLE_USER cũ.
+
+OTP6 số/5 phút/5 lần sai, resend120 giây, tối đa5 lần gửi/email trong60 phút gần nhất; session30 phút. Transaction rollback consume/create/link nếu lưu refresh thất bại. Các mô tả local-register tạo user ngay và OAuth partial cũ bên dưới đã được thay thế. [Usecase](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/VerificationUsecase.java), [validation/rollout](google-auth-implementation-report.md).
+
 ## Giáo viên xuất ma trận đề — 2026-11-12
 
 Tại trang xem trước, giáo viên chọn “Xuất ma trận đề”. Hook khóa thao tác lặp, gọi Next rồi Java với examId/examName. Java xác thực role/owner, đọc matrix/matrixDetails đã lưu trong Exam và tên đề từ database, giữ thứ tự cùng dòng số lượng 0. Không dựng lại theo câu hỏi thực tế; đề sinh thiếu có thể khác số lượng snapshot. Thiếu phần dữ liệu trả 422, không xuất tài liệu thiếu.

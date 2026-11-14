@@ -1,5 +1,25 @@
 # Kiến trúc WEdu hiện tại
 
+## Migration Java có cờ bật — 2026-11-14
+
+AuthMigrationRunner chỉ đăng ký khi auth.migration.enabled=true; mặc định tắt. Runner có thứ tự trước AuthIndexConfig. Nghiệp vụ preflight/chuẩn bị changes ở AuthMigrationUsecase; đọc legacy Users, drop index dẫn xuất và partial bulk writes ở AuthMigrationRepositoryImpl qua domain port. Opaque ID giữ nguyên ObjectId/string, không serialize lại ID; không log email/password/token, chỉ log số user đã xử lý. AuthIndexConfig tạo/reuse unique email/Google và TTL indexes sau migration. DDL và bulk update không là một transaction; cần maintenance window và có thể chạy lại nếu bị gián đoạn. [Validation](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+Google redirect về `/auth/login/oauth2/code/google`; Spring OAuth2LoginAuthenticationFilter nhận qua redirection baseUri `/auth/login/oauth2/code/*`, trong filter chain chỉ match callback Google chính xác và endpoint bắt đầu OAuth. JWT filter bỏ qua đúng callback mới theo SecurityConstants; callback cũ/đường dẫn liền kề không public. Backend tiếp tục chuyển handoff sang Next `/api/auth/google/callback`. [Validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Email trực tiếp và MIXED — 2026-11-13
+
+Lookup user dùng email canonical với unique index trực tiếp; EmailNormalizer là common utility, không tạo field dẫn xuất. Google exchange không tìm user bằng sub; hasGoogleLink kiểm sub sau lookup email. Link usecase quyết định LOCAL/MIXED có password → MIXED, GOOGLE → GOOGLE; repository conditional partial update ghi loginMethod và googleSubject trong transaction hiện có. Google đổi email không tự tìm lại user theo sub; unique sub chặn gắn cùng identity vào user khác. [Validation mới](email-login-method-implementation-report.md).
+
+## Authentication OTP/Google — 2026-11-13
+
+VerificationController → VerificationUsecase → IVerificationRepository/VerificationRepositoryImpl; tách entity/document/MapStruct và HTTP DTO. Liên feature qua UserService; token dùng AuthUsecase.generateToken và RefreshTokenService hiện có. TransactionTemplate bao consume OTP/create hoặc link user/refresh metadata; SMTP nằm ngoài transaction. Rate limit là rolling60 phút với revision CAS; expiry kiểm tra ở usecase/query, TTL chỉ cleanup.
+
+OAuth dùng filter chain riêng chỉ cho hai endpoint Google, session tạm tối đa10 phút và NullSecurityContextRepository. Chain nghiệp vụ tiếp tục STATELESS/JWT. OidcUserService chỉ xác minh identity; success handler không tạo user/cấp JWT, xóa session rồi chuyển mã handoff ngẫu nhiên/hash lưu DB, hạn60 giây/dùng một lần/ràng buộc trình duyệt. Next callback đổi mã qua backend bằng verifier HttpOnly; JWT không xuất hiện trong URL/JSON browser. Next đặt cookie accessToken300s/refreshToken7d, HttpOnly/SameSite=Lax/Secure production.
+
+Frontend page → hook → AuthService → Next BFF → usecase → port/adapter → Spring. RegisterUsecase giữ luồng cũ với response chờ OTP mới; VerificationUsecase phía Next phục vụ metadata/verify/resend/exchange. Shared GoogleAuthButton và OTP page tránh lặp UI. Mutation BFF kiểm Origin, auth responses no-store. [Chi tiết/evidence](google-auth-implementation-report.md). Các mô tả OAuth partial trước đây được thay thế trong phạm vi này.
+
 ## Ranh giới xuất ma trận đề — 2026-11-12
 
 Giữ UI → hook/service → Next BFF → usecase/repository adapter → Java → Express → binary quay về browser. Java [ExporterController](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java) kiểm ROLE_TEACHER; [ExamUsecase.getExamMatrixById](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java) đọc snapshot qua repository với examId/userId và map common DTO. Không expose domain entity xuyên feature, không đọc Questions/Drafts hoặc gọi S3 cho ma trận. BFF giữ status lỗi arraybuffer; frontend tách tải Blob khỏi component.

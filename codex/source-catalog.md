@@ -1,5 +1,23 @@
 # Source catalogue WEdu
 
+## Inventory migration Java — 2026-11-14
+
+Thêm domain entities AuthMigrationUserEntity/AuthMigrationChangeEntity, port IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply, AuthMigrationRepositoryImpl, AuthMigrationUsecase.migrate và AuthMigrationRunner.run. Thêm AuthMigrationUsecaseTest (14 cases), AuthMigrationRepositoryTest (5), AuthMigrationRunnerTest (3); cập nhật AuthIndexConfigTest. Xóa hai script JS/CJS, không còn source JS trong backend. [Danh sách từng file và link](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+Route Google callback đổi thành GET `/auth/login/oauth2/code/google`, xử lý bởi OAuth filter trong SecurityConfig thay endpoint mặc định cũ. Bổ sung [JwtOAuthCallbackFilterTest](../backend/src/test/java/com/wedu/exam_creation/security/JwtOAuthCallbackFilterTest.java): callback mới không cần JWT, callback cũ và đường dẫn liền kề không bypass. GoogleSecurityConfigTest đọc redirect template trong application.yml và kiểm request tới Google/callback matching. [Inventory từng file](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Email trực tiếp và MIXED — 2026-11-13
+
+Bỏ UserDocument.emailKey và findByGoogleSubject. Common util EmailNormalizer.normalize/isCanonical dùng chung. UserService/UserUsecase.hasGoogleLink(email,subject) chỉ kiểm tra subject sau lookup email; UserRepositoryImpl.linkGoogle(id,subject,loginMethod) ghi liên kết và phương thức cùng lúc. AuthIndexConfig kiểm email canonical/legacy index và unique email index. Thêm UserRepositoryEmailTest, UserUsecaseGoogleTest, AuthIndexConfigTest; test script Node đã thay bằng JUnit như mục mới ở trên. [Inventory từng file và validation mới](email-login-method-implementation-report.md).
+
+## Inventory Auth OTP/Google — 2026-11-13
+
+Auth bổ sung controller VerificationController; domain VerificationEntity/IVerificationRepository; document VerificationDocument/OtpRateLimitDocument; VerificationMapper/VerificationRepositoryImpl; AuthIndexConfig; usecase VerificationUsecase/VerificationException; request VerifyOtpRequestDTO/GoogleExchangeRequestDTO và response VerificationResponseDTO. AuthController.register/AuthUsecase.register bị bỏ; register thuộc VerificationController/VerificationUsecase.
+
+Frontend thêm verification.entity, IVerificationRepository/VerificationRepositoryImpl/VerificationUsecase, useVerifyEmail, GoogleAuthButton, verify-email/google-error pages, BFF flow.ts, verification GET/verify/resend và google start/callback. Test AuthUsecaseRegisterTest được thay bằng VerificationUsecaseTest; AuthControllerRegisterTest vẫn giữ validation input với contract202. [Danh sách từng file, link và mô tả đầy đủ](google-auth-implementation-report.md#files-thay-đổi).
+
 ## Xuất ma trận đề — 2026-11-12
 
 Style bổ sung: [MatrixExportData.ts](../exporter-service/src/routes/exporter/usecase/util/MatrixExportData.ts) khai báo MatrixExportData/MatrixExportRow và prepareMatrixExport/sumCounts/levelTotals/pointsForCount/percentageForCount/formatMatrixNumber. MatrixTableBuilder nhận dữ liệu đã tổng hợp, dựng merge/header/summary; GenerateMatrixWordFileUsecase cấu hình page/font theo mẫu. Harness matrixExport 8 cases đã chạy trong phiên triển khai nhưng không được lưu trong repo hiện tại. Ba backend test classes đã merge qua `ba3f912`; source tính năng đủ trên main `5baf5e1` (đối chiếu 2026-11-13). [Inventory lượt style](matrix-export-implementation-report.md#cập-nhật-style-theo-mẫu).
@@ -693,7 +711,7 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
 | `com/wedu/exam_creation/auth/controller` | [AuthControllerLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLoginTest.java), [AuthControllerLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLogoutTest.java), [AuthControllerRegisterTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java) |
-| `com/wedu/exam_creation/auth/usecase` | [AuthUsecaseLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java), [AuthUsecaseLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLogoutTest.java), [AuthUsecaseRegisterTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseRegisterTest.java) |
+| `com/wedu/exam_creation/auth/usecase` | [AuthUsecaseLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java), [AuthUsecaseLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLogoutTest.java), [VerificationUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java) |
 | `com/wedu/exam_creation/moderator/controller` | `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại) |
 | `com/wedu/exam_creation/storage/controller` | [StorageAvatarControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageAvatarControllerTest.java) |
 | `com/wedu/exam_creation/storage/service` | [StorageAvatarServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageAvatarServiceTest.java), [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java) |

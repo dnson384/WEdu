@@ -1,5 +1,23 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Migration auth bằng Java — 2026-11-14
+
+Implemented AuthMigrationRunner → AuthMigrationUsecase → IAuthMigrationRepository/AuthMigrationRepositoryImpl, thay hai script JS đã xóa. Mặc định tắt; khi bật, migration chạy trước AuthIndexConfig, guard lỗi hướng dẫn --auth.migration.enabled=true. Spotless11 file và147 tests migration/index/auth đạt. Chưa chạy migration/index thực trên MongoDB hoặc deploy. [Files và cách chạy](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+Implemented callback backend `/auth/login/oauth2/code/google`, thay path cũ. Application YAML, OAuth filter processing/matcher và JWT public path đồng bộ.8 tests OAuth/JWT filter đạt; YAML parse/property đạt. Chưa gọi Google thật hay sửa Google Console. [Files/validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Chỉnh sửa email/MIXED — 2026-11-13
+
+Bỏ emailKey trong model/query/save; chuẩn hóa email trực tiếp và unique index email. Không tìm user Google bằng sub. Liên kết LOCAL có mật khẩu chuyển MIXED trong cùng conditional write với googleSubject; LOCAL/MIXED dùng password, GOOGLE-only vẫn từ chối password. Migration Java hỗ trợ cleanup bản emailKey trước và đánh dấu các LOCAL đã có Google link hợp lệ thành MIXED. [Validation và files của chỉnh sửa này](email-login-method-implementation-report.md). Chưa áp migration vào DB thật.
+
+## Đăng ký OTP và Google — 2026-11-13
+
+Implemented trong source: OTP cho mọi đăng ký mới LOCAL/GOOGLE, hồ sơ tạm, resend/cooldown/rolling quota, transaction hoàn tất user+refresh, Google OIDC/binding/handoff, teacher/active guard, lookup bằng email, liên kết Google theo sub và chuyển LOCAL thành MIXED. Frontend có nút Google hoạt động, shared OTP page/hook và cookie BFF. Register chuyển202 chờ xác minh; mô tả register tạo user ngay/OAuth partial/cookie snake_case cũ bên dưới đã được thay thế bởi mục này.
+
+Migration/index production, Google consent thực, SMTP delivery và Mongo transaction/concurrency thực vẫn unknown; chưa chạy against external services hoặc deploy. Cần OTP_SECRET, Google/SMTP config và chuẩn hóa email trước startup. [Validation chính xác, lỗi baseline và toàn bộ files](google-auth-implementation-report.md).
+
 ## Xuất ma trận đề — 2026-11-12
 
 Source đối chiếu 2026-11-13 trên main `5baf5e1`: backend `23a4111` (PR #140), backend tests `ba3f912` (PR #141), exporter `ef66943` (PR #142) và frontend `97e1d67` (PR #143) đã merge. Ba file JUnit nằm trong source. Mẫu DOCX và harness `exporter-service/tests/matrixExport.test.ts` không được lưu trong snapshot repo hiện tại; kết quả exporter 8 tests bên dưới thuộc phiên triển khai, không phải test suite có thể chạy lại từ checkout này. Lượt đồng bộ context chỉ kiểm source/links/diff, không chạy lại application build/tests hoặc chứng nhận production.
