@@ -1,5 +1,9 @@
 package com.wedu.exam_creation.auth.usecase;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.*;
+
 import com.wedu.exam_creation.auth.dto.mapper.AuthDTOMapper;
 import com.wedu.exam_creation.auth.dto.response.AuthorizedResponseDTO;
 import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
@@ -16,33 +20,25 @@ import com.wedu.exam_creation.refreshToken.usecase.RefreshTokenService;
 import com.wedu.exam_creation.security.service.SecurityService;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserService;
+import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
-import java.util.Optional;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 public class AuthUsecaseLoginTest {
-    @Mock
-    private AuthDTOMapper mapperDTO;
-    @Mock
-    private SecurityService securityService;
-    @Mock
-    private RefreshTokenService refreshTokenService;
-    @Mock
-    private PasswordResetTokenService passwordResetTokenService;
-    @Mock
-    private UserService userService;
+    @Mock private AuthDTOMapper mapperDTO;
+    @Mock private SecurityService securityService;
+    @Mock private RefreshTokenService refreshTokenService;
+    @Mock private PasswordResetTokenService passwordResetTokenService;
+    @Mock private UserService userService;
 
     private AuthUsecase authUsecase;
 
@@ -52,44 +48,53 @@ public class AuthUsecaseLoginTest {
 
     @BeforeEach
     void setUp() {
-        authUsecase = new AuthUsecase(userService, securityService, refreshTokenService, passwordResetTokenService, mapperDTO);
+        authUsecase =
+                new AuthUsecase(
+                        userService,
+                        securityService,
+                        refreshTokenService,
+                        passwordResetTokenService,
+                        mapperDTO);
 
         loginRequest = new LoginUserRequestDTO();
         loginRequest.setEmail("anv@gmail.com");
         loginRequest.setPlainPassword("Password123@");
 
-        activeLocalUser = new CommonUserResponseAllDTO(
-                "user-123",
-                "anv@gmail.com",
-                "hashed-password",
-                "Nguyen Van A",
-                "ROLE_TEACHER",
-                "LOCAL",
-                "avatars/default-avatar-user.png",
-                true, // isActive
-                "FREE",
-                Instant.now(),
-                Instant.now(),
-                null
-        );
+        activeLocalUser =
+                new CommonUserResponseAllDTO(
+                        "user-123",
+                        "anv@gmail.com",
+                        "hashed-password",
+                        "Nguyen Van A",
+                        "ROLE_TEACHER",
+                        "LOCAL",
+                        "avatars/default-avatar-user.png",
+                        true, // isActive
+                        "FREE",
+                        Instant.now(),
+                        Instant.now(),
+                        null);
 
-        userResponseDTO = new UserResponseDTO(
-                "user-123",
-                "anv@gmail.com",
-                "Nguyen Van A",
-                "ROLE_TEACHER",
-                "avatars/default-avatar-user.png"
-        );
+        userResponseDTO =
+                new UserResponseDTO(
+                        "user-123",
+                        "anv@gmail.com",
+                        "Nguyen Van A",
+                        "ROLE_TEACHER",
+                        "avatars/default-avatar-user.png");
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"LOCAL", "MIXED"})
     @DisplayName("200 - Đăng nhập thành công")
-    void should_returnTokens_when_credentialsAreValid() {
+    void should_returnTokens_when_credentialsAreValid(String loginMethod) {
+        activeLocalUser.setLoginMethod(loginMethod);
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(activeLocalUser));
         when(securityService.validatePassword("Password123@", "hashed-password")).thenReturn(true);
         when(mapperDTO.toUserResponseDTO(activeLocalUser)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
-        when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
+        when(securityService.generateRefreshToken(any(RTPayload.class)))
+                .thenReturn("refresh-token");
         NewRTRequestDTO parsedToken = mock(NewRTRequestDTO.class);
         when(securityService.parseNewRefreshToken("refresh-token")).thenReturn(parsedToken);
         when(refreshTokenService.save(parsedToken)).thenReturn(true);
@@ -123,6 +128,16 @@ public class AuthUsecaseLoginTest {
         assertThat(at.getParentJti()).isEqualTo(rt.getJti());
     }
 
+    @Test
+    void mixedWithoutPasswordCannotAuthenticateLocally() {
+        activeLocalUser.setLoginMethod("MIXED");
+        activeLocalUser.setHashedPassword("");
+        when(userService.findByEmail(loginRequest.getEmail()))
+                .thenReturn(Optional.of(activeLocalUser));
+        assertThatThrownBy(() -> authUsecase.login(loginRequest))
+                .isInstanceOf(UnAuthorizedException.class);
+        verifyNoInteractions(securityService, refreshTokenService);
+    }
 
     @Test
     @DisplayName("404 - Email không tồn tại")
@@ -136,24 +151,23 @@ public class AuthUsecaseLoginTest {
         verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
-
     @Test
     @DisplayName("401 - Tài khoản đăng ký bằng GOOGLE cố gắng đăng nhập bằng LOCAL")
     void should_throwUnauthorized_when_loginMethodIsGoogle() {
-        CommonUserResponseAllDTO googleUser = new CommonUserResponseAllDTO(
-                "user-456",
-                "anv@gmail.com",
-                null,
-                "Nguyen Van A",
-                "ROLE_TEACHER",
-                "GOOGLE",
-                "avatars/default-avatar-user.png",
-                true,
-                "FREE",
-                Instant.now(),
-                Instant.now(),
-                null
-        );
+        CommonUserResponseAllDTO googleUser =
+                new CommonUserResponseAllDTO(
+                        "user-456",
+                        "anv@gmail.com",
+                        null,
+                        "Nguyen Van A",
+                        "ROLE_TEACHER",
+                        "GOOGLE",
+                        "avatars/default-avatar-user.png",
+                        true,
+                        "FREE",
+                        Instant.now(),
+                        Instant.now(),
+                        null);
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(googleUser));
 
         assertThatThrownBy(() -> authUsecase.login(loginRequest))
@@ -163,24 +177,23 @@ public class AuthUsecaseLoginTest {
         verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
 
-
     @Test
     @DisplayName("403 - tài khoản đã bị khóa")
     void should_throwForbidden_when_accountIsLocked() {
-        CommonUserResponseAllDTO lockedUser = new CommonUserResponseAllDTO(
-                "user-789",
-                "anv@gmail.com",
-                "hashed-password",
-                "Nguyen Van A",
-                "ROLE_TEACHER",
-                "LOCAL",
-                "avatars/default-avatar-user.png",
-                false,
-                "FREE",
-                Instant.now(),
-                Instant.now(),
-                null
-        );
+        CommonUserResponseAllDTO lockedUser =
+                new CommonUserResponseAllDTO(
+                        "user-789",
+                        "anv@gmail.com",
+                        "hashed-password",
+                        "Nguyen Van A",
+                        "ROLE_TEACHER",
+                        "LOCAL",
+                        "avatars/default-avatar-user.png",
+                        false,
+                        "FREE",
+                        Instant.now(),
+                        Instant.now(),
+                        null);
         when(userService.findByEmail("anv@gmail.com")).thenReturn(Optional.of(lockedUser));
 
         assertThatThrownBy(() -> authUsecase.login(loginRequest))
@@ -189,7 +202,6 @@ public class AuthUsecaseLoginTest {
 
         verifyNoInteractions(securityService, mapperDTO, refreshTokenService);
     }
-
 
     @Test
     @DisplayName("401 - mật khẩu không đúng")
@@ -213,7 +225,8 @@ public class AuthUsecaseLoginTest {
         when(securityService.validatePassword("Password123@", "hashed-password")).thenReturn(true);
         when(mapperDTO.toUserResponseDTO(activeLocalUser)).thenReturn(userResponseDTO);
         when(securityService.generateAccessToken(any(ATPayload.class))).thenReturn("access-token");
-        when(securityService.generateRefreshToken(any(RTPayload.class))).thenReturn("refresh-token");
+        when(securityService.generateRefreshToken(any(RTPayload.class)))
+                .thenReturn("refresh-token");
         when(securityService.parseNewRefreshToken("refresh-token"))
                 .thenReturn(mock(NewRTRequestDTO.class));
         when(refreshTokenService.save(any(NewRTRequestDTO.class))).thenReturn(false);
