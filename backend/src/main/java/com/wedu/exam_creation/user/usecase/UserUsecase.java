@@ -16,11 +16,10 @@ import com.wedu.exam_creation.storage.service.S3Service;
 import com.wedu.exam_creation.user.domain.entity.UserEntity;
 import com.wedu.exam_creation.user.dto.mapper.UserDTOMapper;
 import com.wedu.exam_creation.user.infrastructure.repository.UserRepositoryImpl;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class UserUsecase {
@@ -31,7 +30,13 @@ public class UserUsecase {
     private final S3Service s3Service;
     private final TelegramNotificationService notiService;
 
-    public UserUsecase(UserRepositoryImpl repo, UserDTOMapper mapper, UserCommonDTOMapper mapperCommon, RefreshTokenService refreshTokenService, S3Service s3Service, TelegramNotificationService notiService) {
+    public UserUsecase(
+            UserRepositoryImpl repo,
+            UserDTOMapper mapper,
+            UserCommonDTOMapper mapperCommon,
+            RefreshTokenService refreshTokenService,
+            S3Service s3Service,
+            TelegramNotificationService notiService) {
         this.repo = repo;
         this.mapper = mapper;
         this.mapperCommon = mapperCommon;
@@ -41,20 +46,21 @@ public class UserUsecase {
     }
 
     // POST
-    public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
-        UserEntity newUserEntity = new UserEntity(
-                null,
-                newUser.getEmail(),
-                hashedPassword,
-                newUser.getUsername(),
-                "ROLE_TEACHER",
-                newUser.getLoginMethod(),
-                "avatars/default-avatar-user.png",
-                true,
-                "FREE",
-                Instant.now(),
-                Instant.now()
-        );
+    public CommonUserResponseAllDTO createNewUser(
+            NewUserRequestDTO newUser, String hashedPassword) {
+        UserEntity newUserEntity =
+                new UserEntity(
+                        null,
+                        newUser.getEmail(),
+                        hashedPassword,
+                        newUser.getUsername(),
+                        "ROLE_TEACHER",
+                        newUser.getLoginMethod(),
+                        "avatars/default-avatar-user.png",
+                        true,
+                        "FREE",
+                        Instant.now(),
+                        Instant.now());
 
         UserEntity createdUser = repo.save(newUserEntity);
 
@@ -69,6 +75,26 @@ public class UserUsecase {
         userResponse.setAvatarUrl(avatarUrl);
 
         return userResponse;
+    }
+
+    public boolean hasGoogleLink(String email, String subject) {
+        return repo.findByEmail(email)
+                .map(user -> subject.equals(user.getGoogleSubject()))
+                .orElse(false);
+    }
+
+    public CommonUserResponseAllDTO linkGoogle(String id, String subject) {
+        UserEntity user = repo.findById(id);
+        if (user == null) throw new NotFoundException("Không tìm thấy tài khoản");
+        String method = user.getLoginMethod();
+        boolean local = "LOCAL".equals(method) || "MIXED".equals(method);
+        if ((!local && !"GOOGLE".equals(method))
+                || (local
+                        && (user.getHashedPassword() == null
+                                || user.getHashedPassword().isBlank()))) {
+            throw new BadRequestException("Thông tin phương thức đăng nhập không hợp lệ");
+        }
+        return mapper.toCommonAllDTO(repo.linkGoogle(id, subject, local ? "MIXED" : "GOOGLE"));
     }
 
     public Optional<CommonUserResponseAllDTO> findByEmail(String email) {
@@ -129,7 +155,8 @@ public class UserUsecase {
             try {
                 s3Service.deleteFile(oldAvatar);
             } catch (Exception e) {
-                String message = String.format("Không xóa được ảnh cũ %s: %s", oldAvatar, e.getMessage());
+                String message =
+                        String.format("Không xóa được ảnh cũ %s: %s", oldAvatar, e.getMessage());
                 System.err.printf(message);
                 notiService.notifyFailedDeleteImage(message);
             }
@@ -193,7 +220,8 @@ public class UserUsecase {
     public CommonUserResponseAllDTO updatePassword(CommonUserResponseAllDTO user) {
         UserEntity userEntity = mapper.commonAllToEntity(user);
 
-        UserEntity updatedUser = repo.updatePassword(userEntity.getId(), userEntity.getHashedPassword());
+        UserEntity updatedUser =
+                repo.updatePassword(userEntity.getId(), userEntity.getHashedPassword());
         if (updatedUser == null) {
             throw new InternalServerException("Có lỗi trong quá trình cập nhật vai trò người dùng");
         }
@@ -204,7 +232,9 @@ public class UserUsecase {
     public Instant grantPaidPlus(String userId, Instant now, int days) {
         UserEntity user = repo.findById(userId);
         if (user == null) return null;
-        Instant expiry = com.wedu.exam_creation.user.domain.entity.PlusEntitlement.extend(user.getPlusExpiresAt(), now, days);
+        Instant expiry =
+                com.wedu.exam_creation.user.domain.entity.PlusEntitlement.extend(
+                        user.getPlusExpiresAt(), now, days);
         return repo.grantPlus(userId, expiry) == null ? null : expiry;
     }
 
@@ -215,7 +245,9 @@ public class UserUsecase {
 
     public boolean hasLegacyPlus(String userId) {
         UserEntity user = repo.findById(userId);
-        return user != null && "PLUS".equals(user.getAccountType()) && user.getPlusExpiresAt() == null;
+        return user != null
+                && "PLUS".equals(user.getAccountType())
+                && user.getPlusExpiresAt() == null;
     }
 
     public boolean revokePaidTime(String userId, Instant expiry) {
@@ -241,10 +273,9 @@ public class UserUsecase {
     }
 
     private UserEntity updateField(String userId, UserUpdateFields updateFields) {
-        if (updateFields.getS3Key() == null &&
-                updateFields.getUsername() == null &&
-                updateFields.getIsActive() == null
-        ) {
+        if (updateFields.getS3Key() == null
+                && updateFields.getUsername() == null
+                && updateFields.getIsActive() == null) {
             throw new BadRequestException("Không có trường nào cần cập nhật");
         }
 

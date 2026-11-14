@@ -8,6 +8,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class AppConfig {
     @Bean
+    public java.time.Clock clock() {
+        return java.time.Clock.systemUTC();
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

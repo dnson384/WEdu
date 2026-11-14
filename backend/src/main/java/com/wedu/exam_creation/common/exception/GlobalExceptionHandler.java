@@ -1,5 +1,7 @@
 package com.wedu.exam_creation.common.exception;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -11,11 +13,25 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.wedu.exam_creation.auth.usecase.VerificationException.class)
+    public ResponseEntity<?> handleVerification(
+            com.wedu.exam_creation.auth.usecase.VerificationException ex) {
+        var builder =
+                ResponseEntity.status(ex.getStatus()).header("Cache-Control", "private, no-store");
+        if (ex.getRetryAfter() > 0)
+            builder.header("Retry-After", Long.toString(ex.getRetryAfter()));
+        return builder.body(
+                Map.of(
+                        "message",
+                        ex.getMessage(),
+                        "code",
+                        ex.getCode(),
+                        "retryAfter",
+                        ex.getRetryAfter()));
+    }
+
     @ExceptionHandler(UnprocessableEntityException.class)
     public ResponseEntity<?> handleUnprocessableEntity(UnprocessableEntityException ex) {
         return ResponseEntity.unprocessableEntity().body(Map.of("message", ex.getMessage()));
@@ -26,12 +42,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header("Retry-After", "30")
                 .header("Cache-Control", "private, no-store")
-                .body(Map.of("message", ex.getMessage(), "code", "PAYMENT_VERIFICATION_UNAVAILABLE"));
+                .body(
+                        Map.of(
+                                "message",
+                                ex.getMessage(),
+                                "code",
+                                "PAYMENT_VERIFICATION_UNAVAILABLE"));
     }
 
     @ExceptionHandler(AiAccessException.class)
     public ResponseEntity<?> handleAiAccess(AiAccessException ex) {
-        return ResponseEntity.status(ex.getStatus()).body(Map.of("message", ex.getMessage(), "code", ex.getCode()));
+        return ResponseEntity.status(ex.getStatus())
+                .body(Map.of("message", ex.getMessage(), "code", ex.getCode()));
     }
 
     @ExceptionHandler(ConflictException.class)
@@ -40,15 +62,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
 
         // Duyệt qua tất cả các lỗi validation và đưa vào Map
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        ex.getBindingResult()
+                .getAllErrors()
+                .forEach(
+                        (error) -> {
+                            String fieldName = ((FieldError) error).getField();
+                            String errorMessage = error.getDefaultMessage();
+                            errors.put(fieldName, errorMessage);
+                        });
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
@@ -63,13 +89,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<?> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        return ResponseEntity
-                .badRequest()
-                .body(Map.of("message", "Dữ liệu gửi lên không hợp lệ"));
+        return ResponseEntity.badRequest().body(Map.of("message", "Dữ liệu gửi lên không hợp lệ"));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<Map<String, String>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+    public ResponseEntity<Map<String, String>> handleMethodNotAllowed(
+            HttpRequestMethodNotSupportedException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("message", "Phương thức HTTP không được hỗ trợ");
 
@@ -77,7 +102,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<Map<String, String>> handleMissingHeaderException(MissingRequestHeaderException ex) {
+    public ResponseEntity<Map<String, String>> handleMissingHeaderException(
+            MissingRequestHeaderException ex) {
         Map<String, String> error = new HashMap<>();
 
         if (ex.getHeaderName().equals("Authorization")) {
@@ -92,45 +118,37 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(UnAuthorizedException.class)
     public ResponseEntity<?> handleUnauthorized(UnAuthorizedException ex) {
 
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<?> handleForbidden(ForbiddenException ex) {
 
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<?> handleNotfound(NotFoundException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(InternalServerException.class)
     public ResponseEntity<?> handleInternalServer(InternalServerException ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(AIGenerationException.class)
     public ResponseEntity<?> handleAIGeneration(AIGenerationException ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));
     }
 }

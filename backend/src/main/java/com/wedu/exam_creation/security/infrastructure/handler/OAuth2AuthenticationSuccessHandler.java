@@ -1,34 +1,27 @@
 package com.wedu.exam_creation.security.infrastructure.handler;
 
-import com.wedu.exam_creation.common.dto.token.ATPayload;
-import com.wedu.exam_creation.common.dto.token.RTPayload;
-import com.wedu.exam_creation.common.exception.NotFoundException;
-import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
-import com.wedu.exam_creation.user.domain.entity.UserEntity;
-import com.wedu.exam_creation.user.domain.repository.IUserRepository;
-import io.jsonwebtoken.io.IOException;
+import com.wedu.exam_creation.auth.usecase.VerificationUsecase;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Locale;
 import org.jspecify.annotations.NonNull;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-import java.util.UUID;
-
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-    private final JwtTokenProvider tokenProvider;
-    private final IUserRepository userRepository;
+    private final VerificationUsecase verification;
+    private final String frontendUrl;
 
-    public OAuth2AuthenticationSuccessHandler(JwtTokenProvider tokenProvider, IUserRepository userRepository) {
-        this.tokenProvider = tokenProvider;
-        this.userRepository = userRepository;
+    public OAuth2AuthenticationSuccessHandler(
+            VerificationUsecase verification, @Value("${app.frontend.url}") String frontendUrl) {
+        this.verification = verification;
+        this.frontendUrl = frontendUrl.replaceAll("/+$", "");
     }
 
     @Override
@@ -36,51 +29,38 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             Authentication authentication)
-            throws IOException, ServletException, java.io.IOException {
-
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        assert oAuth2User != null;
-        String email = oAuth2User.getAttribute("email");
-
-        Optional<UserEntity> userEntity = userRepository.findByEmail(email);
-        if (userEntity.isEmpty()) {
-            throw new NotFoundException("User chưa tồn tại");
+            throws IOException, ServletException {
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Referrer-Policy", "no-referrer");
+        String target = frontendUrl + "/api/auth/google/callback?error=google_failed";
+        try {
+            var session = request.getSession(false);
+            String binding =
+                    session == null ? null : (String) session.getAttribute("googleBinding");
+            Long started = session == null ? null : (Long) session.getAttribute("googleStarted");
+            if (started == null || System.currentTimeMillis() - started > 600_000)
+                throw new IllegalStateException("OAuth expired");
+            OidcUser user = (OidcUser) authentication.getPrincipal();
+            String email = user.getEmail();
+            String hd = user.getClaimAsString("hd");
+            boolean authoritative =
+                    email != null
+                            && (email.toLowerCase(Locale.ROOT).endsWith("@gmail.com")
+                                    || (hd != null && !hd.isBlank()));
+            String code =
+                    verification.googleHandoff(
+                            email,
+                            user.getFullName(),
+                            user.getSubject(),
+                            Boolean.TRUE.equals(user.getEmailVerified()),
+                            authoritative,
+                            binding);
+            target = frontendUrl + "/api/auth/google/callback?code=" + code;
+        } catch (RuntimeException ignored) {
+            // Do not expose provider details, authorization codes or tokens in logs or error URLs.
+        } finally {
+            if (request.getSession(false) != null) request.getSession(false).invalidate();
         }
-
-        UserEntity curUser = userEntity.get();
-
-        String jti = UUID.randomUUID().toString();
-
-        String accessToken = tokenProvider.generateAccessToken(
-                new ATPayload(jti, curUser.getId(), curUser.getEmail(), curUser.getRole()));
-
-        String refreshToken = tokenProvider.generateRefreshToken(
-                new RTPayload(jti, curUser.getId(), curUser.getEmail(), curUser.getRole()));
-
-        ResponseCookie accessTokenCookie = ResponseCookie
-                .from("access_token", accessToken)
-                .httpOnly(true)
-                // .secure(true)
-                .path("/")
-                .maxAge(15 * 60)
-                .sameSite("Lax")
-                .build();
-
-        ResponseCookie refreshTokenCookie = ResponseCookie
-                .from("refresh_token", refreshToken)
-                .httpOnly(true)
-                // .secure(true)
-                .path("/api/auth/refresh")
-                .maxAge(7 * 24 * 60 * 60)
-                .sameSite("Lax")
-                .build();
-
-        // 3. Đẩy cookies vào Response Header
-        response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
-
-        // 4. Chuyển hướng người dùng về trang chủ của Frontend (Ví dụ: React/Next.js chạy cổng 3000)
-        String targetUrl = "http://localhost:3000/dashboard";
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+        getRedirectStrategy().sendRedirect(request, response, target);
     }
 }
