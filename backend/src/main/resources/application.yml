@@ -22,6 +22,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/auth/login/oauth2/code/{registrationId}"
             scope:
               - openid
               - profile
@@ -101,3 +102,17 @@ payment:
     return-url: ${VNPAY_RETURN_URL}
     bank-code: ${VNPAY_BANK_CODE:}
     server-ip: ${VNPAY_SERVER_IP:127.0.0.1}
+
+# Independent server-only secret, at least 32 characters.
+auth:
+  otp-secret: ${OTP_SECRET}
+  migration:
+    enabled: ${AUTH_MIGRATION_ENABLED:false}
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE}

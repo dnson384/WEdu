@@ -13,12 +13,24 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final String fromEmail;
 
+    public void sendVerificationOtp(String email, String otp) {
+        sendResult(
+                email,
+                "Mã xác thực email WEdu",
+                "Mã OTP của bạn: "
+                        + otp
+                        + "\n\nMã có hiệu lực 5 phút. Không chia sẻ mã này với người khác.");
+    }
+
     public void sendPaymentResultEmail(String toEmail, String orderId, String result) {
         sendResult(toEmail, "Kết quả thanh toán WEdu PLUS", "Mã đơn: " + orderId + "\n\n" + result);
     }
 
     public void sendRefundResultEmail(String toEmail, String refundId, String result) {
-        sendResult(toEmail, "Tình trạng yêu cầu hoàn tiền WEdu PLUS", "Mã yêu cầu: " + refundId + "\n\n" + result);
+        sendResult(
+                toEmail,
+                "Tình trạng yêu cầu hoàn tiền WEdu PLUS",
+                "Mã yêu cầu: " + refundId + "\n\n" + result);
     }
 
     private void sendResult(String toEmail, String subject, String content) {
@@ -36,9 +48,7 @@ public class MailService {
     }
 
     public MailService(
-            JavaMailSender mailSender,
-            @Value("${spring.mail.username}") String fromEmail
-    ) {
+            JavaMailSender mailSender, @Value("${spring.mail.username}") String fromEmail) {
         this.mailSender = mailSender;
         this.fromEmail = fromEmail;
     }
@@ -77,7 +87,8 @@ public class MailService {
                         mật khẩu của bạn sẽ không thay đổi.
                     </p>
                 </div>
-                """.formatted(resetLink);
+                """
+                .formatted(resetLink);
     }
 
     public void sendQuestionFileRejectionEmail(String toEmail, String fileName, String reason) {
@@ -93,5 +104,4 @@ public class MailService {
             throw new InternalServerException("Không thể gửi email từ chối tệp câu hỏi");
         }
     }
-
 }
