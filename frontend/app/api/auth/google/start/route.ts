@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { getFrontendOrigin } from "../../flow";
 
 export async function GET(request: NextRequest) {
   if (request.headers.get("sec-fetch-site") === "cross-site") {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   const backend = process.env.GOOGLE_OAUTH_BASE_URL ?? process.env.BACKEND_URL;
   if (!backend) {
     const response = NextResponse.redirect(
-      new URL("/auth/google-error", request.url),
+      new URL("/auth/google-error", getFrontendOrigin(request)),
     );
     response.headers.set("Cache-Control", "no-store");
     return response;

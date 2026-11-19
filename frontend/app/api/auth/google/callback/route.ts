@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { VerificationRepositoryImpl } from "@/infrastructure/repositories/VerificationRepositoryImpl";
 import { VerificationUsecase } from "@/usecases/auth/VerificationUsecase";
-import { applyAuthCookies } from "../../flow";
+import { applyAuthCookies, getFrontendOrigin } from "../../flow";
 
 export async function GET(request: NextRequest) {
+  const frontendOrigin = getFrontendOrigin(request);
   let response: NextResponse;
 
   try {
@@ -27,14 +28,14 @@ export async function GET(request: NextRequest) {
       NextResponse.redirect(
         new URL(
           result.status === 202 ? "/auth/verify-email" : "/",
-          request.url,
+          frontendOrigin,
         ),
       ),
       result.cookies,
     );
   } catch {
     response = NextResponse.redirect(
-      new URL("/auth/google-error", request.url),
+      new URL("/auth/google-error", frontendOrigin),
     );
   }
 
