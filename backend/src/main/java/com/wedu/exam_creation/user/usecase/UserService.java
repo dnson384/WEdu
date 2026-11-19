@@ -68,18 +68,6 @@ public class UserService {
         return userUsecase.grantPaidPlus(userId, now, days);
     }
 
-    public Instant paidPlusExpiry(String userId) {
-        return userUsecase.paidPlusExpiry(userId);
-    }
-
-    public boolean hasLegacyPlus(String userId) {
-        return userUsecase.hasLegacyPlus(userId);
-    }
-
-    public boolean revokePaidTime(String userId, Instant expiry) {
-        return userUsecase.revokePaidTime(userId, expiry);
-    }
-
     // DELETE
     public boolean deleteUser(String userId) {
         return userUsecase.deleteUser(userId);

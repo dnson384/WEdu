@@ -1,10 +1,9 @@
 package com.wedu.exam_creation.payment.domain.entity;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -21,15 +20,10 @@ public class PaymentOrderEntity {
     private Instant expiresAt;
     private Instant paidAt;
     private Instant plusExpiresAt;
-    private String transactionNo;
-    private String responseCode;
-    private String transactionStatus;
-    private String clientIp;
-    private boolean manualReview;
+    private VnpayTransactionEntity vnpayTransaction;
     private long revision;
-    private Instant lastVerifiedAt;
-    private Instant plusStartsAt;
-    private Instant refundedAt;
-    private boolean refundTracked;
-    private boolean plusLegacyProtected;
+
+    public boolean isManualReview() {
+        return "SUCCEEDED".equals(status) && plusExpiresAt == null;
+    }
 }

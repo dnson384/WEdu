@@ -1,6 +1,8 @@
 package com.wedu.exam_creation.payment.domain.entity;
-import lombok.Data;
+
 import java.time.Instant;
+import lombok.Data;
+
 @Data
 public class PaymentEmailEntity {
     private String id;
@@ -13,6 +15,4 @@ public class PaymentEmailEntity {
     private Instant nextAttemptAt;
     private Instant sentAt;
     private String leaseToken;
-    private String refundId;
-    private String message;
 }
