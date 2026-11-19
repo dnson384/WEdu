@@ -1,31 +1,102 @@
+import { Search } from "lucide-react";
 import { TransactionFilters as Filters } from "@/domain/entities/adminTransaction.entity";
 import { transactionStatuses } from "@/presentation/utils/transactionDisplay";
 
-export default function TransactionFilters({ value, onChange, onSearch, error }: {
-  value: Filters; onChange: (value: Filters) => void; onSearch: () => void; error: string;
-}) {
-  const input = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 bg-white";
-  return <form onSubmit={(event) => { event.preventDefault(); onSearch(); }} className="rounded-2xl border bg-white p-5 space-y-4">
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <label className="text-sm font-medium">Từ khóa
-        <input className={input} value={value.keyword} maxLength={254} placeholder="Mã đơn, mã VNPay hoặc email"
-          onChange={(e) => onChange({ ...value, keyword: e.target.value })} />
-      </label>
-      <label className="text-sm font-medium">Trạng thái nội bộ
-        <select className={input} value={value.status} onChange={(e) => onChange({ ...value, status: e.target.value })}>
-          <option value="">Tất cả trạng thái</option>
-          {Object.entries(transactionStatuses).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-        </select>
-      </label>
-      <label className="text-sm font-medium">Ngày tạo từ
-        <input type="date" className={input} value={value.from} onChange={(e) => onChange({ ...value, from: e.target.value })} />
-      </label>
-      <label className="text-sm font-medium">Ngày tạo đến
-        <input type="date" className={input} value={value.to} onChange={(e) => onChange({ ...value, to: e.target.value })} />
-      </label>
-    </div>
-    <p className="text-sm text-slate-500">Tìm mã chính xác hoặc một phần email. Ngày và giờ theo múi giờ Việt Nam.</p>
-    {error && <p role="alert" className="text-red-700">{error}</p>}
-    <button className="rounded-lg bg-blue-600 px-5 py-2 text-white" type="submit">Tìm giao dịch</button>
-  </form>;
+interface Props {
+  value: Filters;
+  onChange: (value: Filters) => void;
+  onSearch: () => void;
+  error: string;
+}
+
+export default function TransactionFilters({
+  value,
+  onChange,
+  onSearch,
+  error,
+}: Props) {
+  const inputClass =
+    "mt-1.5 block w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSearch();
+      }}
+      className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+    >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label className="min-w-0 text-sm text-slate-600">
+          Từ khóa
+          <input
+            type="search"
+            className={inputClass}
+            value={value.keyword}
+            maxLength={254}
+            placeholder="Mã đơn, mã VNPay hoặc email"
+            onChange={(event) =>
+              onChange({ ...value, keyword: event.target.value })
+            }
+          />
+        </label>
+        <label className="min-w-0 text-sm text-slate-600">
+          Trạng thái
+          <select
+            className={inputClass}
+            value={value.status}
+            onChange={(event) =>
+              onChange({ ...value, status: event.target.value })
+            }
+          >
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(transactionStatuses).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0 text-sm text-slate-600">
+          Từ ngày
+          <input
+            type="date"
+            className={inputClass}
+            value={value.from}
+            onChange={(event) =>
+              onChange({ ...value, from: event.target.value })
+            }
+          />
+        </label>
+        <label className="min-w-0 text-sm text-slate-600">
+          Đến ngày
+          <input
+            type="date"
+            className={inputClass}
+            value={value.to}
+            onChange={(event) => onChange({ ...value, to: event.target.value })}
+          />
+        </label>
+      </div>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          {error}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs leading-relaxed text-slate-500">
+          Tìm mã chính xác hoặc một phần email · Giờ Việt Nam
+        </p>
+        <button
+          type="submit"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+        >
+          <Search size={16} />
+          Tìm kiếm
+        </button>
+      </div>
+    </form>
+  );
 }

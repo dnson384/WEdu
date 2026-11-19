@@ -1,6 +1,7 @@
 "use client";
 
-import { Activity, Coins, Hash, RefreshCw } from "lucide-react";
+import { Activity, Coins, Hash } from "lucide-react";
+import AdminPageHeader from "@/presentation/components/Admin/AdminPageHeader";
 import useAiManagement from "@/presentation/hooks/Admin/useAiManagement";
 import AiMetricCard from "@/presentation/components/Admin/AiMetricCard";
 import AiUsageChart from "@/presentation/components/Admin/AiUsageChart";
@@ -13,26 +14,12 @@ export default function AiManagementPage() {
   const report = ai.report.data;
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-600">
-            Quản trị hệ thống
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">Quản lý AI</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Theo dõi mức sử dụng, chi phí và hạn mức DeepSeek.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={ai.refresh}
-          disabled={ai.report.isFetching || ai.status.isFetching}
-          className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-        >
-          <RefreshCw size={16} />
-          Làm mới
-        </button>
-      </header>
+      <AdminPageHeader
+        title="Quản lý AI"
+        description="Theo dõi mức sử dụng, chi phí và hạn mức DeepSeek."
+        refreshing={ai.report.isFetching || ai.status.isFetching}
+        onRefresh={ai.refresh}
+      />
 
       {ai.statusError && (
         <p
@@ -40,7 +27,11 @@ export default function AiManagementPage() {
           className="rounded-xl bg-red-50 p-4 text-sm text-red-700"
         >
           {ai.statusError}
-          {ai.notice ? " — Cấu hình đã lưu, nhưng trạng thái hạn mức chưa cập nhật. Chọn Làm mới để thử lại." : ai.status.data ? " — Số liệu bên dưới chưa cập nhật." : ""}
+          {ai.notice
+            ? " — Cấu hình đã lưu, nhưng trạng thái hạn mức chưa cập nhật. Chọn Làm mới để thử lại."
+            : ai.status.data
+              ? " — Số liệu bên dưới chưa cập nhật."
+              : ""}
         </p>
       )}
       {ai.status.isPending && (
