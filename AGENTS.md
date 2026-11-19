@@ -33,7 +33,7 @@ Chạy trong module, không có root build script. Hai module npm dùng `npm ci`
 
 Unix dùng `./mvnw`. Exporter thiếu `outDir` dù start cần `dist/app.js`. Backend dùng JUnit Jupiter/Mockito/AssertJ/MockMvc; tests ở `src/test/java`, tên `*Test.java`. Frontend chưa có test script; exporter test là placeholder thất bại. Không có coverage threshold cấu hình. Báo rõ kiểm tra đã chạy và lỗi có sẵn.
 
-## Quy tắc thêm tính năng
+## Quy tắc thêm hoặc sửa tính năng
 
 - Giữ controller/route mỏng, nghiệp vụ trong use case/service, persistence trong repository; tách entity/document/DTO.
 - Giữ owner filter `userId` cho draft/exam, quyền `ROLE_*`, JWT/cookie/refresh contract. Backend quyết định quyền.
@@ -52,6 +52,16 @@ hook/service/usecase phù hợp với kiến trúc hiện có.
 - Sau khi format backend, kiểm tra diff và không stage các thay đổi formatting ngoài scope của task.
 - Không tự thay đổi formatter, formatter configuration hoặc code style nếu task không yêu cầu.
 - Nếu formatter thất bại, báo lỗi thay vì bỏ qua hoặc tự thay thế bằng formatter khác.
+
+### Explicit type rules
+
+- Backend Java bắt buộc khai báo kiểu dữ liệu rõ ràng; không sử dụng `var` cho biến local.
+- Không dùng kiểu trả về mơ hồ như `ResponseEntity<?>`, `Object` hoặc raw type khi có thể xác định contract cụ thể.
+- Controller phải khai báo chính xác kiểu response, ví dụ `ResponseEntity<UserResponseDTO>`, `ResponseEntity<List<QuestionDTO>>`, `ResponseEntity<Void>` hoặc kiểu dữ liệu cụ thể tương ứng.
+- Collection phải khai báo đầy đủ generic type, ví dụ `List<QuestionDTO>`, `Set<String>`, `Map<String, Long>`; không dùng raw type như `List`, `Set`, `Map`.
+- Biến local phải thể hiện rõ kiểu dữ liệu, đặc biệt với entity, DTO, document, domain object, collection và kết quả repository/service.
+- Method phải có kiểu trả về cụ thể phản ánh đúng contract; không làm tổng quát kiểu dữ liệu chỉ để tái sử dụng method.
+- Nếu một API có nhiều response body khác nhau, ưu tiên thiết kế một response DTO/contract rõ ràng thay vì sử dụng `ResponseEntity<?>`.
 
 ## Commit và PR
 

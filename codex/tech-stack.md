@@ -1,5 +1,19 @@
 # Tech stack và môi trường WEdu
 
+## Validation gỡ refund/tra cứu DB — 2026-11-19
+
+Không thêm dependency. Format Java bằng Spotless scoped; formatter frontend là Prettier đã cache và ESLint scoped. Clean backend trước test để tránh class refund cũ trong target. Sau khi xóa Next routes, regenerate typegen và bỏ generated .next/dev/types cũ trước TypeScript/build. Không sửa tsconfig/formatter config. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi lệnh, kết quả và giới hạn; không cần REFUND_ENABLED khi chạy app.
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Thêm biến server-only `FRONTEND_URL=https://<frontend-public-host>` vào môi trường Next (`frontend/.env` cho local), cùng origin với `FRONTEND_URL` của Spring. Khởi động lại Next sau khi sửa biến; nếu domain ngrok thay đổi, cập nhật cả hai môi trường. BFF lấy `.origin` từ URL HTTP(S) không chứa credentials, fallback request origin khi biến trống/chưa đặt. Dùng cho redirect Google và kiểm origin mutation auth. Giữ `BACKEND_URL` cho server-to-server và `GOOGLE_OAUTH_BASE_URL` cho backend browser truy cập được; tunnel port3000 không tự expose backend port8080. Không thêm dependency. [Validation](current-status.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+No dependency or YAML change. payment.storage-migration.enabled defaults false via @Value; normal startup checks embedded schema readiness. Run maintenance migration with --payment.storage-migration.enabled=true --payment.vnpay.enabled=false --payment.refund.enabled=false while other application/AI/refund writers are stopped. Restart with migration disabled and normal flags after completion. Replica-set transactions and collection/index permissions are required. No normal runtime creates VnpayTransactions.
+
+Tests use existing JUnit/Mockito/AssertJ/MockMvc; optional Mongo tests use WEDU_PAYMENT_TEST_MONGO_URI and disposable databases. Windows mvnw.cmd failed before Maven startup earlier in this session; installed Maven runs the same Spotless configuration, scoped to changed Java files. [Operation and validation](payment-storage-refactor-report.md).
+
 ## Cấu hình Auth OTP/Google — 2026-11-13
 
 Cập nhật 2026-11-14: `application.yml` khai báo `spring.security.oauth2.client.registration.google.redirect-uri` là `{baseUrl}/auth/login/oauth2/code/{registrationId}`. SecurityConfig đồng bộ OAuth redirection baseUri `/auth/login/oauth2/code/*` và filter-chain matcher; SecurityConstants chỉ public callback Google chính xác. Với request tới `http://localhost:8080`, callback là `http://localhost:8080/auth/login/oauth2/code/google`. YAML parse/property và8 tests OAuth/JWT filter đạt; chưa xác nhận Google Console hoặc đăng nhập Google thật. Nếu có environment override redirect-uri, cập nhật override theo URL mới và khởi động lại backend.
@@ -12,11 +26,9 @@ Backend migration chỉ dùng Java, không cần Node.js/mongosh. Trong maintena
 
 ## Refund configuration and checks — 2026-11-09
 
-No new package dependencies. Source rechecked on main `cbcb49a` (2026-11-10): `payment.refund.enabled=${REFUND_ENABLED}` controls refund mutations/provider polling and requires an explicit runtime environment value; application.yml has no fallback. Set false to disable mutations/polling, true to enable. RefundSettings.enabled is a Java boolean initialized false, but this does not supply a missing YAML placeholder. Spring does not automatically load backend/.env; the launcher/IDE/container must provide it. Owned history remains readable when disabled, and teacher AI tracking remains active for future evidence. Do not enable until index initialization and VNPay sandbox verification are complete. Refund uses existing backend VNPay merchant credentials/query URL and RestClient timeouts; no credential is exposed through NEXT_PUBLIC variables.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
-RefundJobs runs every 60 seconds with a 300-second persisted per-request query throttle; unresolved records stop automatic polling after 24 hours. Refund emails reuse PaymentJobs (15 seconds, maximum five attempts, 300-second lease, 60-second retry). Existing scheduling enablement and VNPay enabled configuration still apply. No long transaction wraps refund/query HTTP.
-
-Targeted command: `mvn -q '-Dtest=Refund*Test,VnpayRefundGatewayTest,Payment*Test,VnpayGatewayTest,VnpayQueryGatewayTest,AdminTransaction*Test,PlusEntitlementTest' test`. Real concurrent Mongo tests require explicit `WEDU_PAYMENT_TEST_MONGO_URI` to a dedicated replica set and create/drop only a generated `wedu_refund_test_*` database. No URI was available in this session. Frontend checks use build, TypeScript and targeted ESLint. Exact results and limitations are in the [implementation report](refund-implementation-report.md).
+REFUND_ENABLED/payment.refund.enabled đã bỏ khỏi application.yml; không còn refund polling/index initialization/SMTP refund. Các cấu hình VNPay còn phục vụ checkout/verify.
 
 ## Snapshot hiện tại — 2026-11-06
 

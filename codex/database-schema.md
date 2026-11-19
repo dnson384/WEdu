@@ -1,5 +1,19 @@
 # MongoDB schema và trạng thái dữ liệu
 
+## Persistence sau gỡ refund — 2026-11-19
+
+Source còn14 root @Document collections; RefundRequests/RefundAccounts/RefundAiReceipts không còn model/index/runtime access. Không chạy drop collection, cleanup DB thật hoặc migration trong task này. PaymentOrderEntity/Document bỏ plusStartsAt/refundedAt/plusLegacyProtected; PaymentEmailEntity/Document bỏ refundId/message. Dữ liệu legacy vẫn có thể còn các field này trong Mongo vì update payment dùng dotted paths, không replace document.
+
+PaymentEmails.claimEmail thêm điều kiện raw refundId=null để không gửi email refund cũ như payment. Payment storage migration bỏ coverage/ghi RefundAccounts; vẫn chuyển embedded VNPay/userId ObjectId và unset refundTracked legacy khi migration được vận hành chủ động. Các extra field refund khác không bị tự xóa. User.accountType/plusExpiresAt, order.status/paidAt/plusExpiresAt/vnpayTransaction giữ nguyên. Không thêm migration phá hủy dữ liệu. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Payment embedded VNPay - 2026-11-18
+
+[PaymentOrderDocument](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/PaymentOrderDocument.java) declares 16 root fields: _id:String, idempotencyKeyHash:String, userId:BSON ObjectId (Java String), email:String, amount:long, durationDays:int, status:String, createdAt/expiresAt/paidAt/plusStartsAt/plusExpiresAt/refundedAt:Instant, revision:long, plusLegacyProtected:boolean, vnpayTransaction:embedded object.
+
+[VnpayTransactionDocument](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/document/VnpayTransactionDocument.java) has transactionNo/responseCode/transactionStatus:String and lastVerifiedAt:Instant. It has no @Document, ID annotation or id property and creates no root collection. VnpayTransactionEntity has the same four fields. Index on PaymentOrders.vnpayTransaction.transactionNo replaces the former flat index. Existing order date/status/idempotency/user+paidAt indexes remain. No TTL deletion.
+
+clientIp/manualReview/refundTracked and flat provider fields are removed from PaymentOrders. PaymentEmails.manualReview remains a snapshot. Migration preserves plusLegacyProtected and legacy AI evidence; it embeds compatible data from flat/nested/intermediate split layouts, rejects conflicts, verifies the nested copy, then removes the corresponding split source in the same transaction. It never drops the old collection or deletes orphan provider records. [Migration details](payment-storage-refactor-report.md). Deployed schema remains unverified.
+
 ## Auth OTP/Google — 2026-11-13
 
 - Users dùng trực tiếp email đã trim/lowercase (không biến đổi dấu chấm/+ Gmail), unique index đầy đủ trên email. Không dùng field dẫn xuất cho kiểm tra tồn tại. googleSubject nullable có unique partial index, chỉ kiểm tra liên kết sau lookup email. loginMethod LOCAL/GOOGLE/MIXED: LOCAL có mật khẩu liên kết Google thành MIXED; Google-only giữ GOOGLE. Link cập nhật riêng googleSubject/loginMethod/updatedAt và kiểm role/active, giữ password/PLUS.
@@ -10,21 +24,7 @@
 
 ## Refund persistence — 2026-11-09
 
-New collections (no TTL/backfill):
-
-| Collection / document | Fields and invariants |
-| --- | --- |
-| RefundRequests / RefundDocument | Random32hex _id, orderId/userId/email snapshot, idempotencyKey, amount VND, status, reason, policyVersion, eligibility, decisionReason, adminId, createdAt/updatedAt/submittedAt/lastCheckedAt, requestId, providerCode/providerStatus/refundTransactionNo, pollingStopped, revision, history[{at,status,actor,reason}], checks[{key,result,reason}]. |
-| RefundAccounts / RefundAccountDocument | _id=userId string, trackedSince, lastAiUsedAt, activeAi attempt IDs, holds refund IDs, revision. CAS/transactions serialize per-user operations. Unknown attempts are not expired as unused. |
-| RefundAiReceipts / RefundAiReceiptDocument | _id=attempt UUID, userId string, createdAt; inserted in the exam transaction only for persisted AI-generated questions. |
-
-Refund status: PENDING_REVIEW / NEEDS_VERIFICATION / PROCESSING / REFUNDED / REJECTED / FAILED / CANCELLED. Eligibility: ELIGIBLE / INELIGIBLE / UNKNOWN; check result: PASSED / FAILED / UNKNOWN. Unique (userId,idempotencyKey) prevents request replay. Active/previously refunded order checks are serialized through RefundAccounts; they are not inferred from accountType.
-
-PaymentOrders adds nullable plusStartsAt/refundedAt and booleans refundTracked/plusLegacyProtected (legacy absent=false). Newly verified grants record their entitlement interval and AI-evidence coverage. Future intervals may shift after a preceding refund; original status remains SUCCEEDED. Legacy start may be derived from plusExpiresAt-durationDays only when consistent. A purchase originating from indefinite legacy PLUS is flagged to prevent automatic destructive revocation. PaymentEmails adds nullable refundId/message; deterministic refund event IDs share its existing send lease/retry indexes. Users keeps its existing accountType/plusExpiresAt shape; mutations update only entitlement fields.
-
-[RefundIndexConfig](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/RefundIndexConfig.java) ensures RefundRequests unique(userId,idempotencyKey), (orderId,status), (createdAt DESC,_id DESC), (userId,createdAt DESC), (status,lastCheckedAt); RefundAccounts(trackedSince); RefundAiReceipts(userId,createdAt DESC); PaymentOrders(userId,paidAt). Indexes initialize independently of refund enablement and create the collections before transaction use. Replica-set transaction support and index permissions are required; deployed presence remains unverified.
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 

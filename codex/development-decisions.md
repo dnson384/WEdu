@@ -1,5 +1,17 @@
 # WEdu Development Decisions
 
+## Phạm vi KLTN: bỏ hoàn tiền, tra cứu DB — 2026-11-19
+
+User xác nhận gỡ toàn bộ flow hoàn tiền thay vì chỉ disable/ẩn UI, đồng thời chọn ADMIN chỉ tra cứu dữ liệu DB và bỏ Tra cứu VNPay. Quyết định này thay thế phần PLUS refund workflow ngày 2026-11-09 và scope ADMIN provider lookup liên quan. Giữ thanh toán nâng cấp PLUS, callback/IPN có xác minh chữ ký, phân quyền backend, dữ liệu giao dịch đã lưu và tra cứu nội bộ. Không coi việc bỏ hoàn tiền là sửa được lỗi99 của querydr. Không xóa dữ liệu DB thật hoặc tự khôi phục quyền lợi từ refund lịch sử. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+User duyệt sửa lỗi redirect `https://localhost:3000` sau xác thực Google qua ngrok: frontend dùng biến server-only `FRONTEND_URL` làm origin cho redirect Google và kiểm origin mutation OTP; fallback request origin cho local khi chưa cấu hình. Không đổi API/schema/nghiệp vụ đăng nhập. Không mở rộng sang redirect của proxy hoặc các feature khác. [Implementation/validation](current-status.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+User confirmed the final design: VnpayTransactionDocument is embedded at PaymentOrderDocument.vnpayTransaction, with a corresponding separate VnpayTransactionEntity referenced by PaymentOrderEntity. This supersedes the intermediate two-collection design. Both VNPay types contain only transactionNo, responseCode, transactionStatus and lastVerifiedAt; no duplicate id. Keep ObjectId storage/Java String for userId, request-scoped IP, derived manualReview and AI coverage, and plusLegacyProtected. Java migration supports original flat orders and intermediate split records; no real database migration has run. [Report](payment-storage-refactor-report.md).
+
 ## Migration auth chỉ dùng Java — 2026-11-14
 
 User đã confirm thay migration/test JS bằng Java. Migration chỉ chạy khi auth.migration.enabled=true (AUTH_MIGRATION_ENABLED, mặc định false), trước AuthIndexConfig. Giữ preflight trước ghi, normalization email, cleanup emailKey cũ, nâng LOCAL đã liên kết hợp lệ thành MIXED và tính idempotent. Không tự chạy migration trên DB thật trong phiên implement. Không thêm Node/mongosh hoặc dependency/framework migration vào backend. [Implementation/validation](auth-java-migration-implementation-report.md).
@@ -40,7 +52,7 @@ Accepted pending requests hold new AI generation, including requests from stale 
 
 Refund status is separate from payment status. Verified completion removes only the refunded order's remaining entitlement, preserving other purchases. No partial refund, in-app notification inbox, time compensation, or automatic resend of an ambiguous refund. Notify via durable email and the teacher status page. Rollout keeps refund mutations disabled until indexes and sandbox validation are verified; AI tracking runs independently of that flag. Source rechecked 2026-11-10 on main `cbcb49a` requires explicit REFUND_ENABLED with no YAML fallback; this source fact does not certify runtime activation or change the rollout prerequisite. An ambiguous send/commit retains processing for reconciliation/manual investigation; this UI cannot force-mark a refund successful or force-clear unknown AI attempts.
 
-Evidence: [RefundUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [RefundAiService](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundAiService.java), [RefundEntitlementService](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundEntitlementService.java). Implementation/validation details: [refund report](refund-implementation-report.md). No real VNPay refund or production activation is certified.
+Evidence: RefundUsecase (đã xóa), RefundAiService (đã xóa), RefundEntitlementService (đã xóa). Implementation/validation details: [refund report](refund-implementation-report.md). No real VNPay refund or production activation is certified.
 
 > Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
 

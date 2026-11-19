@@ -1,5 +1,19 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Nghiệp vụ KLTN sau gỡ refund — 2026-11-19
+
+Không còn gửi/duyệt/từ chối/hủy/đối soát hoàn tiền, khóa AI vì refund hoặc tự thu hồi PLUS theo refund. Tài khoản active có quyền PLUS hiện hành vẫn dùng AI theo budget/usage hiện có. Giữ checkout → signed IPN/Return → lưu kết quả/cấp PLUS/email, và tra cứu ADMIN từ DB. Không tự hoàn tác quyền PLUS hoặc xóa các yêu cầu refund lịch sử. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Sau Google xác thực → backend chuyển handoff về Next callback → exchange trả200 thì redirect `/`, trả202 thì redirect `/auth/verify-email`, lỗi thì redirect `/auth/google-error`. Cả ba dùng frontend `FRONTEND_URL` khi cấu hình để tránh redirect về `https://localhost:3000` qua ngrok. Mutation OTP chấp nhận đúng origin cấu hình, vẫn chặn origin khác/thiếu hoặc cross-site. Không cấu hình thì giữ origin từ request cho local development. Không đổi điều kiện OTP/liên kết/tạo user hoặc phát JWT. [Source](../frontend/app/api/auth/google/callback/route.ts).
+
+## Payment embedded VNPay - 2026-11-18
+
+Checkout URLs use current request IP without persisting clientIp. manualReview is derived from SUCCEEDED with absent plusExpiresAt and remains an API/email value. AI coverage requires trackedSince <= paidAt; tracking is initialized before paidAt on a new grant, and legacy exceptions/PLUS protection retain their existing rules.
+
+VNPay results live in PaymentOrders.vnpayTransaction. Result updates use dotted paths and order revision; verification claims the nested timestamp with user ownership in the same update. ADMIN searches vnpayTransaction.transactionNo directly with existing date/status/email filters before pagination/count. Migration embeds old data and conditionally removes a split source only after verification in the same transaction. [Report](payment-storage-refactor-report.md).
+
 ## Chuẩn bị dữ liệu auth bằng Java — 2026-11-14
 
 Trong maintenance window, bật auth.migration.enabled=true rồi khởi động backend: đọc Users → kiểm đủ ID/email, trùng email chuẩn hóa/Google subject và credential nhất quán trên toàn bộ snapshot → drop index emailKey cũ → partial update email, unset emailKey, đổi LOCAL đã có Google link + password thành MIXED → AuthIndexConfig bảo đảm indexes. Không merge/delete tài khoản, không đổi password/role/PLUS, không gọi mail/Google. Tắt flag và khởi động bình thường sau khi hoàn tất. Nếu preflight lỗi thì chưa có ghi migration; lỗi DB trong DDL/bulk có thể để lại tiến độ một phần, chạy lại sau khi xử lý lỗi. [Cách chạy/tests](auth-java-migration-implementation-report.md).
@@ -26,15 +40,7 @@ Java gửi hai danh sách dòng sang Express `/exporter/matrix`. DOCX gồm tiê
 
 ## Refund processing — 2026-11-09
 
-Teacher opens Thanh toán → Giao dịch và hoàn tiền (`/me/bill/refunds`), selects an owned SUCCEEDED order, enters a reason and accepts the versioned 48-hour/unused-AI policy and AI-hold/no-compensation terms. Submission is idempotent; a deterministic failed condition saves REJECTED plus email. Otherwise it saves PENDING_REVIEW or NEEDS_VERIFICATION and a per-user AI hold. Multiple requests may hold one user; clearing one does not clear the others. Cancellation is allowed only before PROCESSING.
-
-ADMIN opens `/admin/transactions` → Xử lý yêu cầu hoàn tiền → `/admin/transactions/refunds`. Search/filter local requests by ID/order/email/status/Vietnam submission dates, 10/page. Detail shows snapshot checks, current AI uncertainty, projected expiry and history. Reject requires a reason. Approve verifies the original VNPay payment, reevaluates business rules using the original submission timestamp and checks revision. Old missing AI evidence may be explicitly excepted with a reason; other unknowns cannot be bypassed. A newly known AI result auto-rejects. No provider failure is mapped to business-policy rejection.
-
-Approval commits PROCESSING and request ID, then sends a single full refund. Codes for acceptance/in-progress retain PROCESSING. Timeout, unverified/mismatched responses and original-payment query results cannot complete a refund. RefundJobs checks due records every 60 seconds, claims at most one query per request/300 seconds and stops automatic querying after 24 hours unresolved. ADMIN may still query manually, subject to the throttle. Only a verified matching type-02 completed refund revokes entitlement and becomes REFUNDED; a definite provider refusal becomes FAILED and releases the hold.
-
-Expiry keeps running while held. Completion removes only the refunded grant's remaining time and shifts subsequent grants, preserving other purchases; consumed time is never deducted from other orders. All user-visible transitions enqueue a plaintext email in the same transaction and remain readable in the status page if delivery fails. SMTP retries follow the existing five-attempt outbox policy. [Usecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [validation/limitations](refund-implementation-report.md).
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 
@@ -251,8 +257,4 @@ On owned-order404, hide stale checkout and stop automatic reconciliation for tha
 
 ## ADMIN transaction lookup flow — 2026-11-08
 
-ADMIN navigation now additionally includes Quản lý giao dịch. Open /admin/transactions, choose Tra cứu giao dịch, then filter/search /admin/transactions/search. Default is all stored statuses/dates, newest first,10 rows per page. Email is the purchase-time snapshot, not the user's current email.
-
-Filtering only reads local PaymentOrders. Select Tra cứu VNPay on one row: backend reads its stored reference/createdAt, calls signed querydr and validates the response. Display provider and internal results separately, flag amount mismatch and show lookup time. No matching local rows produces an empty-state message; missing provider transaction and temporary/unverified failure have distinct errors.
-
-Lookup never calls payment processing or changes PLUS, order status, lastVerifiedAt or email outbox. Existing IPN/teacher reconciliation may independently update the order. Deleted local records cannot be queried by this flow. [Usecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java), [UI](<../frontend/app/(site)/admin/transactions/search/page.tsx>).
+ADMIN mở Quản lý giao dịch → Tra cứu giao dịch → lọc mã đơn/mã VNPay/email/trạng thái/ngày → backend đọc PaymentOrders. SUCCEEDED và transactionNo là dữ liệu đã lưu sau khi xác minh thanh toán; không gọi querydr, không so sánh kết quả provider và không sửa dữ liệu khi tra cứu. Các trạng thái khác vẫn có thể được tìm trong DB. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).

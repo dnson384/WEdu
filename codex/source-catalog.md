@@ -1,5 +1,28 @@
 # Source catalogue WEdu
 
+## Shared ADMIN UI và transaction styling — 2026-11-19
+
+Thêm [AdminPageHeader](../frontend/presentation/components/Admin/AdminPageHeader.tsx) cho transactions/users/ai; thêm [AdminPagination](../frontend/presentation/components/Admin/AdminPagination.tsx) cho transactions/users; thêm transactionStatusClass trong [transactionDisplay](../frontend/presentation/utils/transactionDisplay.ts). Cập nhật TransactionSearchPage, TransactionFilters, TransactionTable và hai page tham chiếu để dùng component chung. Không đổi route/DTO/model; [inventory từng file và validation](current-status.md#đồng-bộ-style-quản-lý-giao-dịch-với-admin--2026-11-19).
+
+## Entry point tra cứu giao dịch — 2026-11-19
+
+[TransactionSearchPage tại trang chính](../frontend/app/(site)/admin/transactions/page.tsx) thay TransactionManagementPage trung gian, dùng useAdminTransactions và TransactionFilters/TransactionTable hiện có. [Trang search cũ](../frontend/app/(site)/admin/transactions/search/page.tsx) chỉ redirect về /admin/transactions, không render hook/list lần hai. Không đổi API/model. [Validation](current-status.md#mở-trực-tiếp-tra-cứu-giao-dịch--2026-11-19).
+
+## Inventory gỡ refund/tra cứu DB — 2026-11-19
+
+[Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) là inventory hiện hành và liệt kê từng file đã xóa/sửa/thêm. Inventory/số liệu lịch sử bên dưới không còn đại diện module refund. Backend/Frontend refund symbols/routes không còn tồn tại. QuestionServicePlusAccessTest mới bảo vệ current PLUS/active guard sau khi gỡ RefundAiService.
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+- [frontend/app/api/auth/flow.ts](../frontend/app/api/auth/flow.ts): thêm `getFrontendOrigin`; `requireSameOrigin` dùng frontend origin cấu hình.
+- [frontend/app/api/auth/google/callback/route.ts](../frontend/app/api/auth/google/callback/route.ts): redirect thành công/OTP/lỗi về frontend public origin.
+- [frontend/app/api/auth/google/start/route.ts](../frontend/app/api/auth/google/start/route.ts): redirect lỗi thiếu backend dùng cùng helper.
+- Local `frontend/.env` (Git ignored): thêm server-only `FRONTEND_URL` theo ngrok origin hiện tại; không ghi secrets trong docs. [Cấu hình/validation](tech-stack.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+VnpayTransactionEntity and VnpayTransactionDocument are separate domain/persistence types with four provider fields, no duplicate ID; the document is embedded in PaymentOrderDocument and has no @Document annotation. PaymentMapper maps the relationship directly. PaymentRepositoryImpl, AdminTransactionIndexConfig, migration and tests use the embedded schema. PaymentStorageMigrationRunner/Usecase/IPaymentStorageMigrationRepository/PaymentStorageMigrationRepositoryImpl provide Java-only conversion from flat and intermediate split storage. [All changed files and symbols](payment-storage-refactor-report.md).
+
 ## Inventory migration Java — 2026-11-14
 
 Thêm domain entities AuthMigrationUserEntity/AuthMigrationChangeEntity, port IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply, AuthMigrationRepositoryImpl, AuthMigrationUsecase.migrate và AuthMigrationRunner.run. Thêm AuthMigrationUsecaseTest (14 cases), AuthMigrationRepositoryTest (5), AuthMigrationRunnerTest (3); cập nhật AuthIndexConfigTest. Xóa hai script JS/CJS, không còn source JS trong backend. [Danh sách từng file và link](auth-java-migration-implementation-report.md).
@@ -26,9 +49,7 @@ Inventory application/test/docs và mô tả từng file ở [báo cáo triển 
 
 ## Refund implementation — 2026-11-09
 
-The [refund implementation report](refund-implementation-report.md) inventories every application, test, configuration and documentation file added/changed for this feature, with a per-file description. Public flow/symbol inventory is in [module map](module-map.md#refund-module--2026-11-09), all new routes/DTO contracts in [API reference](api-reference.md#refund-apis--2026-11-09), document fields/indexes in [schema](database-schema.md#refund-persistence--2026-11-09). Historical declarations/counts below predate this addition.
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 
@@ -745,35 +766,4 @@ Changed files: Bill page; UserEntity.plusExpiresAt; useAuth expiry cache effect;
 
 ## ADMIN transaction lookup — 2026-11-08
 
-New/changed source inventory (no route or symbol removals):
-
-| File | Symbols / purpose |
-| --- | --- |
-| [AdminTransactionController.java](<../backend/src/main/java/com/wedu/exam_creation/payment/controller/AdminTransactionController.java>) | ADMIN-only search/lookup endpoints and safe error mapping |
-| [AdminTransactionDTO.java](<../backend/src/main/java/com/wedu/exam_creation/payment/dto/AdminTransactionDTO.java>) | Item, Page, Provider and Lookup response DTOs |
-| [AdminTransactionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java>) | Filter validation, read-only provider lookup and result normalization |
-| [AdminTransactionException.java](<../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionException.java>) | Typed lookup status/code |
-| [AdminTransactionIndexConfig.java](<../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/AdminTransactionIndexConfig.java>) | Independent read-index initialization |
-| [IPaymentRepository.java](<../backend/src/main/java/com/wedu/exam_creation/payment/domain/repository/IPaymentRepository.java>) | Added searchTransactions/countTransactions |
-| [PaymentRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/repository/PaymentRepositoryImpl.java>) | Shared search/count filters and stable pagination |
-| [AdminTransactionControllerTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionControllerTest.java>) | Role/authentication and error contracts |
-| [AdminTransactionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionUsecaseTest.java>) | Dates, provider validation and no writes |
-| [AdminTransactionRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/payment/AdminTransactionRepositoryTest.java>) | Literal regex, pagination/count and indexes |
-| [page.tsx](<../frontend/app/(site)/admin/transactions/page.tsx>) | Transaction management landing |
-| [page.tsx](<../frontend/app/(site)/admin/transactions/search/page.tsx>) | Search page composition |
-| [handler.ts](<../frontend/app/api/admin/transactions/handler.ts>) | Authenticated BFF validation/error masking |
-| [route.ts](<../frontend/app/api/admin/transactions/route.ts>) | GET list BFF |
-| [route.ts](<../frontend/app/api/admin/transactions/[id]/lookup/route.ts>) | POST lookup BFF |
-| [adminTransaction.entity.ts](<../frontend/domain/entities/adminTransaction.entity.ts>) | TransactionFilters/AdminTransaction/TransactionPage/TransactionLookup |
-| [IAdminTransactionRepository.ts](<../frontend/domain/repositories/IAdminTransactionRepository.ts>) | Frontend repository interface |
-| [AdminTransactionRepositoryImpl.ts](<../frontend/infrastructure/repositories/AdminTransactionRepositoryImpl.ts>) | Bearer-authenticated backend adapter |
-| [AdminTransactionUsecase.ts](<../frontend/usecases/admin/AdminTransactionUsecase.ts>) | Frontend usecase boundary |
-| [AdminTransactionService.ts](<../frontend/presentation/services/AdminTransactionService.ts>) | Abortable browser HTTP calls |
-| [useAdminTransactions.ts](<../frontend/presentation/hooks/Admin/useAdminTransactions.ts>) | Search/lookup state and stale response protection |
-| [TransactionFilters.tsx](<../frontend/presentation/components/Admin/TransactionFilters.tsx>) | Reusable filter form |
-| [TransactionTable.tsx](<../frontend/presentation/components/Admin/TransactionTable.tsx>) | Local results and pagination |
-| [TransactionDetail.tsx](<../frontend/presentation/components/Admin/TransactionDetail.tsx>) | Provider/internal details and mismatch warning |
-| [transactionDisplay.ts](<../frontend/presentation/utils/transactionDisplay.ts>) | Vietnam dates, currency and status labels |
-| [Navbar.tsx](<../frontend/presentation/components/layout/Navbar.tsx>) | Added ADMIN transaction navigation |
-
-Validation: 15 new backend tests; targeted payment suite79 passed/5 skipped; frontend build/TypeScript/targeted ESLint and temporary React/JSDOM/BFF harness passed. See [current status](current-status.md#admin-transaction-lookup--2026-11-08).
+Các symbol còn dùng: AdminTransactionController.search, AdminTransactionUsecase.search/date/item, AdminTransactionDTO.Item/Page; frontend AdminTransactionRepositoryImpl/IAdminTransactionRepository/AdminTransactionUsecase/AdminTransactionService.search, useAdminTransactions, TransactionFilters và TransactionTable. Bỏ lookup/Provider/Lookup DTO, TransactionDetail/providerStatus, AdminTransactionException và BFF lookup. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) có toàn bộ file add/modify/delete cùng mô tả.

@@ -1,5 +1,27 @@
 # Bản đồ module, symbols và API
 
+## Shared ADMIN presentation — 2026-11-19
+
+AdminPageHeader (title/description/onRefresh/refreshing/disabled) dùng ở pages transactions/users/ai, gom style header và nút Làm mới. AdminPagination (page one-based/totalPages/pageSize/itemLabel/onPageChange/disabled) dùng ở TransactionTable và users page; TransactionTable chuyển data.page+1 khi render và page-1 trong callback để giữ contract zero-based. transactionDisplay.transactionStatusClass cung cấp màu badge. TransactionFilters/TransactionTable vẫn tách render khỏi useAdminTransactions; không thêm API/hook/business logic. [Inventory và validation](current-status.md#đồng-bộ-style-quản-lý-giao-dịch-với-admin--2026-11-19).
+
+## Payment/AI sau khi gỡ refund — 2026-11-19
+
+QuestionService.generateExamQuestions overload có userId dùng UserService.findById kiểm active/effective PLUS trước AI; không phụ thuộc payment refund. PaymentUsecase.process chỉ grantPaidPlus và lưu payment result/outbox. PaymentRepositoryImpl bỏ ordersForUser; claimEmail lọc refundId=null cho tương thích outbox lịch sử. UserService/UserUsecase bỏ paidPlusExpiry/hasLegacyPlus/revokePaidTime; UserRepositoryImpl bỏ revokePaidTime nhưng giữ grantPlus/updateOnly. PaymentStorageMigrationRepositoryImpl bỏ RefundAccounts coverage; giữ migration provider embedded/ObjectId hiện có. VnpayGateway bỏ refund/validRefund/queryRefund. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+[flow.ts.getFrontendOrigin](../frontend/app/api/auth/flow.ts) chọn origin cấu hình `FRONTEND_URL` hoặc request fallback; `requireSameOrigin` so sánh với cùng origin. [Google callback GET](../frontend/app/api/auth/google/callback/route.ts) dùng cho redirect200/202/error; [Google start GET](../frontend/app/api/auth/google/start/route.ts) dùng cho redirect lỗi thiếu backend. Không thêm route/DTO/model. [Cấu hình](tech-stack.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18), [validation](current-status.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+- PaymentOrderDocument.vnpayTransaction embeds VnpayTransactionDocument (four fields, no id/@Document). PaymentOrderEntity.vnpayTransaction references VnpayTransactionEntity with the same four fields. userId retains ObjectId storage/Java String.
+- PaymentMapper.toEntity/toDocument overloads map each pair and nested data automatically. PaymentRepositoryImpl.assemble validates embedded presence; requireProvider rejects missing nested data before insert/update. No separate provider collection access in normal reads/writes.
+- AdminTransactionIndexConfig creates PaymentOrders(vnpayTransaction.transactionNo). Search/count use the same nested predicate. claimVerification atomically checks owner and updates vnpayTransaction.lastVerifiedAt; result updates preserve that timestamp.
+- PaymentController/PaymentUsecase forward current request IP to VnpayGateway.paymentUrl. PaymentOrderEntity.isManualReview remains derived.
+- PaymentStorageMigrationRunner -> PaymentStorageMigrationUsecase.migrate/assertCurrent -> IPaymentStorageMigrationRepository/PaymentStorageMigrationRepositoryImpl. The intermediate VnpayTransactions name appears only as a legacy migration source.
+
+[Complete inventory and checks](payment-storage-refactor-report.md).
+
 ## Migration auth bằng Java — 2026-11-14
 
 AuthMigrationRunner (ConditionalOnProperty auth.migration.enabled=true, Order.HIGHEST_PRECEDENCE) → AuthMigrationUsecase.migrate → IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply → AuthMigrationRepositoryImpl/MongoTemplate. AuthMigrationUserEntity giữ legacy scalar fields/opaque ID; AuthMigrationChangeEntity chỉ chứa ID/email/optional loginMethod, không phải HTTP DTO hay collection mới. AuthIndexConfig có order tiếp sau để kiểm email và tạo indexes. AuthMigrationUsecaseTest/AuthMigrationRepositoryTest/AuthMigrationRunnerTest thay test Node; hai file backend/scripts/prepare-auth-indexes.* đã xóa. [Inventory/validation](auth-java-migration-implementation-report.md).
@@ -26,13 +48,7 @@ Style theo mẫu: `GenerateMatrixWordFileUsecase` → [prepareMatrixExport](../e
 
 ## Refund module — 2026-11-09
 
-- Teacher `/me/bill/refunds` and ADMIN `/admin/transactions/refunds` → reusable RefundManager/RefundDetail → useRefunds → RefundService → Next handleRefund → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl → backend RefundController/RefundUsecase. Parent transaction/billing pages link the new entrypoints. All BFF responses are private,no-store.
-- RefundUsecase.orders/search/get/create/decide/reconcile/reconcileDue coordinates IRefundRepository.find/findAttempt/activeForOrder/insert/update/search/count/due/claimPoll/account/saveAccount/recordAi/lastAiUse and IPaymentRepository.ordersForUser. RefundTransactions.run owns short transaction boundaries. RefundMapper maps RefundEntity/RefundAccountEntity and their documents, including separate EventDocument/CheckDocument snapshots; RefundDTO defines Create/Decision/Item/Page/Order/Orders/Event/Check. No document or HTTP model imports domain snapshot types.
-- ExamUsecase.generateExam → QuestionService.generateExamQuestions overload with userId → RefundAiService.begin → teacher gate; persisted questions insert RefundAiReceipts. Moderator AI remains separate. PaymentUsecase.process initializes the same account and records plusStartsAt/refundTracked/plusLegacyProtected for new grants.
-- RefundEntitlementService.preview/revoke uses ordered payment grants and UserService.paidPlusExpiry/hasLegacyPlus/revokePaidTime → UserUsecase → UserRepositoryImpl.revokePaidTime. VnpayGateway.refund/validRefund/queryRefund extend provider transport without changing ordinary lookup's read-only contract.
-- RefundJobs.reconcile schedules reconciliation; RefundIndexConfig.indexes initializes indexes. Refund events enqueue PaymentEmailEntity.refundId/message; PaymentJobs chooses MailService.sendRefundResultEmail. [API](api-reference.md#refund-apis--2026-11-09), [schema](database-schema.md#refund-persistence--2026-11-09), [complete file inventory](refund-implementation-report.md).
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 
@@ -234,6 +250,4 @@ Matching backend payment endpoints are already available in main through PR #131
 
 ## ADMIN transaction lookup — 2026-11-08
 
-- Backend payment: AdminTransactionController → AdminTransactionUsecase → IPaymentRepository.searchTransactions/countTransactions/find and VnpayGateway.query. AdminTransactionDTO separates list/lookup output; AdminTransactionException provides safe lookup codes. AdminTransactionIndexConfig creates read indexes independently of payment enablement.
-- Frontend: Navbar → /admin/transactions → /admin/transactions/search; TransactionFilters/Table/Detail render useAdminTransactions state. AdminTransactionService → BFF handleAdminTransactions → AdminTransactionUsecase → IAdminTransactionRepository/AdminTransactionRepositoryImpl → backend.
-- New contracts/types: TransactionFilters, AdminTransaction, TransactionPage, TransactionLookup; GET /admin/transactions and POST /admin/transactions/{id}/lookup, with matching /api BFF routes. See [API reference](api-reference.md#admin-transaction-lookup--2026-11-08) and [source inventory](source-catalog.md#admin-transaction-lookup--2026-11-08).
+/admin/transactions hiển thị trực tiếp TransactionSearchPage → TransactionFilters/TransactionTable → useAdminTransactions → AdminTransactionService.search → GET BFF /api/admin/transactions → AdminTransactionUsecase.search → IAdminTransactionRepository.search/adapter → AdminTransactionController.search → AdminTransactionUsecase.search → IPaymentRepository.searchTransactions/countTransactions. URL cũ /admin/transactions/search chỉ redirect về /admin/transactions (cập nhật 2026-11-19). ADMIN-only, private/no-store; không gọi gateway/provider. Xóa lookup route/method, TransactionDetail và TransactionLookup/Provider DTO. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).

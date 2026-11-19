@@ -1,5 +1,17 @@
 # API reference WEdu
 
+## Phạm vi API payment hiện hành — 2026-11-19
+
+Gỡ API refund và ADMIN lookup provider; giữ checkout/IPN/Return/verify và GET ADMIN transactions đọc local DB. GET /payment/orders của refund bị xóa nhưng POST /payment/orders tạo checkout giữ nguyên. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Không đổi method/path/DTO. `GET /api/auth/google/callback` redirect `/` (exchange200), `/auth/verify-email` (202) hoặc `/auth/google-error` trên origin của frontend `FRONTEND_URL` khi cấu hình, thay vì host nội bộ trong request. Google start thiếu backend cũng redirect lỗi trên origin đó. Mutation auth dùng `requireSameOrigin` kiểm đúng origin cấu hình và tiếp tục chặn cross-site; thiếu biến thì fallback request origin. [Source/helper](../frontend/app/api/auth/flow.ts), [cấu hình](tech-stack.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+HTTP paths, methods and JSON shapes remain as documented below. userId remains a Java/API String while Mongo stores ObjectId. PaymentDTO.Order.manualReview remains derived; pending checkout uses current request IP. VNPay information is stored as PaymentOrders.vnpayTransaction and exposed through the existing DTO fields. ADMIN transactionNo search uses the nested field. No frontend contract change. [Internal mapping, migration and validation](payment-storage-refactor-report.md).
+
 ## Migration auth Java — 2026-11-14
 
 Migration không có HTTP endpoint/DTO public; chỉ bật bằng auth.migration.enabled=true, mặc định false. Không đổi API đăng ký/Google/OTP. [Cách chạy và types nội bộ](auth-java-migration-implementation-report.md).
@@ -36,26 +48,9 @@ Output style cập nhật theo docs/format_file_ma_tran_de.docx, wire shape gi�
 
 ## Refund APIs — 2026-11-09
 
-All routes are authenticated; backend enforces ROLE_TEACHER ownership or ROLE_ADMIN. BFF path is `/api` + backend path. No bearer/signature/provider payload is exposed. Amounts are VND integers; timestamps ISO instants. Read-only ADMIN transaction lookup remains unchanged.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
-| Backend (same BFF method) | Authorization / request | Response |
-| --- | --- | --- |
-| GET /payment/orders | Teacher, page default0 | Orders{items:[Order{id,amount,status,createdAt,paidAt}],page,hasNext}; 10 rows/page. |
-| POST /payment/orders/{id}/refunds | Teacher owner; Idempotency-Key alphanumeric/hyphen16–80; {reason,policyVersion:"plus-refund-v1"} | Item; reason trimmed3–1000. Same key returns same request; another active request/already refunded order409. |
-| GET /payment/refunds | Teacher; page | Page restricted to authenticated user. |
-| GET /payment/refunds/{id} | Teacher owner | Item, absent/not owned404. |
-| POST /payment/refunds/{id}/cancel | Teacher owner; {revision} | Item; only pending/verification states. |
-| GET /admin/refunds | ADMIN; keyword,status,from,to,page | Page; escaped literal email substring OR exact request/order ID; status/date constraints AND. |
-| GET /admin/refunds/{id} | ADMIN | Item. |
-| POST /admin/refunds/{id}/approve | ADMIN; {revision,legacyException?:boolean,reason?:string} | Item; legacy exception requires reason, cannot override hard ineligibility or other unknowns. |
-| POST /admin/refunds/{id}/reject | ADMIN; {revision,reason} | Item; mandatory reason3–1000. |
-| POST /admin/refunds/{id}/reconcile | ADMIN; no body required | Item; query only, 300-second throttle. |
-
-Item = {id,orderId,email,amount,status,reason,policyVersion,eligibility,decisionReason,createdAt,updatedAt,paidAt,lastAiUsedAt,activeAi,projectedPlusExpiresAt,entitlementVerifiable,providerCode,providerStatus,refundTransactionNo,revision,history:[{at,status,actor,reason}],checks:[{key,result,reason}]}. Nullable timestamps/provider fields and email are allowed; projected expiry is unavailable for completed/unverifiable grants. Check keys PAYMENT/WINDOW/NOT_REFUNDED/AI_UNUSED/ENTITLEMENT; results PASSED/FAILED/UNKNOWN. Eligibility/checks are saved at submission/decision, not recomputed by GET.
-
-Page = {items,page,pageSize:10,totalElements,totalPages,enabled,policyVersion}; page zero-based0–1000000. Dates yyyy-MM-dd in Asia/Ho_Chi_Minh with inclusive UI end date converted to exclusive next midnight; newest creation then ID descending. Keyword max254. IDs: order64 lowercase hex, refund32 lowercase hex. Mutations require current revision; stale/incompatible state409; invalid input400; anonymous/role failures401/403. Safe application error code REFUND_ERROR; uncertain provider errors retain PROCESSING instead of returning a false terminal result. Feature-disabled mutations503. BFF bounds JSON body to8192 characters and masks server failures. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/RefundController.java), [provider reference](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html).
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+Đã xóa GET /payment/orders, POST /payment/orders/{id}/refunds, GET /payment/refunds, GET /payment/refunds/{id}, POST /payment/refunds/{id}/cancel, GET /admin/refunds, GET /admin/refunds/{id}, POST /admin/refunds/{id}/approve|reject|reconcile và các BFF tương ứng. Không có alias thay thế.
 
 ## Snapshot hiện tại — 2026-11-06
 
@@ -283,7 +278,7 @@ Methods/paths có thể khác Spring, ví dụ Next PUT profile chuyển sang Sp
 | `GET /api/moderator/questions/pending` | [route.ts](<../frontend/app/api/moderator/questions/pending/route.ts>) | `ModeratorRepositoryImpl, GetPendingQuestionsUsecase` |
 | `PATCH /api/moderator/questions/[id]` | [route.ts](<../frontend/app/api/moderator/questions/[id]/route.ts>) | `ModeratorRepositoryImpl, EditPendingQuestionUsecase` |
 | `POST /api/moderator/questions/[id]/[action]` | [route.ts](<../frontend/app/api/moderator/questions/[id]/[action]/route.ts>) | `ModeratorRepositoryImpl, ReviewPendingQuestionUsecase` |
-| `POST /api/payment/orders` | [route.ts](<../frontend/app/api/payment/orders/route.ts>) | `handlePayment` |
+| `POST /api/payment/orders` | route.ts (đã xóa) | `handlePayment` |
 | `POST /api/payment/orders/[id]/return` | [route.ts](<../frontend/app/api/payment/orders/[id]/return/route.ts>) | `handlePayment` |
 | `GET /api/payment/orders/[id]` | [route.ts](<../frontend/app/api/payment/orders/[id]/route.ts>) | `handlePayment` |
 | `POST /api/payment/orders/[id]/verify` | [route.ts](<../frontend/app/api/payment/orders/[id]/verify/route.ts>) | `handlePayment` |
@@ -343,17 +338,10 @@ PaymentOrder={orderId,amount,status,expiresAt,plusExpiresAt,paymentUrl,manualRev
 
 ## ADMIN transaction lookup — 2026-11-08
 
-Both backend endpoints require ROLE_ADMIN. Existing ROLE_TEACHER payment endpoints retain their owner/role rules. BFF reads accessToken cookie and forwards bearer server-side; all BFF responses use private,no-store.
+**Contract hiện hành 2026-11-19:** chỉ tra cứu DB.
 
 | Backend | BFF | Contract |
 | --- | --- | --- |
-| GET /admin/transactions | GET /api/admin/transactions | keyword (trimmed, max254), status, from/to (yyyy-MM-dd), page (zero-based, default0). Returns {items,page,pageSize:10,totalElements,totalPages}. |
-| POST /admin/transactions/{id}/lookup | POST /api/admin/transactions/{id}/lookup | No body; id64 lowercase hex. Returns {order,provider,amountMismatch,queriedAt}. No persistence mutations. |
+| GET /admin/transactions | GET /api/admin/transactions | ROLE_ADMIN; keyword trim/max254, status, from/to yyyy-MM-dd, page zero-based. Trả {items,page,pageSize:10,totalElements,totalPages}; private,no-store. |
 
-Item/order = {orderId,email,amount,status,createdAt,transactionNo}; nullable email/createdAt/transactionNo. Amount is VND. Provider = {transactionNo,amount,bankCode,paidAt,responseCode,transactionStatus}; optional information is nullable. Amount converts VNPay minor units by dividing100; dates are ISO instants. queriedAt is backend response time, not provider update time.
-
-Keyword OR-matches exact order ID, exact stored VNPay transactionNo, or escaped case-insensitive email substring. Combine keyword/status/date constraints with AND. Dates use Asia/Ho_Chi_Minh; inclusive UI end date maps to exclusive next midnight. Sort createdAt DESC,_id DESC. Status filters use stored PENDING/SUCCEEDED/FAILED/CANCELLED/EXPIRED. Empty list is200, not an upstream call.
-
-Lookup requires signature verification by VnpayGateway, matching merchant/reference/command, and valid amount/status/date on successful query. Query response00 is distinct from transaction status00. A verified91 maps to404 VNPAY_TRANSACTION_NOT_FOUND; missing local order maps to404 ORDER_NOT_FOUND. Unavailable configuration, network errors, unverified/malformed responses or other provider errors map to503 TRANSACTION_LOOKUP_UNAVAILABLE. Invalid input400, unauthenticated/unauthorized401/403 through existing security. No raw provider payload, checkout URL, clientIp or signatures are exposed.
-
-Evidence: [controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/AdminTransactionController.java), [DTO](../backend/src/main/java/com/wedu/exam_creation/payment/dto/AdminTransactionDTO.java), [BFF](../frontend/app/api/admin/transactions/handler.ts). Provider reference: [VNPay querydr](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html).
+Item = {orderId,email,amount,status,createdAt,transactionNo}; nullable email/createdAt/transactionNo. Amount VND, thời gian ISO. Filter exact orderId/transactionNo hoặc escaped email substring; kết hợp status và ngày GMT+7, ngày kết thúc inclusive; sort createdAt DESC,_id DESC. Không yêu cầu cấu hình VNPay sẵn sàng và không gọi HTTP provider. POST /admin/transactions/{id}/lookup và DTO Provider/Lookup đã xóa. Invalid filter400, anonymous/other role401/403. [Controller](../backend/src/main/java/com/wedu/exam_creation/payment/controller/AdminTransactionController.java), [DTO](../backend/src/main/java/com/wedu/exam_creation/payment/dto/AdminTransactionDTO.java), [BFF](../frontend/app/api/admin/transactions/handler.ts).

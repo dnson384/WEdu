@@ -1,5 +1,19 @@
 # Kiến trúc WEdu hiện tại
 
+## Ranh giới payment/AI sau gỡ refund — 2026-11-19
+
+Flow refund đã gỡ; QuestionService đọc lại active/effective PLUS qua UserService trước actual AI call, bỏ transaction/hold/receipt riêng của refund. Exam transaction và AI usage/budget hiện có giữ nguyên. PaymentUsecase grant PLUS không còn mở RefundAccount; mail outbox chỉ gửi payment events và loại refundId lịch sử khỏi claim. Migration storage không phụ thuộc refund persistence. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Next BFF dùng `getFrontendOrigin` trong [flow.ts](../frontend/app/api/auth/flow.ts): ưu tiên origin của biến server-only `FRONTEND_URL`, fallback `request.nextUrl.origin` khi không cấu hình. Chỉ chấp nhận URL HTTP(S) không chứa credentials; không suy ra redirect origin từ forwarded headers. Google callback dùng origin này cho thành công, OTP và lỗi; Google start dùng cho redirect lỗi thiếu backend. `requireSameOrigin` dùng cùng origin và vẫn từ chối `sec-fetch-site=cross-site`. Backend OAuth/session/handoff và JWT cookies giữ contract hiện tại. Cấu hình frontend và backend `FRONTEND_URL` cần cùng public origin. [Validation](current-status.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+PaymentOrderEntity references VnpayTransactionEntity; PaymentOrderDocument embeds VnpayTransactionDocument. PaymentMapper maps the nested object directly. PaymentRepositoryImpl reads/writes one order document, without provider lookups or joins. Its conditional revision update writes provider result fields via dotted paths and preserves a concurrently updated verification timestamp. A single atomic claim checks order ID, owner and the nested 30-second throttle. PLUS/outbox changes still share the existing Mongo transaction.
+
+PaymentStorageMigrationRunner -> PaymentStorageMigrationUsecase -> IPaymentStorageMigrationRepository/PaymentStorageMigrationRepositoryImpl handles opt-in preflight and per-order transactions. Normal startup checks ObjectId ownership, embedded provider presence and absence of legacy root fields. Migration must run in maintenance with other writers stopped and this instance's scheduling/refund mutations disabled. [Operation and sources](payment-storage-refactor-report.md).
+
 ## Migration Java có cờ bật — 2026-11-14
 
 AuthMigrationRunner chỉ đăng ký khi auth.migration.enabled=true; mặc định tắt. Runner có thứ tự trước AuthIndexConfig. Nghiệp vụ preflight/chuẩn bị changes ở AuthMigrationUsecase; đọc legacy Users, drop index dẫn xuất và partial bulk writes ở AuthMigrationRepositoryImpl qua domain port. Opaque ID giữ nguyên ObjectId/string, không serialize lại ID; không log email/password/token, chỉ log số user đã xử lý. AuthIndexConfig tạo/reuse unique email/Google và TTL indexes sau migration. DDL và bulk update không là một transaction; cần maintenance window và có thể chạy lại nếu bị gián đoạn. [Validation](auth-java-migration-implementation-report.md).
@@ -30,13 +44,7 @@ Style theo mẫu có bước chuẩn bị [MatrixExportData](../exporter-service
 
 ## Refund boundaries — 2026-11-09
 
-RefundController → RefundUsecase → IRefundRepository/RefundRepositoryImpl; RefundEntitlementService uses payment repository plus UserService facades, not user infrastructure directly. Controllers enforce teacher/admin roles and pass authenticated ownership. Domain entities, Mongo documents, MapStruct mapper and HTTP DTOs remain separate. The shared RefundManager/RefundDetail render interaction; useRefunds owns queries/state/mutations through RefundService → private/no-store BFF → frontend RefundUsecase → IRefundRepository/RefundRepositoryImpl.
-
-RefundTransactions runs short REQUIRES_NEW Mongo transactions with bounded retry for known transient aborts; unknown commit results are not replayed. Per-user RefundAccounts revisions serialize AI starts, refund holds and payment grants. QuestionService starts a durable AI attempt in a separate short transaction immediately before provider HTTP, stores RefundAiReceipts in the existing exam transaction, then clears the attempt after a known completion. Committed results set a usage timestamp; unknown completion retains the attempt. The gate rereads effective PLUS inside its transaction, preventing stale principals from using revoked rights. Moderator regeneration does not pass through this teacher gate.
-
-Provider preflight and refund/query HTTP execute outside refund database transactions. Send intent is durable before refund HTTP; only the winning revision sends. Reconciliation never repeats refund submission. Verified completion atomically updates refund, shifts later entitlement intervals, revokes remaining purchased time, removes the relevant AI hold and inserts an email event. PaymentJobs sends refund emails using the existing lease/retry infrastructure. [Implementation inventory](refund-implementation-report.md).
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 
@@ -307,6 +315,4 @@ BillingLayout reuses Navbar. useNavBar offers upgrade only to ROLE_TEACHER; back
 
 ## ADMIN transaction lookup boundary — 2026-11-08
 
-ROLE_ADMIN has a separate read-only payment entrypoint: AdminTransactionController → AdminTransactionUsecase → payment repository for local search/find and VnpayGateway.query for one selected order. Reuses signed query transport without invoking PaymentUsecase.get/verify/process; those methods can expire/reconcile orders and grant entitlement. No Mongo transaction is opened around provider HTTP, and no lastVerifiedAt/payment/outbox write occurs.
-
-Presentation components use useAdminTransactions → AdminTransactionService → authenticated Next BFF → frontend usecase/repository → backend. Backend role enforcement remains authoritative. No automatic VNPay polling/retries; an in-flight ref prevents duplicate UI requests and AbortController/identity checks discard results after closing/changing selection. List queries are user-scoped in React Query. [Hook](../frontend/presentation/hooks/Admin/useAdminTransactions.ts), [backend](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java).
+ADMIN UI → hook/service → authenticated BFF → frontend usecase/repository → AdminTransactionController/Usecase → IPaymentRepository → MongoDB PaymentOrders. Chỉ đọc, không gateway HTTP và không sửa entitlement. Không còn UI/API tra cứu trực tiếp VNPay. Backend giữ ROLE_ADMIN. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).

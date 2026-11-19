@@ -1,5 +1,63 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Snapshot main sau merge payment/Google — 2026-11-19
+
+Đã đối chiếu main tại `be3c072`: PR #147 backend main `a17aca7`, #148 backend test `495c80c`, #149 frontend payment `f5f6e94` và #150 frontend Google `9f33837` đã merge. Source backend/src/main, backend/src/test và frontend không khác cây source tại `9f33837`. Không chứng nhận deploy, migration hoặc external service đã được kiểm thử thật.
+
+Validation đã chạy trên staged snapshot trước commit: backend main Spotless/package đạt (bỏ qua test); backend test Spotless và184 tests đạt177 passed/7 Mongo integration skipped,0 failures/errors. Frontend payment Prettier/ESLint,54 checks và Webpack compile đạt; frontend Google Prettier/ESLint và46 checks origin/callback/cookie/binding đạt. **TypeScript/production build trên checkout sạch vẫn chưa đạt:** Git lưu draftRepositoryImpl.ts/userRepositoryImpl.ts, imports dùng DraftRepositoryImpl/UserRepositoryImpl, gây hai lỗi TS1261 có sẵn. Kết quả TypeScript/build đạt trên working tree ở các snapshot bên dưới không thay thế kết quả staged snapshot này. Lượt commit context không sửa application code hoặc chạy lại test/build; chỉ kiểm links/inventory và whitespace.
+
+## Đồng bộ style quản lý giao dịch với ADMIN — 2026-11-19
+
+Trang giao dịch dùng cùng khung max-w-7xl, header Quản trị hệ thống, nút Làm mới, card trắng/viền slate/shadow nhẹ và control rounded-xl với các trang tài khoản/AI. Bộ lọc giữ keyword/status/ngày; bảng có header slate-50, hàng hover, badge màu trạng thái, empty state và phân trang dùng chung. Loading ban đầu hiển thị card; khi refetch vẫn giữ dữ liệu đã tải, báo đang cập nhật và disable phân trang; lỗi có dữ liệu cũ được ghi chú. Không thay query hook, API/schema/backend hoặc quyền.
+
+Files: [transactions/page.tsx](../frontend/app/(site)/admin/transactions/page.tsx) dựng header/loading/error; [TransactionFilters](../frontend/presentation/components/Admin/TransactionFilters.tsx) đồng bộ form/input/nút; [TransactionTable](../frontend/presentation/components/Admin/TransactionTable.tsx) đồng bộ bảng/badge/empty state và chuyển trang zero-based sang UI one-based; [transactionDisplay](../frontend/presentation/utils/transactionDisplay.ts) thêm transactionStatusClass; [AdminPageHeader](../frontend/presentation/components/Admin/AdminPageHeader.tsx) mới tái sử dụng header/refresh; [AdminPagination](../frontend/presentation/components/Admin/AdminPagination.tsx) mới dùng UI one-based và disable khi busy; [users/page.tsx](../frontend/app/(site)/admin/users/page.tsx) dùng header/pagination chung, giữ callbacks/khóa khi pending; [ai/page.tsx](../frontend/app/(site)/admin/ai/page.tsx) dùng header chung, giữ ai.refresh/disabled. [module-map](module-map.md) và [source-catalog](source-catalog.md) đồng bộ symbol/inventory.
+
+Validation: Prettier/ESLint8 file, TypeScript noEmit, production build Webpack và scoped diff whitespace đạt. Harness tạm React SSR/mock hooks và callback thật của component:36 checks đạt cho header/refresh, first/last/busy/empty pagination, chuyển zero/one-based, filter submit/change, badge, loading/error/stale data và khóa pending users/refresh AI. Browser inventory không có surface khả dụng nên chưa kiểm tra pixel/browser end-to-end; không thay dependency hoặc test runner, không chạy backend vì chỉ đổi presentation.
+
+## Mở trực tiếp tra cứu giao dịch — 2026-11-19
+
+[Trang quản lý giao dịch](../frontend/app/(site)/admin/transactions/page.tsx) hiển thị ngay bộ lọc, danh sách, loading/error/retry và phân trang bằng hook hiện có. Bỏ thẻ trung gian và link quay lại; [URL search cũ](../frontend/app/(site)/admin/transactions/search/page.tsx) redirect một chiều về /admin/transactions. Không đổi API/schema/backend hay nghiệp vụ payment; vẫn chỉ tra cứu DB.
+
+Validation: Prettier/ESLint hai page và TypeScript noEmit đạt. Harness tạm ngoài repo dùng React SSR, mock hook/components và Next redirect thật: render ngay filter/list, giữ callbacks tìm kiếm/phân trang, không có link trung gian và redirect307 từ URL search cũ về trang chính đạt. Scoped diff whitespace đạt. Không thêm test runner/dependency, không chạy lại backend/full build hoặc browser end-to-end trong task UI này.
+
+## Gỡ hoàn tiền và tra cứu giao dịch từ DB — 2026-11-19
+
+User đã duyệt xóa toàn bộ flow hoàn tiền và xác nhận ADMIN chỉ tra cứu DB, bỏ nút/API gọi VNPay. Source hiện không còn RefundController/RefundUsecase/RefundAiService, model/repository/index/job hoàn tiền, frontend refund pages/BFF/components/hooks/services. Xóa cấu hình REFUND_ENABLED. API GET /payment/orders của flow refund và POST /admin/transactions/{id}/lookup đã gỡ; POST /payment/orders (tạo checkout) vẫn giữ.
+
+ADMIN GET /admin/transactions chỉ đọc PaymentOrders, gồm mã đơn, email, số tiền, ngày tạo, trạng thái và mã VNPay đã lưu. Thanh toán giữ chữ ký IPN/Return, owner/role guard, cấp PLUS và email kết quả. querydr vẫn phục vụ verify của checkout khi cần; lỗi sandbox99 chưa được xác nhận đã sửa, không còn là dependency của tra cứu ADMIN.
+
+QuestionService đọc lại quyền PLUS/active qua UserService trước khi gọi AI, không còn refund hold/AI receipt. Không tự xóa RefundRequests/RefundAccounts/RefundAiReceipts hay sửa quyền PLUS trên DB thật. PaymentEmails claim loại các event có refundId cũ; không gửi nhầm thành email thanh toán. Migration payment chỉ còn xử lý storage, không đọc/ghi tài khoản refund. Các snapshot refund trước ngày này là lịch sử và đã bị quyết định hiện tại thay thế.
+
+[Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) có inventory từng file và validation. Validation mới: backend184 tests (177 passed,7 Mongo integration skipped,0 failures/errors); Spotless scoped, frontend Prettier/ESLint13 file, TypeScript/typegen, production Webpack build và harness18 checks đều đạt. Clean generated class/types sau khi xóa routes; build sandbox lỗi fonts/trace đã chạy lại ngoài sandbox đạt. Chưa gọi VNPay/Mongo/SMTP thật hoặc chạy migration trên database thật.
+
+## Checksum querydr theo đặc tả VNPay — 2026-11-18
+
+[VnpayGateway.query](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayGateway.java) tạo biến local `checksumData` bằng đúng thứ tự `RequestId|Version|Command|TmnCode|TxnRef|TransactionDate|CreateDate|IpAddr|OrderInfo`, dùng raw values, không URL-encode hoặc thêm dấu phân cách cuối. `sign` giữ HMAC-SHA512, UTF-8 cho key/data và lowercase hex. `TransactionNo` tùy chọn vẫn gửi trong JSON nhưng không nằm trong checksum querydr theo đặc tả. Không đổi API/schema, ký checkout/refund, xác minh phản hồi hay trạng thái nghiệp vụ.
+
+[VnpayQueryGatewayTest](../backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayQueryGatewayTest.java) thêm fixed-vector HMAC-SHA512 tính độc lập bằng .NET với dummy key: xác minh checksum trong JSON khi có/không có TransactionNo bằng UUID/thời gian cố định, và UTF-8 gồm tiếng Việt, khoảng trắng, ký tự `+ & %`. Source trước thay đổi vốn đã ghép cùng thứ tự; thay đổi làm rõ công thức và bổ sung bằng chứng kiểm thử độc lập, không chứng nhận nguyên nhân mã99 hoặc VNPay thực đã hoạt động.
+
+Validation: Spotless apply/check đúng hai file Java đạt bằng Maven đã cài với cùng cấu hình repository; wrapper vẫn lỗi `Cannot index into a null array` trước khi Maven khởi động. Lệnh `mvn -q '-Dtest=VnpayQueryGatewayTest,VnpayGatewayTest,VnpayRefundGatewayTest,Payment*Test,Refund*Test,AdminTransaction*Test,PlusEntitlementTest' test` đạt: 163 tests, 153 passed, 10 Mongo integration skipped, 0 failures/errors; riêng VnpayQueryGatewayTest có11 tests đạt. Scoped diff whitespace đạt. Không chạy full suite hoặc gọi VNPay/Mongo/SMTP thật; không thay đổi credentials/config.
+
+## Chẩn đoán phản hồi hoàn tiền VNPay — 2026-11-18
+
+[VnpayGateway.refund](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayGateway.java) giữ mã `vnp_ResponseCode` đúng hai chữ số trong exception/log khi phản hồi không xác minh được, thay vì luôn ghi `UNKNOWN`. Phản hồi chỉ có `99 / Unexpected error` vẫn là `REFUND_UNVERIFIED`; mã thiếu/sai định dạng và body rỗng vẫn là `UNKNOWN`. Không ghi provider message, payload hoặc chữ ký. Không đổi API/schema, trạng thái nghiệp vụ hay gửi lại lệnh: yêu cầu chưa xác minh vẫn giữ PROCESSING để đối soát.
+
+VnpayRefundGatewayTest (đã xóa) bổ sung unsigned99/00, mã lỗi không hợp lệ, bảo vệ log và body rỗng. Chưa xác nhận nguyên nhân lỗi99 trên merchant thực; thay đổi chỉ sửa việc mất mã chẩn đoán.
+
+Validation: Spotless apply hai file Java đạt bằng Maven đã cài, cùng cấu hình repository; wrapper `mvnw.cmd` lỗi `Cannot index into a null array` trước khi khởi động Maven. Lần gọi Maven trong sandbox lỗi không truy cập được local repository; lần đầu bộ lọc glob sai cú pháp regex, đã sửa thành `.*VnpayGateway.java,.*VnpayRefundGatewayTest.java` và chạy thành công. Nhóm `Refund*Test,VnpayRefundGatewayTest,VnpayGatewayTest,VnpayQueryGatewayTest`: 70 tests, 67 passed, 3 Mongo integration skipped, 0 failures/errors; không có dedicated Mongo URI. Scoped diff whitespace đạt. Không chạy full suite hoặc gọi VNPay/Mongo/SMTP thật; không thay đổi các sửa đổi payment/auth/AGENTS.md đã có trong working tree ngoài hai file thuộc task.
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Implemented `getFrontendOrigin` trong [flow.ts](../frontend/app/api/auth/flow.ts), dùng chung cho kiểm same-origin và redirect trong [Google callback](../frontend/app/api/auth/google/callback/route.ts)/[start](../frontend/app/api/auth/google/start/route.ts). Frontend `FRONTEND_URL` ưu tiên public origin, fallback request origin khi chưa đặt; chỉ HTTP(S) không credentials. Đã thêm biến vào local `frontend/.env` (Git ignored) theo domain ngrok hiện có. Không đổi API/schema/backend.
+
+Validation: Prettier ba file đạt (dùng Prettier đã cache; lệnh npx ban đầu không truy cập được registry do EACCES); ESLint ba file và `tsc --noEmit --incremental false` đạt. Harness Node tạm ngoài repo dùng NextRequest/NextResponse thật, mock exchange/backend: đạt redirect200/202, callback thiếu code/verifier, exchange lỗi, start thiếu backend, giữ start backend/binding, cookie set/clear và no-store; origin cấu hình/trailing slash, fallback localhost, chặn origin lạ/thiếu/cross-site và URL cấu hình sai protocol/credentials đều đạt. Không thêm dependency/test runner. Chưa chạy production build hoặc đăng nhập Google thật; cần khởi động lại frontend rồi xác minh qua ngrok. Backend browser URL còn fallback localhost nếu chưa đặt `GOOGLE_OAUTH_BASE_URL`; tunnel3000 không tự expose8080, giữ ngoài scope sửa redirect này. Các thay đổi payment/AGENTS.md có sẵn được giữ nguyên.
+
+## Payment embedded VNPay - 2026-11-18
+
+Implemented in source: embedded PaymentOrders.vnpayTransaction with separate entity/document types, nested search/index/throttle, ObjectId userId mapping, request-scoped checkout IP, derived manualReview/AI coverage and retained plusLegacyProtected. Opt-in Java migration handles both old flat orders and intermediate split data; default startup checks storage readiness. API shape is unchanged.
+
+Validation: 146 tests passed, 10 Mongo integration tests skipped, no failures/errors; scoped Spotless passed. [Report](payment-storage-refactor-report.md) contains exact validation and complete inventory. Real database migration, deployed indexes and VNPay sandbox remain unverified. WEDU_PAYMENT_TEST_MONGO_URI is absent; replica-set integration tests are skipped. Historical results below do not certify this change.
+
 ## Migration auth bằng Java — 2026-11-14
 
 Implemented AuthMigrationRunner → AuthMigrationUsecase → IAuthMigrationRepository/AuthMigrationRepositoryImpl, thay hai script JS đã xóa. Mặc định tắt; khi bật, migration chạy trước AuthIndexConfig, guard lỗi hướng dẫn --auth.migration.enabled=true. Spotless11 file và147 tests migration/index/auth đạt. Chưa chạy migration/index thực trên MongoDB hoặc deploy. [Files và cách chạy](auth-java-migration-implementation-report.md).
@@ -32,17 +90,7 @@ Validation lượt ban đầu: 13 backend tests mới đạt; exporter 3 tests �
 
 ## PLUS refunds — 2026-11-09
 
-Source rechecked 2026-11-10 on main `cbcb49a`: backend `bf42f2b` (PR #137), tests `0c619db` (PR #138) and frontend `f1064c4` (PR #139) are merged. This documentation preparation does not rerun application builds/tests or certify deployment; results below retain their original execution context.
-
-Validation: targeted payment/refund suite **133 tests:125 passed,8 Mongo integration skipped,0 failures/errors**; frontend build, TypeScript and targeted ESLint passed; temporary React SSR/JSDOM/BFF harness passed24 checks. Full-suite run in this session had the two previously documented assertion failures plus a MongoDB TLS context-load error; see report for timing and limits.
-
-Implemented in source: teacher-owned order history, refund submission/cancellation/status; ADMIN list/detail, eligibility checks, approval/legacy-AI exception/rejection; signed VNPay full refund, reconciliation, per-order remaining PLUS revocation and durable email outbox. Reuses the existing payment feature without downgrading SUCCEEDED orders or regranting refunded entitlement on callback replay. [RefundUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/RefundUsecase.java), [shared UI](../frontend/presentation/components/Payment/RefundManager.tsx).
-
-AI evidence now records committed exam usage per teacher, with a per-user gate serializing starts against refund holds. In-flight or unknown commits remain unknown. Old orders are not backfilled as unused. Finite legacy intervals are reconstructed only when non-overlapping and matching the user's expiry; indefinite/unknown legacy entitlement requires investigation. Data disagreement discovered after provider completion retains the AI hold and an ADMIN investigation state rather than silently dropping other entitlement.
-
-Runtime enablement and real VNPay/Mongo/SMTP end-to-end remain **unknown/unverified**. Current application.yml requires explicit `REFUND_ENABLED`; there is no YAML default. False disables refund mutations/polling, true enables them; launcher/IDE/container must provide the value. There is intentionally no UI force-success, clear-unknown-AI or refund resend action. A crash after a persisted send intent but before provider submission can therefore require operational investigation. See [report](refund-implementation-report.md) for the complete changed-file list, checks run and existing full-suite failures; historical validation below is not a certification of this change.
-
-> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
 
 ## Snapshot hiện tại — 2026-11-06
 
