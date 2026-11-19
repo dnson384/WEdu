@@ -1,13 +1,14 @@
 package com.wedu.exam_creation.payment.infrastructure.document;
-import lombok.Data;
+
 import java.time.Instant;
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 @Data
 @Document("PaymentEmails")
 public class PaymentEmailDocument {
-    @Id
-    private String id;
+    @Id private String id;
     private String email;
     private String orderId;
     private String status;
@@ -17,6 +18,4 @@ public class PaymentEmailDocument {
     private Instant nextAttemptAt;
     private Instant sentAt;
     private String leaseToken;
-    private String refundId;
-    private String message;
 }

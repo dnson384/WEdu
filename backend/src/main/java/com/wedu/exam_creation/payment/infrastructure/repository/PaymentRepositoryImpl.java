@@ -6,6 +6,8 @@ import com.wedu.exam_creation.payment.domain.repository.IPaymentRepository;
 import com.wedu.exam_creation.payment.infrastructure.document.PaymentEmailDocument;
 import com.wedu.exam_creation.payment.infrastructure.document.PaymentOrderDocument;
 import com.wedu.exam_creation.payment.infrastructure.mapper.PaymentMapper;
+import java.time.Instant;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -14,26 +16,23 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
-import java.util.List;
-
 @Repository
 @RequiredArgsConstructor
 public class PaymentRepositoryImpl implements IPaymentRepository {
     private final MongoTemplate mongoTemplate;
     private final PaymentMapper paymentMapper;
 
-    public List<PaymentOrderEntity> ordersForUser(String userId) {
-        return mongoTemplate.find(Query.query(Criteria.where("userId").is(userId))
-                .with(org.springframework.data.domain.Sort.by("paidAt", "_id")), PaymentOrderDocument.class)
-                .stream().map(paymentMapper::toEntity).toList();
-    }
-
     private Query transactionQuery(String keyword, String status, Instant from, Instant to) {
         Query query = new Query();
-        if (!keyword.isEmpty()) query.addCriteria(new Criteria().orOperator(
-                Criteria.where("_id").is(keyword), Criteria.where("transactionNo").is(keyword),
-                Criteria.where("email").regex(java.util.regex.Pattern.quote(keyword), "i")));
+        if (!keyword.isEmpty()) {
+            query.addCriteria(
+                    new Criteria()
+                            .orOperator(
+                                    Criteria.where("_id").is(keyword),
+                                    Criteria.where("vnpayTransaction.transactionNo").is(keyword),
+                                    Criteria.where("email")
+                                            .regex(java.util.regex.Pattern.quote(keyword), "i")));
+        }
         if (!status.isEmpty()) query.addCriteria(Criteria.where("status").is(status));
         if (from != null || to != null) {
             Criteria dates = Criteria.where("createdAt");
@@ -44,53 +43,123 @@ public class PaymentRepositoryImpl implements IPaymentRepository {
         return query;
     }
 
-    public List<PaymentOrderEntity> searchTransactions(String keyword, String status, Instant from, Instant to, int page) {
-        Query query = transactionQuery(keyword, status, from, to)
-                .with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt", "_id"))
-                .skip((long) page * 10).limit(10);
-        return mongoTemplate.find(query, PaymentOrderDocument.class).stream().map(paymentMapper::toEntity).toList();
+    public List<PaymentOrderEntity> searchTransactions(
+            String keyword, String status, Instant from, Instant to, int page) {
+        Query query =
+                transactionQuery(keyword, status, from, to)
+                        .with(
+                                org.springframework.data.domain.Sort.by(
+                                        org.springframework.data.domain.Sort.Direction.DESC,
+                                        "createdAt",
+                                        "_id"))
+                        .skip((long) page * 10)
+                        .limit(10);
+        return assemble(mongoTemplate.find(query, PaymentOrderDocument.class));
     }
 
     public long countTransactions(String keyword, String status, Instant from, Instant to) {
-        return mongoTemplate.count(transactionQuery(keyword, status, from, to), PaymentOrderDocument.class);
+        return mongoTemplate.count(
+                transactionQuery(keyword, status, from, to), PaymentOrderDocument.class);
     }
 
     public PaymentOrderEntity find(String id) {
-        PaymentOrderDocument paymentOrderDocument = mongoTemplate.findById(id, PaymentOrderDocument.class);
-        return paymentMapper.toEntity(paymentOrderDocument);
+        PaymentOrderDocument paymentOrderDocument =
+                mongoTemplate.findById(id, PaymentOrderDocument.class);
+        return assemble(paymentOrderDocument);
     }
 
     public PaymentOrderEntity insert(PaymentOrderEntity order) {
-        PaymentOrderDocument paymentOrderDocument = mongoTemplate.insert(paymentMapper.toDocument(order));
-        return paymentMapper.toEntity(paymentOrderDocument);
+        requireProvider(order);
+        PaymentOrderDocument paymentOrderDocument =
+                mongoTemplate.insert(paymentMapper.toDocument(order));
+        return assemble(paymentOrderDocument);
     }
 
     public PaymentOrderEntity findByIdempotencyKeyHash(String hash) {
-        return paymentMapper.toEntity(mongoTemplate.findOne(
-                Query.query(Criteria.where("idempotencyKeyHash").is(hash)), PaymentOrderDocument.class));
+        return assemble(
+                mongoTemplate.findOne(
+                        Query.query(Criteria.where("idempotencyKeyHash").is(hash)),
+                        PaymentOrderDocument.class));
     }
 
     public boolean update(PaymentOrderEntity order, long expectedRevision) {
-        Update update = new Update().set("status", order.getStatus()).set("paidAt", order.getPaidAt())
-                .set("plusExpiresAt", order.getPlusExpiresAt()).set("transactionNo", order.getTransactionNo())
-                .set("responseCode", order.getResponseCode()).set("transactionStatus", order.getTransactionStatus())
-                .set("manualReview", order.isManualReview()).set("plusStartsAt", order.getPlusStartsAt())
-                .set("refundedAt", order.getRefundedAt()).set("refundTracked", order.isRefundTracked())
-                .set("plusLegacyProtected", order.isPlusLegacyProtected()).inc("revision", 1);
-        return mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(order.getId())
-                .and("revision").is(expectedRevision)), update, PaymentOrderDocument.class).getModifiedCount() == 1;
+        requireProvider(order);
+        Update update =
+                new Update()
+                        .set("status", order.getStatus())
+                        .set("paidAt", order.getPaidAt())
+                        .set("plusExpiresAt", order.getPlusExpiresAt())
+                        .set(
+                                "vnpayTransaction.transactionNo",
+                                order.getVnpayTransaction().getTransactionNo())
+                        .set(
+                                "vnpayTransaction.responseCode",
+                                order.getVnpayTransaction().getResponseCode())
+                        .set(
+                                "vnpayTransaction.transactionStatus",
+                                order.getVnpayTransaction().getTransactionStatus())
+                        .inc("revision", 1);
+        return mongoTemplate
+                        .updateFirst(
+                                Query.query(
+                                        Criteria.where("_id")
+                                                .is(order.getId())
+                                                .and("revision")
+                                                .is(expectedRevision)),
+                                update,
+                                PaymentOrderDocument.class)
+                        .getModifiedCount()
+                == 1;
     }
 
     public boolean claimVerification(String id, String userId, Instant now) {
-        Criteria criteria = Criteria.where("_id").is(id).and("userId").is(userId)
-                .orOperator(Criteria.where("lastVerifiedAt").is(null), Criteria.where("lastVerifiedAt").lte(now.minusSeconds(30)));
-        return mongoTemplate.updateFirst(Query.query(criteria), new Update().set("lastVerifiedAt", now),
-                PaymentOrderDocument.class).getModifiedCount() == 1;
+        Criteria criteria =
+                Criteria.where("_id")
+                        .is(id)
+                        .and("userId")
+                        .is(userId)
+                        .and("vnpayTransaction")
+                        .ne(null)
+                        .orOperator(
+                                Criteria.where("vnpayTransaction.lastVerifiedAt").is(null),
+                                Criteria.where("vnpayTransaction.lastVerifiedAt")
+                                        .lte(now.minusSeconds(30)));
+        return mongoTemplate
+                        .updateFirst(
+                                Query.query(criteria),
+                                new Update().set("vnpayTransaction.lastVerifiedAt", now),
+                                PaymentOrderDocument.class)
+                        .getModifiedCount()
+                == 1;
     }
 
     public List<PaymentOrderEntity> expiredPending(Instant now) {
-        return mongoTemplate.find(Query.query(Criteria.where("status").is("PENDING").and("expiresAt").lte(now))
-                .limit(100), PaymentOrderDocument.class).stream().map(paymentMapper::toEntity).toList();
+        return assemble(
+                mongoTemplate.find(
+                        Query.query(
+                                        Criteria.where("status")
+                                                .is("PENDING")
+                                                .and("expiresAt")
+                                                .lte(now))
+                                .limit(100),
+                        PaymentOrderDocument.class));
+    }
+
+    private PaymentOrderEntity assemble(PaymentOrderDocument order) {
+        if (order == null) return null;
+        if (order.getVnpayTransaction() == null)
+            throw new IllegalStateException(
+                    "Missing embedded VNPay data; payment storage migration required");
+        return paymentMapper.toEntity(order);
+    }
+
+    private List<PaymentOrderEntity> assemble(List<PaymentOrderDocument> orders) {
+        return orders.stream().map(this::assemble).toList();
+    }
+
+    private void requireProvider(PaymentOrderEntity order) {
+        if (order.getVnpayTransaction() == null)
+            throw new IllegalArgumentException("Missing embedded VNPay data");
     }
 
     public void enqueueEmail(PaymentEmailEntity email) {
@@ -99,17 +168,32 @@ public class PaymentRepositoryImpl implements IPaymentRepository {
     }
 
     public PaymentEmailEntity claimEmail(Instant now, String leaseToken) {
-        return paymentMapper.toEntity(mongoTemplate.findAndModify(Query.query(Criteria.where("sentAt").is(null)
-                        .and("attempts").lt(5).and("nextAttemptAt").lte(now)),
-                new Update().inc("attempts", 1).set("nextAttemptAt", now.plusSeconds(300)).set("leaseToken", leaseToken),
-                FindAndModifyOptions.options().returnNew(true), PaymentEmailDocument.class));
+        return paymentMapper.toEntity(
+                mongoTemplate.findAndModify(
+                        Query.query(
+                                Criteria.where("refundId")
+                                        .is(null)
+                                        .and("sentAt")
+                                        .is(null)
+                                        .and("attempts")
+                                        .lt(5)
+                                        .and("nextAttemptAt")
+                                        .lte(now)),
+                        new Update()
+                                .inc("attempts", 1)
+                                .set("nextAttemptAt", now.plusSeconds(300))
+                                .set("leaseToken", leaseToken),
+                        FindAndModifyOptions.options().returnNew(true),
+                        PaymentEmailDocument.class));
     }
 
     public void completeEmail(String id, String leaseToken, Instant now, boolean sent) {
         Update update = new Update().unset("leaseToken");
         if (sent) update.set("sentAt", now);
         else update.set("nextAttemptAt", now.plusSeconds(60));
-        mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(id).and("leaseToken").is(leaseToken)),
-                update, PaymentEmailDocument.class);
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(id).and("leaseToken").is(leaseToken)),
+                update,
+                PaymentEmailDocument.class);
     }
 }

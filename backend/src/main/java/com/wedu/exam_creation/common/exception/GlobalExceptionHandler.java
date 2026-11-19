@@ -1,7 +1,9 @@
 package com.wedu.exam_creation.common.exception;
 
+import com.wedu.exam_creation.auth.usecase.VerificationException;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,9 +17,15 @@ import org.springframework.web.multipart.MultipartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(com.wedu.exam_creation.auth.usecase.VerificationException.class)
-    public ResponseEntity<?> handleVerification(
-            com.wedu.exam_creation.auth.usecase.VerificationException ex) {
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> conflict() {
+        return ResponseEntity.status(409)
+                .header("Cache-Control", "private, no-store")
+                .body(Map.of("message", "Yêu cầu đang thay đổi. Vui lòng tải lại."));
+    }
+
+    @ExceptionHandler(VerificationException.class)
+    public ResponseEntity<?> handleVerification(VerificationException ex) {
         var builder =
                 ResponseEntity.status(ex.getStatus()).header("Cache-Control", "private, no-store");
         if (ex.getRetryAfter() > 0)
@@ -34,7 +42,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnprocessableEntityException.class)
     public ResponseEntity<?> handleUnprocessableEntity(UnprocessableEntityException ex) {
-        return ResponseEntity.unprocessableEntity().body(Map.of("message", ex.getMessage()));
+        return ResponseEntity.unprocessableContent().body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(ServiceUnavailableException.class)

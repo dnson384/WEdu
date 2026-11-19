@@ -91,8 +91,6 @@ export:
   url: ${EXPRESS_EXPORTER_URL}
 
 payment:
-  refund:
-    enabled: ${REFUND_ENABLED}
   vnpay:
     enabled: ${VNPAY_ENABLED}
     tmn-code: ${VNPAY_TMN_CODE}
