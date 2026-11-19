@@ -2,10 +2,25 @@ import { isAxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { AuthFlowResult } from "@/domain/entities/verification.entity";
 
+export function getFrontendOrigin(request: NextRequest): string {
+  const configuredUrl = process.env.FRONTEND_URL?.trim();
+  if (!configuredUrl) return request.nextUrl.origin;
+
+  const url = new URL(configuredUrl);
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error("FRONTEND_URL must be an HTTP(S) frontend URL");
+  }
+  return url.origin;
+}
+
 export function requireSameOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
   if (
-    origin !== request.nextUrl.origin ||
+    origin !== getFrontendOrigin(request) ||
     request.headers.get("sec-fetch-site") === "cross-site"
   ) {
     return NextResponse.json(
