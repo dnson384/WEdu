@@ -22,17 +22,3 @@ export interface TransactionPage {
   totalElements: number;
   totalPages: number;
 }
-
-export interface TransactionLookup {
-  order: AdminTransaction;
-  provider: {
-    transactionNo: string | null;
-    amount: number;
-    bankCode: string | null;
-    paidAt: string | null;
-    responseCode: string;
-    transactionStatus: string;
-  };
-  amountMismatch: boolean;
-  queriedAt: string;
-}

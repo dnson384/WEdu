@@ -1,6 +1,8 @@
 "use client";
 
-import { RefreshCw, Search, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
+import AdminPageHeader from "@/presentation/components/Admin/AdminPageHeader";
+import AdminPagination from "@/presentation/components/Admin/AdminPagination";
 import useAdminUsers from "@/presentation/hooks/Admin/useAdminUsers";
 import AdminUserRow from "@/presentation/components/Admin/AdminUserRow";
 import AdminUserActionDialog from "@/presentation/components/Admin/AdminUserActionDialog";
@@ -9,30 +11,15 @@ export default function AdminUsersPage() {
   const admin = useAdminUsers();
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-blue-600">
-            Quản trị hệ thống
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Quản lý tài khoản người dùng
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Tìm kiếm, phân quyền và quản lý trạng thái tài khoản.
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={admin.query.isFetching || admin.pending}
-          onClick={() => {
-            void admin.query.refetch();
-          }}
-          className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm disabled:opacity-50"
-        >
-          <RefreshCw size={16} />
-          Làm mới
-        </button>
-      </header>
+      <AdminPageHeader
+        title="Quản lý tài khoản người dùng"
+        description="Tìm kiếm, phân quyền và quản lý trạng thái tài khoản."
+        refreshing={admin.query.isFetching}
+        disabled={admin.pending}
+        onRefresh={() => {
+          void admin.query.refetch();
+        }}
+      />
       <form
         onSubmit={admin.applySearch}
         className="flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -119,35 +106,14 @@ export default function AdminUsersPage() {
               : "Chưa có tài khoản người dùng."}
           </p>
         )}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4 text-sm">
-          <p className="text-slate-500">
-            Trang {admin.page}/{admin.totalPages} · 10 tài khoản/trang
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={
-                admin.page <= 1 || admin.query.isFetching || admin.pending
-              }
-              onClick={() => admin.setPage(admin.page - 1)}
-              className="rounded-lg border px-3 py-1.5 disabled:opacity-40"
-            >
-              Trước
-            </button>
-            <button
-              type="button"
-              disabled={
-                admin.page >= admin.totalPages ||
-                admin.query.isFetching ||
-                admin.pending
-              }
-              onClick={() => admin.setPage(admin.page + 1)}
-              className="rounded-lg border px-3 py-1.5 disabled:opacity-40"
-            >
-              Sau
-            </button>
-          </div>
-        </div>
+        <AdminPagination
+          page={admin.page}
+          totalPages={admin.totalPages}
+          pageSize={10}
+          itemLabel="tài khoản"
+          onPageChange={admin.setPage}
+          disabled={admin.query.isFetching || admin.pending}
+        />
       </section>
       <p className="text-xs text-slate-500">
         Không thể thao tác lên tài khoản quản trị hoặc bản thân. Việc phân quyền

@@ -19,7 +19,6 @@ export default function Bill() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-10">
       <header>
-        <Link href="/me/bill/refunds" className="mb-4 inline-block text-blue-700 underline">Giao dịch và hoàn tiền</Link>
         <p className="text-sm font-medium uppercase tracking-wider text-blue-600">
           WEdu PLUS
         </p>
@@ -48,20 +47,39 @@ export default function Bill() {
           )}
         </p>
         {payment.missingOrderId && (
-          <div role="alert" className="mt-5 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div
+            role="alert"
+            className="mt-5 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4"
+          >
             <p>Không tìm thấy đơn thanh toán trong tài khoản hiện tại.</p>
-            <p className="break-all text-sm">Mã đơn: {payment.missingOrderId}</p>
-            <p className="text-sm">Nếu đã thanh toán, hãy giữ mã đơn và liên hệ hỗ trợ đối soát. Chỉ bắt đầu giao dịch mới nếu bạn muốn thực hiện một lần mua khác.</p>
-            <button type="button" onClick={payment.retry} disabled={payment.loadingOrder || payment.busy} className="underline disabled:opacity-50">
+            <p className="break-all text-sm">
+              Mã đơn: {payment.missingOrderId}
+            </p>
+            <p className="text-sm">
+              Nếu đã thanh toán, hãy giữ mã đơn và liên hệ hỗ trợ đối soát. Chỉ
+              bắt đầu giao dịch mới nếu bạn muốn thực hiện một lần mua khác.
+            </p>
+            <button
+              type="button"
+              onClick={payment.retry}
+              disabled={payment.loadingOrder || payment.busy}
+              className="underline disabled:opacity-50"
+            >
               Tải lại thông tin đơn
             </button>
           </div>
         )}
         <button
           type="button"
-          onClick={payment.missingOrderId ? payment.startNewPayment : payment.startPayment}
+          onClick={
+            payment.missingOrderId
+              ? payment.startNewPayment
+              : payment.startPayment
+          }
           disabled={
-            !(payment.missingOrderId ? payment.canStartNewPayment : payment.canStartPayment)
+            !(payment.missingOrderId
+              ? payment.canStartNewPayment
+              : payment.canStartPayment)
           }
           className="mt-6 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -70,8 +88,8 @@ export default function Bill() {
             : payment.missingOrderId
               ? "Bắt đầu giao dịch mới"
               : payment.user.accountType === "PLUS"
-              ? "Gia hạn PLUS"
-              : "Nâng cấp tài khoản"}
+                ? "Gia hạn PLUS"
+                : "Nâng cấp tài khoản"}
         </button>
         <p className="mt-3 text-sm text-slate-600">
           VNPay sẽ mở trong tab mới để chọn phương thức và xác thực thanh toán.
@@ -113,9 +131,15 @@ export default function Bill() {
       {payment.previousOrderIds.length > 0 && (
         <section className="space-y-2 rounded-xl border border-slate-200 p-4">
           <h2 className="font-semibold">Mã đơn cũ cần đối soát</h2>
-          <p className="text-sm text-slate-600">Các mã dưới đây được giữ trên trình duyệt để liên hệ hỗ trợ nếu bạn đã thanh toán. Giao dịch mới không xác nhận hoặc khôi phục các đơn này.</p>
+          <p className="text-sm text-slate-600">
+            Các mã dưới đây được giữ trên trình duyệt để liên hệ hỗ trợ nếu bạn
+            đã thanh toán. Giao dịch mới không xác nhận hoặc khôi phục các đơn
+            này.
+          </p>
           <ul className="space-y-2 break-all text-sm">
-            {payment.previousOrderIds.map((id) => <li key={id}>{id}</li>)}
+            {payment.previousOrderIds.map((id) => (
+              <li key={id}>{id}</li>
+            ))}
           </ul>
         </section>
       )}

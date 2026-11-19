@@ -7,8 +7,4 @@ export class AdminTransactionUsecase {
   search(filters: TransactionFilters, token: string) {
     return this.repository.search(filters, token);
   }
-
-  lookup(id: string, token: string) {
-    return this.repository.lookup(id, token);
-  }
 }
