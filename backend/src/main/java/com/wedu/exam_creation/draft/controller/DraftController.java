@@ -89,9 +89,7 @@ public class DraftController {
 
     @DeleteMapping("/{draftId}")
     public ResponseEntity<Boolean> deleteDraft(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @PathVariable String draftId
-    ) {
-        return ResponseEntity.ok(draftUsecase.deleteDraft(principal.getUser().getId(), draftId));
+            @AuthenticationPrincipal CustomUserDetails principal, @PathVariable String draftId) {
+        return ResponseEntity.ok(draftUsecase.deleteDraft(draftId, principal.getUser().getId()));
     }
 }
