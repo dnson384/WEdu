@@ -4,14 +4,14 @@
 
 Đọc context liên quan trước khi sửa code. Tài liệu là snapshot tại lần cập nhật gần nhất, không mặc định đồng bộ hoàn toàn với working tree hiện tại và không chứng nhận production hoặc test đã pass. Source/config hiện tại là nguồn sự thật về implementation; giữ thay đổi đang có của người dùng và không tự tái cấu trúc ngoài yêu cầu.
 
-| Task                                      | Tài liệu phải đọc                                                                                                                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task                                      | Tài liệu phải đọc                                                                                                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Bắt đầu task, đánh giá phạm vi            | Đọc bảng snapshot/section liên quan trong [development-decisions](codex/development-decisions.md), rồi phần liên quan trong [current-status](codex/current-status.md) và [module-map](codex/module-map.md) |
-| API/contract, tìm symbol cụ thể           | [api-reference](codex/api-reference.md), [source-catalog](codex/source-catalog.md) theo module cần sửa                                                                                                    |
-| Kiến trúc, liên service, auth/security    | [architecture](codex/architecture.md), [business-flows](codex/business-flows.md)                                                                                                                          |
-| Dependency, setup, build/run/lint/test    | [tech-stack](codex/tech-stack.md)                                                                                                                                                                        |
-| Model, persistence, query, index          | [database-schema](codex/database-schema.md), module-map                                                                                                                                                  |
-| Nghiệp vụ, role, review, AI, PLUS/payment | business-flows, current-status                                                                                                                                                                          |
+| API/contract, tìm symbol cụ thể           | [api-reference](codex/api-reference.md), [source-catalog](codex/source-catalog.md) theo module cần sửa                                                                                                     |
+| Kiến trúc, liên service, auth/security    | [architecture](codex/architecture.md), [business-flows](codex/business-flows.md)                                                                                                                           |
+| Dependency, setup, build/run/lint/test    | [tech-stack](codex/tech-stack.md)                                                                                                                                                                          |
+| Model, persistence, query, index          | [database-schema](codex/database-schema.md), module-map                                                                                                                                                    |
+| Nghiệp vụ, role, review, AI, PLUS/payment | business-flows, current-status                                                                                                                                                                             |
 
 Theo link bằng chứng và đọc source hiện tại trước khi triển khai; nếu docs lệch code, cập nhật theo bằng chứng. `implemented` có code xử lý; `partial` có mắt xích thiếu/lệch; `missing` không tìm thấy trong source khảo sát; `unknown` chưa đủ bằng chứng. Không coi UI “chờ duyệt”/Telegram message là trạng thái database hoặc suy ra payment/PLUS provisioning đã có từ accountType.
 
@@ -40,7 +40,7 @@ Unix dùng `./mvnw`. Exporter thiếu `outDir` dù start cần `dist/app.js`. Ba
 - Đồng bộ schema, types, HTTP method/path, DTO và payload exporter khi đổi contract. Giữ placeholder `<math_N>`, `<img_N>` và S3 object key.
 - Theo style lân cận: TypeScript hai spaces, Java bốn; PascalCase cho class/component, camelCase cho hàm, `I*Repository`, `*RepositoryImpl`, `*Usecase`, `*DTO`. Frontend dùng `@/`; exporter ESM import `.js`. ESLint cấm unused imports.
 - Với frontend, tách code giao diện/presentation khỏi logic xử lý, state phức tạp, data fetching và business logic; page/component tập trung render và interaction, còn logic đặt trong
-hook/service/usecase phù hợp với kiến trúc hiện có.
+  hook/service/usecase phù hợp với kiến trúc hiện có.
 - Không lặp lại UI hoặc implementation giống nhau ở nhiều nơi. UI/pattern giao diện dùng lại phải tách thành reusable component; logic không thuộc UI bị lặp phải tách thành hook/service dùng chung phù hợp, không copy-paste giữa các component/page.
 - Không ghi/log secrets, password, token hoặc presigned URL; không đặt credentials trong `NEXT_PUBLIC_*`. Không mặc định Spring tự nạp `.env`.
 
@@ -62,6 +62,28 @@ hook/service/usecase phù hợp với kiến trúc hiện có.
 - Biến local phải thể hiện rõ kiểu dữ liệu, đặc biệt với entity, DTO, document, domain object, collection và kết quả repository/service.
 - Method phải có kiểu trả về cụ thể phản ánh đúng contract; không làm tổng quát kiểu dữ liệu chỉ để tái sử dụng method.
 - Nếu một API có nhiều response body khác nhau, ưu tiên thiết kế một response DTO/contract rõ ràng thay vì sử dụng `ResponseEntity<?>`.
+
+### Testing rules
+
+- Khi implement, fix bug hoặc refactor làm thay đổi behavior, phải cập nhật hoặc bổ sung test phù hợp trong cùng scope nếu module đã có test infrastructure. Bug fix phải có regression test khi có thể tái hiện bằng automated test.
+- Test phải kiểm tra behavior, business rule và contract quan sát được; không viết test chỉ để tăng coverage hoặc phụ thuộc vào chi tiết implementation không cần thiết.
+- Mỗi nhóm behavior phải bao phủ tối thiểu happy path và các failure/edge case quan trọng liên quan trực tiếp đến thay đổi, bao gồm validation, not-found, conflict, authorization/ownership và external-service failure khi các trường hợp đó thuộc scope.
+- Test phải deterministic và độc lập: không phụ thuộc thứ tự chạy, thời gian thực, random không kiểm soát, dữ liệu còn lại từ test khác hoặc network/service bên ngoài thật.
+- Không gọi API/dịch vụ thật như S3, AI, Telegram, email, VNPay hoặc exporter trong unit/integration test thông thường; mock/stub dependency bên ngoài tại boundary phù hợp, trừ khi task yêu cầu rõ end-to-end test.
+- Không sửa production code chỉ để làm test pass nếu thay đổi đó làm sai hoặc làm yếu business rule, validation, authorization, security hoặc contract hiện tại.
+- Không bỏ qua, disable hoặc xóa test đang fail chỉ để validation pass. Nếu test cũ không còn đúng vì requirement đã được phê duyệt thay đổi, cập nhật test và nêu rõ behavior/contract thay đổi.
+- Ưu tiên test nhỏ nhất chứng minh behavior cần kiểm tra; không tạo test trùng lặp cùng một behavior ở nhiều layer nếu không có giá trị bổ sung.
+- Tên test phải mô tả rõ điều kiện và kết quả mong đợi; cấu trúc test theo Arrange/Act/Assert hoặc Given/When/Then và giữ phần setup chỉ ở mức cần thiết cho behavior đang kiểm tra.
+- Backend chỉ viết test bằng Java trong src/test/java, dùng JUnit Jupiter/Mockito/AssertJ/MockMvc theo stack hiện có; tên class test kết thúc bằng \*Test.java. Không tạo .js, .cjs, .mjs hoặc .ts test trong backend/.
+- Mỗi production class Java có behavior cần kiểm thử phải có test class tương ứng theo quan hệ 1-1 và cùng package tương ứng trong src/test/java; ví dụ AuthUsecase.java → AuthUsecaseTest.java. Không gom test của nhiều production class không liên quan vào một test class.
+Tên test method bắt buộc theo format test_<method>_<NNN>, trong đó <method> là tên method production đang được kiểm thử và <NNN> là số thứ tự tối thiểu 3 chữ số, bắt đầu từ 001 trong mỗi test class. Số thứ tự tăng tiến trên toàn bộ test class, không reset khi chuyển production method; ví dụ test_login_001, test_login_002, test_login_003, test_logout_004, test_logout_005.
+Mỗi test method bắt buộc có @DisplayName bằng tiếng Việt theo format trả về <kết quả mong đợi> khi <điều kiện>. Nội dung phải mô tả behavior cụ thể của test, không dùng mô tả chung chung như test success, test error hoặc chỉ lặp lại tên method.
+- Với method void hoặc behavior ném exception, @DisplayName vẫn phải mô tả observable result theo cùng cấu trúc, ví dụ trả về không có ngoại lệ khi ... hoặc trả về BadRequestException khi ....
+- Mỗi test class có một dãy số thứ tự độc lập; không được trùng <NNN> giữa các test method trong cùng class, dù khác production method. Khi thêm test mới, lấy số lớn nhất hiện có trong toàn bộ test class cộng 1. Giữ nguyên số của test hiện có, không tự renumber để lấp khoảng trống hoặc sắp xếp lại; chỉ chuẩn hóa lại khi người dùng yêu cầu. Khi vượt 999, tiếp tục 1000, 1001, ...
+- Backend unit test mock các dependency ngoài unit đang kiểm tra; controller/web contract dùng MockMvc khi phù hợp; chỉ dùng Spring context/integration test khi behavior thực sự cần wiring, persistence hoặc framework integration.
+- Frontend hiện chưa có test script/framework chuẩn trong repository; không tự thêm test framework, dependency hoặc cấu hình test nếu task không yêu cầu hoặc chưa được người dùng phê duyệt.
+- Sau khi sửa code/test, chạy test targeted cho scope thay đổi trước; sau đó chạy test suite/module validation rộng hơn khi hợp lý. Báo chính xác command đã chạy, kết quả và test nào không thể chạy.
+- Test code phải tuân theo các rule formatting, explicit type và coding style tương ứng của module như production code.
 
 ## Commit và PR
 

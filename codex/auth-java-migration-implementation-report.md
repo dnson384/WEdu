@@ -1,5 +1,7 @@
 # Migration auth bằng Java — 2026-11-14
 
+Cập nhật liên kết 2026-11-20: các link test trỏ đến file sau khi gộp/đổi tên theo [testing rule](auth-test-rule-alignment-report.md). Tên test và số liệu validation trong báo cáo này vẫn là snapshot lịch sử.
+
 ## Kết quả
 
 Đã thay hoàn toàn hai file JS/CJS trong backend/scripts bằng Java/JUnit. Backend không cần Node.js/mongosh để chạy migration hay test của migration. Không thêm dependency/framework migration; formatter/POM hiện có giữ nguyên.
@@ -44,7 +46,7 @@ Hoặc thêm Program argument --auth.migration.enabled=true trong IDE; có thể
 | [backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecase.java>) | Thêm preflight toàn bộ snapshot trước ghi, normalize email, kiểm duplicate/credential và nâng LOCAL link hợp lệ thành MIXED. |
 | [backend/src/main/resources/application.yml](<../backend/src/main/resources/application.yml>) | Thêm auth.migration.enabled=${AUTH_MIGRATION_ENABLED:false}. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfigTest.java>) | Thông báo guard phải hướng dẫn --auth.migration.enabled=true. |
-| [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRepositoryTest.java>) | 5 cases cho raw ID/type, scope drop index, partial writes và zero-write paths. |
+| [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/repository/AuthMigrationRepositoryImplTest.java>) | 5 cases cho raw ID/type, scope drop index, partial writes và zero-write paths. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRunnerTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRunnerTest.java>) | 3 cases cho flag missing/false/true và thứ tự trước index guard. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecaseTest.java>) | 14 cases JUnit cho preflight, preservation, failures, empty data và idempotency. |
 | [codex/api-reference.md](<../codex/api-reference.md>) | Ghi migration không có HTTP endpoint và không đổi contract auth. |

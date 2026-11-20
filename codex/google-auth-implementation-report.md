@@ -1,5 +1,7 @@
 # Báo cáo triển khai đăng ký OTP và Google — 2026-11-13
 
+Cập nhật liên kết 2026-11-20: các link test trỏ đến file sau khi gộp/đổi tên theo [testing rule](auth-test-rule-alignment-report.md). Tên test và số liệu validation trong báo cáo này vẫn là snapshot lịch sử.
+
 ## Migration đã chuyển sang Java — 2026-11-14
 
 Hai script JS/CJS được ghi trong snapshot bên dưới đã xóa. Các kết quả Node6 tests là validation lịch sử, không phải lệnh hiện tại. Dùng Java với auth.migration.enabled=true (mặc định false), format bằng Spotless và test JUnit. [Hướng dẫn và kết quả mới](auth-java-migration-implementation-report.md).
@@ -19,8 +21,8 @@ Sau restart backend, đăng ký **http://localhost:8080/auth/login/oauth2/code/g
 | [backend/src/main/java/com/wedu/exam_creation/config/SecurityConfig.java](<../backend/src/main/java/com/wedu/exam_creation/config/SecurityConfig.java>) | Đổi callback matcher và khai báo OAuth redirection baseUri /auth/login/oauth2/code/*. |
 | [backend/src/main/java/com/wedu/exam_creation/security/constant/SecurityConstants.java](<../backend/src/main/java/com/wedu/exam_creation/security/constant/SecurityConstants.java>) | JWT/public allowlist chuyển sang đúng callback Google mới. |
 | [backend/src/main/resources/application.yml](<../backend/src/main/resources/application.yml>) | Redirect template thành {baseUrl}/auth/login/oauth2/code/{registrationId}. |
-| [backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java>) | Đọc template từ YAML; kiểm redirect_uri gửi Google, callback mới/cancel và khóa callback cũ/đường dẫn liền kề (5 tests). |
-| [backend/src/test/java/com/wedu/exam_creation/security/JwtOAuthCallbackFilterTest.java](<../backend/src/test/java/com/wedu/exam_creation/security/JwtOAuthCallbackFilterTest.java>) | 3 tests với JWT filter thật: chỉ callback mới bypass JWT, path cũ và liền kề bị chặn. |
+| [backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/config/SecurityConfigTest.java>) | Đọc template từ YAML; kiểm redirect_uri gửi Google, callback mới/cancel và khóa callback cũ/đường dẫn liền kề (5 tests). |
+| [backend/src/test/java/com/wedu/exam_creation/security/JwtOAuthCallbackFilterTest.java](<../backend/src/test/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilterTest.java>) | 3 tests với JWT filter thật: chỉ callback mới bypass JWT, path cũ và liền kề bị chặn. |
 | [codex/api-reference.md](<../codex/api-reference.md>) | Đổi declaration GET Google callback sang /auth/login/oauth2/code/google. |
 | [codex/architecture.md](<../codex/architecture.md>) | Đồng bộ endpoint xử lý Spring filter và ranh giới public/JWT. |
 | [codex/business-flows.md](<../codex/business-flows.md>) | Cập nhật Google→backend callback mới→Next handoff và yêu cầu Console. |
@@ -97,12 +99,12 @@ Inventory dưới đây là **69 files của phạm vi ban đầu**; các file t
 | [backend/src/main/java/com/wedu/exam_creation/user/usecase/UserService.java](<../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserService.java>) | Facade hasGoogleLink/linkGoogle cho auth sau lookup email. |
 | [backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java>) | Map/facade Google identity qua user repository. |
 | [backend/src/main/resources/application.yml](<../backend/src/main/resources/application.yml>) | OTP_SECRET và cookie session OAuth HttpOnly/Lax/Secure qua environment. |
-| [backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java>) | Giữ25 validation cases, đổi thành202/chỉ verification cookie. |
+| [backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/controller/VerificationControllerTest.java>) | Giữ25 validation cases, đổi thành202/chỉ verification cookie. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/controller/VerificationControllerTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/controller/VerificationControllerTest.java>) | 5 tests OTP validation/cookies/expiry/rate-limit/exchange response. |
-| [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/VerificationRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/VerificationRepositoryTest.java>) | 6 tests rolling quota/cooldown/revision CAS và consume predicates. |
+| [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/VerificationRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/repository/VerificationRepositoryImplTest.java>) | 6 tests rolling quota/cooldown/revision CAS và consume predicates. |
 | `backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseRegisterTest.java` (deleted) | Xóa test luồng đăng ký trực tiếp; thay bằng VerificationUsecaseTest. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java>) | 19 tests OTP, SMTP, replay/expiry, transaction rollback, Google linking và role/active. |
-| [backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java>) | 4 tests OAuth state/nonce/binding, callback lỗi/cancel và protected route. |
+| [backend/src/test/java/com/wedu/exam_creation/security/GoogleSecurityConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/config/SecurityConfigTest.java>) | 4 tests OAuth state/nonce/binding, callback lỗi/cancel và protected route. |
 | [codex/api-reference.md](<../codex/api-reference.md>) | Endpoints,202 response, DTO/cookies và error codes. |
 | [codex/architecture.md](<../codex/architecture.md>) | Cập nhật ranh giới OTP/OIDC/BFF, session tạm và transaction. |
 | [codex/business-flows.md](<../codex/business-flows.md>) | Ghi luồng LOCAL/Google/link/OTP và side effects/error behavior. |

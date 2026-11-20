@@ -1,5 +1,9 @@
 # Bản đồ module, symbols và API
 
+## Chuẩn hóa test auth — 2026-11-20
+
+Test auth được gộp/đổi tên và chuyển package theo production class; tên method `test_<method>_<NNN>`, DisplayName tiếng Việt và fixtures cố định. Không đổi production symbols/routes/DTO/schema. Xem [inventory đầy đủ và validation](auth-test-rule-alignment-report.md).
+
 ## Shared ADMIN presentation — 2026-11-19
 
 AdminPageHeader (title/description/onRefresh/refreshing/disabled) dùng ở pages transactions/users/ai, gom style header và nút Làm mới. AdminPagination (page one-based/totalPages/pageSize/itemLabel/onPageChange/disabled) dùng ở TransactionTable và users page; TransactionTable chuyển data.page+1 khi render và page-1 trong callback để giữ contract zero-based. transactionDisplay.transactionStatusClass cung cấp màu badge. TransactionFilters/TransactionTable vẫn tách render khỏi useAdminTransactions; không thêm API/hook/business logic. [Inventory và validation](current-status.md#đồng-bộ-style-quản-lý-giao-dịch-với-admin--2026-11-19).
@@ -24,11 +28,11 @@ QuestionService.generateExamQuestions overload có userId dùng UserService.find
 
 ## Migration auth bằng Java — 2026-11-14
 
-AuthMigrationRunner (ConditionalOnProperty auth.migration.enabled=true, Order.HIGHEST_PRECEDENCE) → AuthMigrationUsecase.migrate → IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply → AuthMigrationRepositoryImpl/MongoTemplate. AuthMigrationUserEntity giữ legacy scalar fields/opaque ID; AuthMigrationChangeEntity chỉ chứa ID/email/optional loginMethod, không phải HTTP DTO hay collection mới. AuthIndexConfig có order tiếp sau để kiểm email và tạo indexes. AuthMigrationUsecaseTest/AuthMigrationRepositoryTest/AuthMigrationRunnerTest thay test Node; hai file backend/scripts/prepare-auth-indexes.* đã xóa. [Inventory/validation](auth-java-migration-implementation-report.md).
+AuthMigrationRunner (ConditionalOnProperty auth.migration.enabled=true, Order.HIGHEST_PRECEDENCE) → AuthMigrationUsecase.migrate → IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply → AuthMigrationRepositoryImpl/MongoTemplate. AuthMigrationUserEntity giữ legacy scalar fields/opaque ID; AuthMigrationChangeEntity chỉ chứa ID/email/optional loginMethod, không phải HTTP DTO hay collection mới. AuthIndexConfig có order tiếp sau để kiểm email và tạo indexes. AuthMigrationUsecaseTest/AuthMigrationRepositoryImplTest/AuthMigrationRunnerTest thay test Node; hai file backend/scripts/prepare-auth-indexes.* đã xóa. [Inventory/validation](auth-java-migration-implementation-report.md).
 
 ## Callback Google dưới /auth — 2026-11-14
 
-SecurityConfig.googleSecurityFilterChain: matcher callback `/auth/login/oauth2/code/google`, oauth2Login.redirectionEndpoint.baseUri `/auth/login/oauth2/code/*`. SecurityConstants.PUBLIC_PATHS và application.yml redirect-uri đồng bộ; xử lý qua Spring filter, không thêm controller. GoogleSecurityConfigTest dùng redirect-uri từ YAML; JwtOAuthCallbackFilterTest kiểm public path mới/khóa path cũ và liền kề. [API](api-reference.md), [validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+SecurityConfig.googleSecurityFilterChain: matcher callback `/auth/login/oauth2/code/google`, oauth2Login.redirectionEndpoint.baseUri `/auth/login/oauth2/code/*`. SecurityConstants.PUBLIC_PATHS và application.yml redirect-uri đồng bộ; xử lý qua Spring filter, không thêm controller. SecurityConfigTest dùng redirect-uri từ YAML; JwtAuthenticationFilterTest kiểm public path mới/khóa path cũ và liền kề. [API](api-reference.md), [validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
 
 ## Auth OTP/Google — 2026-11-13
 

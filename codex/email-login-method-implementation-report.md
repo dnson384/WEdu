@@ -1,5 +1,7 @@
 # Chỉnh sửa email trực tiếp và MIXED — 2026-11-13
 
+Cập nhật liên kết 2026-11-20: các link test trỏ đến file sau khi gộp/đổi tên theo [testing rule](auth-test-rule-alignment-report.md). Tên test và số liệu validation trong báo cáo này vẫn là snapshot lịch sử.
+
 ## Migration đã chuyển sang Java — 2026-11-14
 
 Hai script JS/CJS được ghi trong snapshot bên dưới đã xóa. Các kết quả Node6 tests là validation lịch sử, không phải lệnh hiện tại. Dùng Java với auth.migration.enabled=true (mặc định false), format bằng Spotless và test JUnit. [Hướng dẫn và kết quả mới](auth-java-migration-implementation-report.md).
@@ -41,7 +43,7 @@ Nếu DB đã canonical và không còn index dẫn xuất cũ, backend không y
 | [backend/src/main/java/com/wedu/exam_creation/user/usecase/UserService.java](<../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserService.java>) | Thay facade findByGoogleSubject bằng hasGoogleLink(email,subject). |
 | [backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java>) | Kiểm liên kết sau lookup email; xác định LOCAL/MIXED có password → MIXED, GOOGLE → GOOGLE trước ghi link. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfigTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfigTest.java>) | 4 tests startup không cần derived field, canonical guard, cleanup guard và reuse unique email index. |
-| [backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java>) | Bổ sung login MIXED thành công và từ chối MIXED thiếu password. |
+| [backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseTest.java>) | Bổ sung login MIXED thành công và từ chối MIXED thiếu password. |
 | [backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java>) | Google hiện lookup email; linked external email không OTP lại; đổi email không tìm theo sub; mismatch/duplicate subject rollback và không cấp JWT. |
 | [backend/src/test/java/com/wedu/exam_creation/user/infrastructure/UserRepositoryEmailTest.java](<../backend/src/test/java/com/wedu/exam_creation/user/infrastructure/UserRepositoryEmailTest.java>) | 4 tests lookup chỉ email, save canonical và partial link bảo toàn password/PLUS, conflict không overwrite. |
 | [backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseGoogleTest.java](<../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseGoogleTest.java>) | 5 cases LOCAL/MIXED/GOOGLE, giữ password, từ chối credential thiếu và xác minh sub sau email. |

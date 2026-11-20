@@ -6,9 +6,21 @@ Lượt rà soát lại chuẩn hóa hậu tố số test xuyên suốt từng c
 
 Thêm2 test class cùng package và tương ứng production1–1: [AdminControllerTest](../backend/src/test/java/com/wedu/exam_creation/admin/controller/AdminControllerTest.java), [AdminUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/admin/usecase/AdminUsecaseTest.java). Tổng83 methods/105 cases: controller56, usecase49; targeted105/105 đạt. Full997 cases còn3 lỗi ngoài admin và7 skipped. Phạm vi là package admin quản lý tài khoản; không sửa AI, payment/AdminTransaction hoặc shared user classes. Không đổi production symbols/routes/DTO/schema. [Inventory, rules và validation](admin-test-rule-alignment-report.md).
 
+## Chuẩn hóa và bổ sung test exam — 2026-11-20
+
+Module exam có 7 test class cùng package, tương ứng production class 1–1: [ExamControllerTest](../backend/src/test/java/com/wedu/exam_creation/exam/controller/ExamControllerTest.java), [ExamUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exam/usecase/ExamUsecaseTest.java), [ExamServiceTest](../backend/src/test/java/com/wedu/exam_creation/exam/usecase/ExamServiceTest.java), [ExamRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/exam/infrastructure/repository/ExamRepositoryImplTest.java), [ExamResponseDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/exam/dto/mapper/ExamResponseDTOMapperTest.java), [ExamCommonDraftDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/exam/dto/mapper/ExamCommonDraftDTOMapperTest.java), [ExamMapperTest](../backend/src/test/java/com/wedu/exam_creation/exam/infrastructure/mapper/ExamMapperTest.java). ExamMatrixUsecaseTest đổi thành ExamUsecaseTest, giữ đủ4 cases snapshot cũ. Tổng87 methods/94 invocations, targeted94/94 đạt; full892 cases còn3 lỗi ngoài exam và7 skipped. Không đổi production symbols/routes/DTO/schema. [Inventory, rules và validation](exam-test-rule-alignment-report.md).
+
 ## Bổ sung test chapter — 2026-11-20
 
 Thêm 6 test class cùng package, 1–1 production class: [ChapterControllerTest](../backend/src/test/java/com/wedu/exam_creation/chapter/controller/ChapterControllerTest.java), [ChapterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterUsecaseTest.java), [ChapterServiceTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterServiceTest.java), [ChapterRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImplTest.java), [ChapterDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/dto/mapper/ChapterDTOMapperTest.java), [ChapterMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/mapper/ChapterMapperTest.java). Tổng58 methods/63 cases, targeted63/63 đạt. Full802 cases còn3 lỗi ngoài chapter và7 skipped; không đổi production symbols/routes/DTO/schema. [Inventory chi tiết, rules và validation](chapter-test-rule-alignment-report.md).
+
+## Bổ sung test draft — 2026-11-20
+
+Thêm 7 test class đúng package theo production class 1–1, 136 cases; không đổi production symbols/routes/DTO/schema. [Inventory từng file, rules, validation và giới hạn](draft-test-rule-alignment-report.md). Targeted136 cases đạt; clean full739 cases có3 lỗi ngoài draft đã được ghi nhận, không coi toàn suite đạt.
+
+## Chuẩn hóa test auth — 2026-11-20
+
+Test auth được gộp/đổi tên và chuyển package theo production class; tên method `test_<method>_<NNN>`, DisplayName tiếng Việt và fixtures cố định. Không đổi production symbols/routes/DTO/schema. Xem [inventory đầy đủ và validation](auth-test-rule-alignment-report.md).
 
 ## Shared ADMIN UI và transaction styling — 2026-11-19
 
@@ -35,11 +47,11 @@ VnpayTransactionEntity and VnpayTransactionDocument are separate domain/persiste
 
 ## Inventory migration Java — 2026-11-14
 
-Thêm domain entities AuthMigrationUserEntity/AuthMigrationChangeEntity, port IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply, AuthMigrationRepositoryImpl, AuthMigrationUsecase.migrate và AuthMigrationRunner.run. Thêm AuthMigrationUsecaseTest (14 cases), AuthMigrationRepositoryTest (5), AuthMigrationRunnerTest (3); cập nhật AuthIndexConfigTest. Xóa hai script JS/CJS, không còn source JS trong backend. [Danh sách từng file và link](auth-java-migration-implementation-report.md).
+Thêm domain entities AuthMigrationUserEntity/AuthMigrationChangeEntity, port IAuthMigrationRepository.findUsers/dropLegacyIndexes/apply, AuthMigrationRepositoryImpl, AuthMigrationUsecase.migrate và AuthMigrationRunner.run. Thêm AuthMigrationUsecaseTest (14 cases), AuthMigrationRepositoryImplTest (5), AuthMigrationRunnerTest (3); cập nhật AuthIndexConfigTest. Xóa hai script JS/CJS, không còn source JS trong backend. [Danh sách từng file và link](auth-java-migration-implementation-report.md).
 
 ## Callback Google dưới /auth — 2026-11-14
 
-Route Google callback đổi thành GET `/auth/login/oauth2/code/google`, xử lý bởi OAuth filter trong SecurityConfig thay endpoint mặc định cũ. Bổ sung [JwtOAuthCallbackFilterTest](../backend/src/test/java/com/wedu/exam_creation/security/JwtOAuthCallbackFilterTest.java): callback mới không cần JWT, callback cũ và đường dẫn liền kề không bypass. GoogleSecurityConfigTest đọc redirect template trong application.yml và kiểm request tới Google/callback matching. [Inventory từng file](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+Route Google callback đổi thành GET `/auth/login/oauth2/code/google`, xử lý bởi OAuth filter trong SecurityConfig thay endpoint mặc định cũ. Bổ sung [JwtAuthenticationFilterTest](../backend/src/test/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilterTest.java): callback mới không cần JWT, callback cũ và đường dẫn liền kề không bypass. SecurityConfigTest đọc redirect template trong application.yml và kiểm request tới Google/callback matching. [Inventory từng file](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
 
 ## Email trực tiếp và MIXED — 2026-11-13
 
@@ -49,7 +61,7 @@ Bỏ UserDocument.emailKey và findByGoogleSubject. Common util EmailNormalizer.
 
 Auth bổ sung controller VerificationController; domain VerificationEntity/IVerificationRepository; document VerificationDocument/OtpRateLimitDocument; VerificationMapper/VerificationRepositoryImpl; AuthIndexConfig; usecase VerificationUsecase/VerificationException; request VerifyOtpRequestDTO/GoogleExchangeRequestDTO và response VerificationResponseDTO. AuthController.register/AuthUsecase.register bị bỏ; register thuộc VerificationController/VerificationUsecase.
 
-Frontend thêm verification.entity, IVerificationRepository/VerificationRepositoryImpl/VerificationUsecase, useVerifyEmail, GoogleAuthButton, verify-email/google-error pages, BFF flow.ts, verification GET/verify/resend và google start/callback. Test AuthUsecaseRegisterTest được thay bằng VerificationUsecaseTest; AuthControllerRegisterTest vẫn giữ validation input với contract202. [Danh sách từng file, link và mô tả đầy đủ](google-auth-implementation-report.md#files-thay-đổi).
+Frontend thêm verification.entity, IVerificationRepository/VerificationRepositoryImpl/VerificationUsecase, useVerifyEmail, GoogleAuthButton, verify-email/google-error pages, BFF flow.ts, verification GET/verify/resend và google start/callback. Test AuthUsecaseRegisterTest được thay bằng VerificationUsecaseTest; VerificationControllerTest vẫn giữ validation input với contract202. [Danh sách từng file, link và mô tả đầy đủ](google-auth-implementation-report.md#files-thay-đổi).
 
 ## Xuất ma trận đề — 2026-11-12
 
@@ -741,8 +753,18 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
-| `com/wedu/exam_creation/auth/controller` | [AuthControllerLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLoginTest.java), [AuthControllerLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerLogoutTest.java), [AuthControllerRegisterTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerRegisterTest.java) |
-| `com/wedu/exam_creation/auth/usecase` | [AuthUsecaseLoginTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLoginTest.java), [AuthUsecaseLogoutTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseLogoutTest.java), [VerificationUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java) |
+| `com/wedu/exam_creation/draft/controller` | [DraftControllerTest](../backend/src/test/java/com/wedu/exam_creation/draft/controller/DraftControllerTest.java) |
+| `com/wedu/exam_creation/draft/usecase` | [DraftUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftUsecaseTest.java), [DraftServiceTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftServiceTest.java) |
+| `com/wedu/exam_creation/draft/usecase/util` | [DraftUtilTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/util/DraftUtilTest.java) |
+| `com/wedu/exam_creation/draft/dto/mapper` | [DraftDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/draft/dto/mapper/DraftDTOMapperTest.java) |
+| `com/wedu/exam_creation/draft/infrastructure/mapper` | [DraftMapperTest](../backend/src/test/java/com/wedu/exam_creation/draft/infrastructure/mapper/DraftMapperTest.java) |
+| `com/wedu/exam_creation/draft/infrastructure/repository` | [DraftRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/draft/infrastructure/repository/DraftRepositoryImplTest.java) |
+| `com/wedu/exam_creation/auth/controller` | [AuthControllerTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerTest.java), [VerificationControllerTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/VerificationControllerTest.java) |
+| `com/wedu/exam_creation/auth/usecase` | [AuthUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthUsecaseTest.java), [VerificationUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/VerificationUsecaseTest.java), [AuthMigrationUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/auth/usecase/AuthMigrationUsecaseTest.java) |
+| `com/wedu/exam_creation/auth/infrastructure` | [AuthIndexConfigTest](../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthIndexConfigTest.java), [AuthMigrationRunnerTest](../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/AuthMigrationRunnerTest.java) |
+| `com/wedu/exam_creation/auth/infrastructure/repository` | [AuthMigrationRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/repository/AuthMigrationRepositoryImplTest.java), [VerificationRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/auth/infrastructure/repository/VerificationRepositoryImplTest.java) |
+| `com/wedu/exam_creation/config` | [SecurityConfigTest](../backend/src/test/java/com/wedu/exam_creation/config/SecurityConfigTest.java) |
+| `com/wedu/exam_creation/security/infrastructure/filter` | [JwtAuthenticationFilterTest](../backend/src/test/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilterTest.java) |
 | `com/wedu/exam_creation/moderator/controller` | `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại) |
 | `com/wedu/exam_creation/storage/controller` | [StorageAvatarControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageAvatarControllerTest.java) |
 | `com/wedu/exam_creation/storage/service` | [StorageAvatarServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageAvatarServiceTest.java), [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java) |
