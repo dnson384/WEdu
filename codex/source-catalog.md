@@ -1,5 +1,11 @@
 # Source catalogue WEdu
 
+## Bổ sung test admin — 2026-11-20
+
+Lượt rà soát lại chuẩn hóa hậu tố số test xuyên suốt từng class, không reset theo production method: AdminControllerTest001–044 và AdminUsecaseTest001–039. Không đổi production symbols hoặc assertions; targeted105/105 và scoped Spotless apply/check đạt. Full suite không chạy lại trong lượt đổi tên. [Chi tiết](admin-test-rule-alignment-report.md#rà-soát-lại-và-chuẩn-hóa-số-thứ-tự--2026-11-20).
+
+Thêm2 test class cùng package và tương ứng production1–1: [AdminControllerTest](../backend/src/test/java/com/wedu/exam_creation/admin/controller/AdminControllerTest.java), [AdminUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/admin/usecase/AdminUsecaseTest.java). Tổng83 methods/105 cases: controller56, usecase49; targeted105/105 đạt. Full997 cases còn3 lỗi ngoài admin và7 skipped. Phạm vi là package admin quản lý tài khoản; không sửa AI, payment/AdminTransaction hoặc shared user classes. Không đổi production symbols/routes/DTO/schema. [Inventory, rules và validation](admin-test-rule-alignment-report.md).
+
 ## Bổ sung test chapter — 2026-11-20
 
 Thêm 6 test class cùng package, 1–1 production class: [ChapterControllerTest](../backend/src/test/java/com/wedu/exam_creation/chapter/controller/ChapterControllerTest.java), [ChapterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterUsecaseTest.java), [ChapterServiceTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterServiceTest.java), [ChapterRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImplTest.java), [ChapterDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/dto/mapper/ChapterDTOMapperTest.java), [ChapterMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/mapper/ChapterMapperTest.java). Tổng58 methods/63 cases, targeted63/63 đạt. Full802 cases còn3 lỗi ngoài chapter và7 skipped; không đổi production symbols/routes/DTO/schema. [Inventory chi tiết, rules và validation](chapter-test-rule-alignment-report.md).
