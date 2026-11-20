@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.security;
+package com.wedu.exam_creation.config;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -8,13 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.wedu.exam_creation.auth.controller.VerificationController;
 import com.wedu.exam_creation.auth.usecase.VerificationUsecase;
-import com.wedu.exam_creation.config.SecurityConfig;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
 import com.wedu.exam_creation.security.infrastructure.handler.OAuth2AuthenticationSuccessHandler;
 import com.wedu.exam_creation.security.infrastructure.service.CustomOAuth2UserService;
 import jakarta.servlet.FilterChain;
 import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,8 +33,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(
         value = VerificationController.class,
         properties = "app.frontend.url=http://localhost:3000")
-@Import({SecurityConfig.class, GoogleSecurityConfigTest.ClientConfig.class})
-class GoogleSecurityConfigTest {
+@Import({SecurityConfig.class, SecurityConfigTest.ClientConfig.class})
+class SecurityConfigTest {
     @Autowired MockMvc mvc;
     @MockitoBean VerificationUsecase verification;
     @MockitoBean JwtAuthenticationFilter jwt;
@@ -77,8 +77,9 @@ class GoogleSecurityConfigTest {
     }
 
     @Test
-    void startCreatesStateNonceAndBrowserBindingWithoutJwt() throws Exception {
-        var result =
+    @DisplayName("trả về redirect có state nonce và binding trong session khi bắt đầu Google")
+    void test_googleSecurityFilterChain_001() throws Exception {
+        org.springframework.test.web.servlet.MvcResult result =
                 mvc.perform(get("/oauth2/authorization/google").param("binding", "a".repeat(64)))
                         .andExpect(status().is3xxRedirection())
                         .andReturn();
@@ -89,7 +90,7 @@ class GoogleSecurityConfigTest {
         assertThat(URI.create(location).getQuery()).doesNotContain("binding=");
         assertThat(URI.create(location).getQuery())
                 .contains("redirect_uri=http://localhost/auth/login/oauth2/code/google");
-        var session = result.getRequest().getSession(false);
+        jakarta.servlet.http.HttpSession session = result.getRequest().getSession(false);
         assertThat(session).isNotNull();
         assertThat(session.getAttribute("googleBinding")).isEqualTo("a".repeat(64));
         assertThat(session.getMaxInactiveInterval()).isEqualTo(600);
@@ -97,7 +98,8 @@ class GoogleSecurityConfigTest {
     }
 
     @Test
-    void callbackWithUnknownStateFailsWithoutIssuingJwt() throws Exception {
+    @DisplayName("trả về redirect lỗi không cấp JWT khi callback có state không hợp lệ")
+    void test_googleSecurityFilterChain_002() throws Exception {
         mvc.perform(
                         get("/auth/login/oauth2/code/google")
                                 .param("code", "not-a-provider-code")
@@ -110,11 +112,12 @@ class GoogleSecurityConfigTest {
     }
 
     @Test
-    void providerCancellationInvalidatesTemporarySession() throws Exception {
-        var start =
+    @DisplayName("trả về session tạm bị hủy khi người dùng hủy Google")
+    void test_googleSecurityFilterChain_003() throws Exception {
+        org.springframework.test.web.servlet.MvcResult start =
                 mvc.perform(get("/oauth2/authorization/google").param("binding", "b".repeat(64)))
                         .andReturn();
-        var session = (MockHttpSession) start.getRequest().getSession(false);
+        MockHttpSession session = (MockHttpSession) start.getRequest().getSession(false);
         mvc.perform(
                         get("/auth/login/oauth2/code/google")
                                 .session(session)
@@ -126,12 +129,14 @@ class GoogleSecurityConfigTest {
     }
 
     @Test
-    void unrelatedEndpointRemainsProtected() throws Exception {
+    @DisplayName("trả về 401 khi truy cập endpoint Google không public")
+    void test_securityFilterChain_001() throws Exception {
         mvc.perform(get("/auth/google/not-public")).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void formerCallbackAndAdjacentPathRemainProtected() throws Exception {
+    @DisplayName("trả về 401 khi truy cập callback cũ hoặc path liền kề callback")
+    void test_securityFilterChain_002() throws Exception {
         mvc.perform(get("/login/oauth2/code/google")).andExpect(status().isUnauthorized());
         mvc.perform(get("/auth/login/oauth2/code/google/extra"))
                 .andExpect(status().isUnauthorized());

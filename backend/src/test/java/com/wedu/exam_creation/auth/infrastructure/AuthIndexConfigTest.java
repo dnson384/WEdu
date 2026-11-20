@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 import org.bson.Document;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,7 +25,7 @@ class AuthIndexConfigTest {
     private final AuthIndexConfig config = new AuthIndexConfig(mongo);
 
     private void canonicalUser() {
-        var user = new UserDocument();
+        UserDocument user = new UserDocument();
         user.setEmail("teacher@example.com");
         when(mongo.stream(any(Query.class), eq(UserDocument.class))).thenReturn(Stream.of(user));
         when(mongo.indexOps(any(Class.class))).thenReturn(indexes);
@@ -49,7 +50,8 @@ class AuthIndexConfigTest {
     }
 
     @Test
-    void canonicalEmailStartsWithoutDerivedFieldAndCreatesUniqueEmailIndex() {
+    @DisplayName("trả về unique index email khi user có email chuẩn hóa")
+    void test_run_001() {
         canonicalUser();
         config.run(new DefaultApplicationArguments());
         verify(indexes)
@@ -65,8 +67,9 @@ class AuthIndexConfigTest {
     }
 
     @Test
-    void unnormalizedEmailRequiresEmailMigrationBeforeIndexes() {
-        var user = new UserDocument();
+    @DisplayName("trả về lỗi yêu cầu migration khi email chưa chuẩn hóa")
+    void test_run_002() {
+        UserDocument user = new UserDocument();
         user.setEmail(" Teacher@Example.com ");
         when(mongo.stream(any(Query.class), eq(UserDocument.class))).thenReturn(Stream.of(user));
         assertThatThrownBy(() -> config.run(new DefaultApplicationArguments()))
@@ -76,7 +79,8 @@ class AuthIndexConfigTest {
     }
 
     @Test
-    void oldDerivedFieldIndexRequiresCleanupBeforeMissingFieldCanBreakNewAccounts() {
+    @DisplayName("trả về lỗi yêu cầu dọn index khi còn index emailKey cũ")
+    void test_run_003() {
         canonicalUser();
         databaseIndexes(
                 new Document("name", "auth_email_key")
@@ -89,7 +93,8 @@ class AuthIndexConfigTest {
     }
 
     @Test
-    void existingFullUniqueEmailIndexIsReusedRegardlessOfName() {
+    @DisplayName("trả về index email được tái sử dụng khi đã có unique index đầy đủ")
+    void test_run_004() {
         canonicalUser();
         databaseIndexes(
                 new Document("name", "email_1")
