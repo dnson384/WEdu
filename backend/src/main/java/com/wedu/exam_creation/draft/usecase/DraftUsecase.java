@@ -174,8 +174,8 @@ public class DraftUsecase {
         return draftEntities.stream().map(mapper::toDTO).toList();
     }
 
-    public boolean deleteDraft(String userId, String draftId) {
-        boolean deleteResult = repo.deleteDraft(userId, draftId);
+    public boolean deleteDraft(String draftId, String userId) {
+        boolean deleteResult = repo.deleteDraft(draftId, userId);
 
         if (!deleteResult) {
             throw new NotFoundException("Không tìm thấy đề kiểm tra để xóa");
