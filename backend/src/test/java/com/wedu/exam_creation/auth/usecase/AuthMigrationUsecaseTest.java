@@ -9,6 +9,7 @@ import com.wedu.exam_creation.auth.domain.repository.IAuthMigrationRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -25,16 +26,18 @@ class AuthMigrationUsecaseTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void normalizesEmailAndUpgradesConfirmedLocalLinkAfterPreflight() {
-        var legacy = user("teacher", " Teacher@Example.COM ", "sub", "LOCAL", "bcrypt-hash");
+    @DisplayName("trả về email chuẩn hóa và MIXED sau preflight khi LOCAL đã liên kết hợp lệ")
+    void test_migrate_001() {
+        AuthMigrationUserEntity legacy =
+                user("teacher", " Teacher@Example.COM ", "sub", "LOCAL", "bcrypt-hash");
         when(repository.findUsers()).thenReturn(List.of(legacy));
         assertThat(migration.migrate()).isEqualTo(1);
-        var changes = ArgumentCaptor.forClass(List.class);
-        var order = inOrder(repository);
+        ArgumentCaptor<List<AuthMigrationChangeEntity>> changes = ArgumentCaptor.captor();
+        org.mockito.InOrder order = inOrder(repository);
         order.verify(repository).findUsers();
         order.verify(repository).dropLegacyIndexes();
         order.verify(repository).apply(changes.capture());
-        assertThat((List<AuthMigrationChangeEntity>) changes.getValue())
+        assertThat(changes.getValue())
                 .containsExactly(
                         new AuthMigrationChangeEntity("teacher", "teacher@example.com", "MIXED"));
         assertThat(legacy.getHashedPassword()).isEqualTo("bcrypt-hash");
@@ -43,23 +46,26 @@ class AuthMigrationUsecaseTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void localWithoutGoogleAndGoogleWithoutPasswordKeepTheirMethods() {
+    @DisplayName(
+            "trả về loginMethod giữ nguyên khi LOCAL chưa liên kết hoặc GOOGLE không có mật khẩu")
+    void test_migrate_002() {
         when(repository.findUsers())
                 .thenReturn(
                         List.of(
                                 user("local", "LOCAL@example.com", null, "LOCAL", "hash"),
                                 user("google", "GOOGLE@example.com", "sub", "GOOGLE", "")));
         migration.migrate();
-        var changes = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<AuthMigrationChangeEntity>> changes = ArgumentCaptor.captor();
         verify(repository).apply(changes.capture());
-        assertThat((List<AuthMigrationChangeEntity>) changes.getValue())
+        assertThat(changes.getValue())
                 .containsExactly(
                         new AuthMigrationChangeEntity("local", "local@example.com", null),
                         new AuthMigrationChangeEntity("google", "google@example.com", null));
     }
 
     @Test
-    void duplicateNormalizedEmailStopsBeforeAnyIndexOrDataWrite() {
+    @DisplayName("trả về lỗi trước mọi thao tác ghi khi email chuẩn hóa bị trùng")
+    void test_migrate_003() {
         when(repository.findUsers())
                 .thenReturn(
                         List.of(
@@ -71,7 +77,8 @@ class AuthMigrationUsecaseTest {
     }
 
     @Test
-    void duplicateGoogleSubjectStopsBeforeAnyWrite() {
+    @DisplayName("trả về lỗi trước mọi thao tác ghi khi Google subject bị trùng")
+    void test_migrate_004() {
         when(repository.findUsers())
                 .thenReturn(
                         List.of(
@@ -84,7 +91,8 @@ class AuthMigrationUsecaseTest {
     }
 
     @Test
-    void blankGoogleSubjectStopsBeforeAnyWrite() {
+    @DisplayName("trả về lỗi trước mọi thao tác ghi khi Google subject trống")
+    void test_migrate_005() {
         when(repository.findUsers())
                 .thenReturn(List.of(user("a", "a@example.com", " ", "GOOGLE", "")));
         assertThatThrownBy(migration::migrate)
@@ -102,7 +110,8 @@ class AuthMigrationUsecaseTest {
 
     @ParameterizedTest
     @MethodSource("inconsistentCredentials")
-    void inconsistentCredentialsStopBeforeAnyWrite(AuthMigrationUserEntity user) {
+    @DisplayName("trả về lỗi trước mọi thao tác ghi khi credential liên kết không nhất quán")
+    void test_migrate_006(AuthMigrationUserEntity user) {
         when(repository.findUsers()).thenReturn(List.of(user));
         assertThatThrownBy(migration::migrate)
                 .hasMessageContaining("Inconsistent linked login credentials");
@@ -119,7 +128,8 @@ class AuthMigrationUsecaseTest {
 
     @ParameterizedTest
     @MethodSource("missingIdentity")
-    void missingIdOrEmailStopsBeforeAnyWrite(AuthMigrationUserEntity user) {
+    @DisplayName("trả về lỗi trước mọi thao tác ghi khi user thiếu ID hoặc email")
+    void test_migrate_007(AuthMigrationUserEntity user) {
         when(repository.findUsers()).thenReturn(List.of(user));
         assertThatThrownBy(migration::migrate).hasMessageContaining("missing ID/email");
         verify(repository, never()).dropLegacyIndexes();
@@ -127,14 +137,16 @@ class AuthMigrationUsecaseTest {
     }
 
     @Test
-    void emptyDatabaseDoesNotCreateAnyAccount() {
+    @DisplayName("trả về không tạo tài khoản khi database rỗng")
+    void test_migrate_008() {
         when(repository.findUsers()).thenReturn(List.of());
         assertThat(migration.migrate()).isZero();
         verify(repository).apply(List.of());
     }
 
     @Test
-    void indexFailureAbortsBeforeUserUpdates() {
+    @DisplayName("trả về lỗi và không cập nhật user khi xóa index thất bại")
+    void test_migrate_009() {
         when(repository.findUsers())
                 .thenReturn(List.of(user("a", "a@example.com", null, "LOCAL", "hash")));
         doThrow(new IllegalStateException("database unavailable"))
@@ -145,7 +157,8 @@ class AuthMigrationUsecaseTest {
     }
 
     @Test
-    void repeatedMigrationIsIdempotent() {
+    @DisplayName("trả về dữ liệu chuẩn hóa giữ nguyên khi migration chạy lại")
+    void test_migrate_010() {
         List<AuthMigrationUserEntity> state =
                 new ArrayList<>(List.of(user("a", " A@Example.COM ", "sub", "LOCAL", "hash")));
         IAuthMigrationRepository memory =
@@ -157,8 +170,8 @@ class AuthMigrationUsecaseTest {
                     public void dropLegacyIndexes() {}
 
                     public void apply(List<AuthMigrationChangeEntity> changes) {
-                        for (var change : changes) {
-                            var current =
+                        for (AuthMigrationChangeEntity change : changes) {
+                            AuthMigrationUserEntity current =
                                     state.stream()
                                             .filter(user -> user.getId().equals(change.getId()))
                                             .findFirst()
@@ -169,7 +182,7 @@ class AuthMigrationUsecaseTest {
                         }
                     }
                 };
-        var migration = new AuthMigrationUsecase(memory);
+        AuthMigrationUsecase migration = new AuthMigrationUsecase(memory);
         assertThat(migration.migrate()).isEqualTo(1);
         assertThat(migration.migrate()).isEqualTo(1);
         assertThat(state.get(0).getEmail()).isEqualTo("a@example.com");
