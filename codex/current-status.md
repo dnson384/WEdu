@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Bổ sung test chapter — 2026-11-20
+
+Module chapter trước đây chưa có test class riêng. Đã thêm 6 class cùng package theo production class 1–1: controller, usecase, service, repository, DTO mapper và document mapper. Tổng 58 test methods/63 cases: controller8, usecase3, service10, repository22, DTO mapper12, document mapper8. Test kiểm contract GET có xác thực, mapping lồng nhau/null/rỗng, tạo/merge chương-bài-bankStats, count, truy vấn/not-found và lỗi dependency. Giữ merge theo chapter name đã được ACCEPTED_CURRENT_SCOPE; không đổi production/API/schema/dependency hoặc importer FROZEN. [Inventory từng file, testing rules và validation](chapter-test-rule-alignment-report.md).
+
+Validation: Maven wrapper không khởi động được (`Cannot index into a null array / Cannot start maven from wrapper`); Maven đã cài chạy cùng cấu hình repository. Spotless apply/check scoped 6 test classes đạt; audit tên/DisplayName/sequence58/58 đạt. `mvn -q "-Dtest=Chapter*Test" test`:63/63 passed, không skipped. `mvn -q test`:802 cases,792 passed,2 failures,1 error,7 skipped; toàn bộ63 chapter cases đạt. Ba lỗi trùng baseline đã ghi nhận ở auth/draft: AiUsageRepositoryImplTest query assertion, ReviewPendingQuestionUsecaseTest invalid-input và BackendApplicationTests thiếu VNPAY_ENABLED. Không sửa/disable test ngoài scope. Chapter tests mock Mongo/dependencies; chưa xác minh persistence với Mongo thật hoặc end-to-end frontend.
+
 ## Snapshot main sau merge payment/Google — 2026-11-19
 
 Đã đối chiếu main tại `be3c072`: PR #147 backend main `a17aca7`, #148 backend test `495c80c`, #149 frontend payment `f5f6e94` và #150 frontend Google `9f33837` đã merge. Source backend/src/main, backend/src/test và frontend không khác cây source tại `9f33837`. Không chứng nhận deploy, migration hoặc external service đã được kiểm thử thật.

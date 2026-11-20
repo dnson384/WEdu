@@ -1,5 +1,9 @@
 # Source catalogue WEdu
 
+## Bổ sung test chapter — 2026-11-20
+
+Thêm 6 test class cùng package, 1–1 production class: [ChapterControllerTest](../backend/src/test/java/com/wedu/exam_creation/chapter/controller/ChapterControllerTest.java), [ChapterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterUsecaseTest.java), [ChapterServiceTest](../backend/src/test/java/com/wedu/exam_creation/chapter/usecase/ChapterServiceTest.java), [ChapterRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImplTest.java), [ChapterDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/dto/mapper/ChapterDTOMapperTest.java), [ChapterMapperTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/mapper/ChapterMapperTest.java). Tổng58 methods/63 cases, targeted63/63 đạt. Full802 cases còn3 lỗi ngoài chapter và7 skipped; không đổi production symbols/routes/DTO/schema. [Inventory chi tiết, rules và validation](chapter-test-rule-alignment-report.md).
+
 ## Shared ADMIN UI và transaction styling — 2026-11-19
 
 Thêm [AdminPageHeader](../frontend/presentation/components/Admin/AdminPageHeader.tsx) cho transactions/users/ai; thêm [AdminPagination](../frontend/presentation/components/Admin/AdminPagination.tsx) cho transactions/users; thêm transactionStatusClass trong [transactionDisplay](../frontend/presentation/utils/transactionDisplay.ts). Cập nhật TransactionSearchPage, TransactionFilters, TransactionTable và hai page tham chiếu để dùng component chung. Không đổi route/DTO/model; [inventory từng file và validation](current-status.md#đồng-bộ-style-quản-lý-giao-dịch-với-admin--2026-11-19).
