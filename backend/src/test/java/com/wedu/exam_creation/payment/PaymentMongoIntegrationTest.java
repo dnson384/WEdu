@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.mapstruct.factory.Mappers;
@@ -41,7 +42,8 @@ import org.springframework.data.mongodb.core.query.Query;
 @EnabledIfEnvironmentVariable(named = "WEDU_PAYMENT_TEST_MONGO_URI", matches = ".+")
 class PaymentMongoIntegrationTest {
     @Test
-    void migrationEmbedsSplitCollectionAndRemovesOnlyVerifiedSource() {
+    @DisplayName("trả về số đơn di trú và xóa bản giao dịch tách khi đã xác minh bản nhúng")
+    void test_migrate_001() {
         String id = "e".repeat(64);
         mongo.getCollection("PaymentOrders")
                 .insertOne(
@@ -70,7 +72,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void migrationPreservesProviderDataWithoutRefundAccountsAndCanRunTwice() {
+    @DisplayName("trả về dữ liệu giao dịch được giữ nguyên khi chạy di trú hai lần")
+    void test_migrate_002() {
         String userId = "507f1f77bcf86cd799439011";
         String id = "d".repeat(64);
         java.util.Date paidAt = java.util.Date.from(Instant.now().minusSeconds(60));
@@ -251,7 +254,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void parallelCreatesShareOneOrderAndDeletionNeverReusesProviderReference() throws Exception {
+    @DisplayName("trả về một đơn cho các yêu cầu song song và mã mới khi xóa đơn cũ")
+    void test_create_003() throws Exception {
         CommonUserResponseAllDTO teacher = new CommonUserResponseAllDTO();
         teacher.setId("507f1f77bcf86cd799439011");
         teacher.setEmail("teacher@example.com");
@@ -281,7 +285,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void returnAndIpnShareOneAtomicEntitlementUpdate() throws Exception {
+    @DisplayName("trả về một lần cấp PLUS khi Return và IPN cùng xác nhận một đơn")
+    void test_confirmReturn_004() throws Exception {
         Map<String, String> values = order("c".repeat(64));
         PaymentDTO.ReturnConfirmation request = new PaymentDTO.ReturnConfirmation();
         request.setParameters(
@@ -333,7 +338,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void simultaneousDuplicateIpnAddsOnlyOnePeriod() throws Exception {
+    @DisplayName("trả về một kỳ PLUS khi hai IPN trùng nhau xử lý đồng thời")
+    void test_ipn_005() throws Exception {
         Map<String, String> values = order("a".repeat(64));
         parallel(values, values);
         assertThat(
@@ -344,7 +350,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void twoPaidOrdersAccumulateWithoutLostUpdate() throws Exception {
+    @DisplayName("trả về tổng thời hạn của cả hai kỳ khi hai đơn thành công cùng lúc")
+    void test_ipn_006() throws Exception {
         parallel(order("a".repeat(64)), order("b".repeat(64)));
         assertThat(
                         mongo.findById("507f1f77bcf86cd799439011", UserDocument.class)
@@ -354,7 +361,8 @@ class PaymentMongoIntegrationTest {
     }
 
     @Test
-    void outboxFailureRollsBackOrderAndEntitlement() {
+    @DisplayName("trả về mã lỗi retry và rollback khi không ghi được email vào outbox")
+    void test_ipn_007() {
         Map<String, String> values = order("a".repeat(64));
         PaymentEmailDocument collision = new PaymentEmailDocument();
         collision.setId("a".repeat(64) + ":SUCCEEDED");

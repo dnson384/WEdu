@@ -1,6 +1,7 @@
 package com.wedu.exam_creation.payment.infrastructure;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
@@ -12,9 +13,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wedu.exam_creation.payment.domain.entity.PaymentOrderEntity;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -23,7 +31,160 @@ import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-class VnpayQueryGatewayTest {
+class VnpayGatewayTest {
+    VnpayProperties properties() {
+        VnpayProperties p = new VnpayProperties();
+        p.setEnabled(true);
+        p.setTmnCode("TESTCODE");
+        p.setHashSecret("test-only");
+        p.setReturnUrl("https://example.com/me/bill");
+        return p;
+    }
+
+    @Test
+    @DisplayName("trả về chữ ký HMAC đúng chuẩn khi dùng vector RFC 4231")
+    void test_sign_001() {
+        VnpayProperties p = properties();
+        p.setHashSecret("\u000b".repeat(20));
+        assertThat(new VnpayGateway(p).sign("Hi There"))
+                .isEqualTo(
+                        "87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cde"
+                                + "daa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854");
+    }
+
+    @Test
+    @DisplayName(
+            "trả về chuỗi tham số đã sắp xếp và mã hóa khi dữ liệu có chữ ký và trường không dùng")
+    void test_canonical_002() {
+        Map<String, String> values =
+                Map.of(
+                        "vnp_Z",
+                        "A B+C",
+                        "vnp_A",
+                        "100",
+                        "vnp_SecureHash",
+                        "ignore",
+                        "vnp_SecureHashType",
+                        "SHA512",
+                        "vnp_Empty",
+                        "",
+                        "untrusted",
+                        "x");
+        assertThat(VnpayGateway.canonical(values)).isEqualTo("vnp_A=100&vnp_Z=A+B%2BC");
+    }
+
+    PaymentOrderEntity order() {
+        PaymentOrderEntity order = new PaymentOrderEntity();
+        order.setId("a".repeat(64));
+        order.setAmount(20000);
+        order.setCreatedAt(Instant.parse("2026-11-03T00:00:00Z"));
+        order.setExpiresAt(Instant.parse("2026-11-03T00:05:00Z"));
+        return order;
+    }
+
+    Map<String, String> checkoutValues(String url) {
+        Map<String, String> values = new HashMap<>();
+        for (String pair : URI.create(url).getRawQuery().split("&")) {
+            String[] parts = pair.split("=", 2);
+            values.put(
+                    URLDecoder.decode(parts[0], StandardCharsets.UTF_8),
+                    URLDecoder.decode(parts[1], StandardCharsets.UTF_8));
+        }
+        return values;
+    }
+
+    @Test
+    @DisplayName("trả về URL đúng số tiền, ngày và URL quay về khi không cấu hình ngân hàng")
+    void test_paymentUrl_003() {
+        VnpayGateway gateway = new VnpayGateway(properties());
+        String url = gateway.paymentUrl(order(), "127.0.0.1");
+        assertThat(url)
+                .contains(
+                        "vnp_Amount=2000000",
+                        "vnp_CreateDate=20261103070000",
+                        "vnp_ExpireDate=20261103070500",
+                        "vnp_ReturnUrl=https%3A%2F%2Fexample.com%2Fme%2Fbill")
+                .doesNotContain("vnp_BankCode=");
+        assertThat(gateway.validIpn(checkoutValues(url))).isTrue();
+    }
+
+    @Test
+    @DisplayName("trả về URL có mã ngân hàng trong phần ký khi cấu hình kênh QR")
+    void test_paymentUrl_004() {
+        VnpayProperties p = properties();
+        p.setBankCode("VNPAYQR");
+        VnpayGateway gateway = new VnpayGateway(p);
+        String url = gateway.paymentUrl(order(), "127.0.0.1");
+        assertThat(url).contains("vnp_BankCode=VNPAYQR");
+        Map<String, String> values = checkoutValues(url);
+        assertThat(gateway.validIpn(values)).isTrue();
+        values.put("vnp_BankCode", "NCB");
+        assertThat(gateway.validIpn(values)).isFalse();
+    }
+
+    @Test
+    @DisplayName("trả về URL bỏ mã ngân hàng khi cấu hình giá trị rỗng hoặc chỉ có khoảng trắng")
+    void test_paymentUrl_005() {
+        VnpayProperties p = properties();
+        for (String bankCode : new String[] {null, "", "   "}) {
+            p.setBankCode(bankCode);
+            VnpayGateway gateway = new VnpayGateway(p);
+            String url = gateway.paymentUrl(order(), "127.0.0.1");
+            assertThat(p.available()).isTrue();
+            assertThat(url).doesNotContain("vnp_BankCode=");
+            assertThat(gateway.validIpn(checkoutValues(url))).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName(
+            "trả về true khi chữ ký phản hồi đúng chuỗi các trường phân cách bằng dấu gạch đứng")
+    void test_validQuery_006() {
+        VnpayGateway gateway = new VnpayGateway(properties());
+        Map<String, String> response =
+                new HashMap<>(
+                        Map.of(
+                                "vnp_ResponseId",
+                                "response1",
+                                "vnp_Command",
+                                "querydr",
+                                "vnp_ResponseCode",
+                                "00",
+                                "vnp_Message",
+                                "OK",
+                                "vnp_TmnCode",
+                                "TESTCODE",
+                                "vnp_TxnRef",
+                                "order1",
+                                "vnp_Amount",
+                                "2000000",
+                                "vnp_TransactionNo",
+                                "123",
+                                "vnp_TransactionType",
+                                "01",
+                                "vnp_TransactionStatus",
+                                "00"));
+        response.put(
+                "vnp_SecureHash",
+                gateway.sign("response1|querydr|00|OK|TESTCODE|order1|2000000|||123|01|00|||"));
+        assertThat(gateway.validQuery(response)).isTrue();
+        response.put("vnp_Amount", "1");
+        assertThat(gateway.validQuery(response)).isFalse();
+    }
+
+    @Test
+    @DisplayName("trả về false khi chữ ký sai định dạng hoặc merchant bị tắt")
+    void test_validIpn_007() {
+        VnpayProperties p = properties();
+        VnpayGateway gateway = new VnpayGateway(p);
+        assertThat(gateway.validIpn(Map.of("vnp_SecureHash", "zz"))).isFalse();
+        Map<String, String> response = new HashMap<>(Map.of("vnp_TmnCode", "TESTCODE"));
+        response.put("vnp_SecureHash", gateway.sign(VnpayGateway.canonical(response)));
+        assertThat(gateway.validIpn(response)).isTrue();
+        p.setEnabled(false);
+        assertThat(gateway.validIpn(response)).isFalse();
+    }
+
     MockRestServiceServer server;
     VnpayGateway gateway;
     PaymentOrderEntity order;
@@ -108,7 +269,9 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void sendsSignedQueryUsingOriginalCheckoutDateAndAcceptsSignedResult() throws Exception {
+    @DisplayName(
+            "trả về kết quả đã xác minh khi query dùng ngày checkout gốc và phản hồi có chữ ký hợp lệ")
+    void test_query_008() throws Exception {
         server.expect(requestTo("https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(
@@ -150,7 +313,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void queryChecksumMatchesIndependentFixedVector() throws Exception {
+    @DisplayName("trả về request ký đúng checksum khi dùng vector cố định độc lập")
+    void test_query_009() throws Exception {
         UUID requestId = UUID.fromString("01234567-89ab-cdef-0123-456789abcdef");
         Instant requestTime = Instant.parse("2026-11-18T14:45:24Z");
         // Expected HMAC-SHA512 calculated independently with .NET using the dummy test key.
@@ -192,7 +356,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void signsRawUtf8DataAgainstIndependentFixedVector() {
+    @DisplayName("trả về chữ ký đúng vector kiểm tra khi dữ liệu đầu vào là UTF-8")
+    void test_sign_010() {
         // Includes Vietnamese text, spaces and URL-sensitive characters without encoding them.
         assertThat(gateway.sign("Yêu cầu tra cứu WEdu + & %"))
                 .isEqualTo(
@@ -201,7 +366,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void unsignedProviderErrorIsDiagnosticOnlyAndDoesNotLeakResponse() {
+    @DisplayName("trả về lỗi chẩn đoán đã rút gọn khi VNPay trả mã lỗi thiếu chữ ký")
+    void test_query_011() {
         server.expect(anything())
                 .andRespond(
                         withSuccess(
@@ -229,7 +395,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void tamperedSuccessIsRejected() throws Exception {
+    @DisplayName("trả về lỗi xác minh khi dữ liệu phản hồi thành công không khớp chữ ký")
+    void test_query_012() throws Exception {
         Map<String, String> result = signedResponse();
         result.put("vnp_Amount", "1");
         server.expect(anything())
@@ -243,7 +410,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void httpFailureIsDistinguishedWithoutLoggingBody() {
+    @DisplayName("trả về lỗi HTTP không lộ response body khi máy chủ trả lỗi")
+    void test_query_013() {
         server.expect(anything()).andRespond(withServerError().body("dummy-secret-not-for-logs"));
         assertThatThrownBy(() -> gateway.query(order))
                 .isInstanceOfSatisfying(
@@ -257,7 +425,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void networkFailureIsDistinguishedWithoutLoggingExceptionMessage() {
+    @DisplayName("trả về lỗi kết nối không lộ chi tiết riêng khi HTTP client timeout")
+    void test_query_014() {
         server.expect(anything())
                 .andRespond(withException(new SocketTimeoutException("dummy-secret-not-for-logs")));
         assertThatThrownBy(() -> gateway.query(order))
@@ -271,7 +440,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void malformedResponseIsDistinguished() {
+    @DisplayName("trả về lỗi định dạng khi phản hồi không phải JSON hợp lệ")
+    void test_query_015() {
         server.expect(anything()).andRespond(withSuccess("not-json", MediaType.APPLICATION_JSON));
         assertThatThrownBy(() -> gateway.query(order))
                 .isInstanceOfSatisfying(
@@ -281,7 +451,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void emptyResponseIsDistinguished() {
+    @DisplayName("trả về lỗi phản hồi rỗng khi máy chủ không trả body")
+    void test_query_016() {
         server.expect(anything()).andRespond(withNoContent());
         assertThatThrownBy(() -> gateway.query(order))
                 .isInstanceOfSatisfying(
@@ -291,7 +462,8 @@ class VnpayQueryGatewayTest {
     }
 
     @Test
-    void untrustedDiagnosticCodeIsSanitized() {
+    @DisplayName("trả về mã chẩn đoán an toàn khi trường báo lỗi của provider không hợp lệ")
+    void test_query_017() {
         server.expect(anything())
                 .andRespond(
                         withSuccess(

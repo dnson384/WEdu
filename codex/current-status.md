@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package payment — 2026-11-21
+
+Đưa unit test payment và test quyền PLUS liên quan về tên/package của lớp production. Gộp các ca checkout và query trong `VnpayGatewayTest`, tách các ca của repository, mapper, document, index và migration về lớp tương ứng. Giữ `PaymentMongoIntegrationTest` là bộ tích hợp opt-in. Các ca mới kiểm tra cấu hình VNPay, trạng thái cần xử lý thủ công, luồng di trú, tác vụ hết hạn, truy vấn đơn và ghi outbox. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check theo phạm vi và audit 117 test methods trong 20 lớp đạt. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài. Test use case cố định thời gian; test chữ ký dùng dữ liệu giả và query VNPay dùng HTTP giả lập. Bộ tích hợp MongoDB giữ database riêng theo URI opt-in.
+
+Nhóm payment và test quyền PLUS liên quan có 126 ca, với 119 đạt và 7 ca tích hợp MongoDB skipped vì thiếu `WEDU_PAYMENT_TEST_MONGO_URI`. `mvn -q clean test` chạy 1.185 ca, với 1.178 đạt, 7 skipped, 0 failures và 0 errors.
+
 ## Bổ sung test package passwordResetToken — 2026-11-21
 
 Thêm 4 lớp test cùng package với production, gồm 24 test methods và 26 ca. Kiểm tra tạo và lưu hash token hạn 15 phút, gửi mail, xác nhận mật khẩu, từ chối token hết hạn hoặc không tìm thấy và thứ tự cập nhật mật khẩu/đánh dấu đã dùng. Service giữ kết quả và lỗi từ use case. Repository kiểm tra điều kiện theo userId, tokenHash và used; mapper kiểm tra các trường và nguồn null. [Danh mục test](source-catalog.md#backend-tests).
@@ -142,7 +150,7 @@ QuestionService đọc lại quyền PLUS/active qua UserService trước khi g�
 
 [VnpayGateway.query](../backend/src/main/java/com/wedu/exam_creation/payment/infrastructure/VnpayGateway.java) tạo biến local `checksumData` bằng đúng thứ tự `RequestId|Version|Command|TmnCode|TxnRef|TransactionDate|CreateDate|IpAddr|OrderInfo`, dùng raw values, không URL-encode hoặc thêm dấu phân cách cuối. `sign` giữ HMAC-SHA512, UTF-8 cho key/data và lowercase hex. `TransactionNo` tùy chọn vẫn gửi trong JSON nhưng không nằm trong checksum querydr theo đặc tả. Không đổi API/schema, ký checkout/refund, xác minh phản hồi hay trạng thái nghiệp vụ.
 
-[VnpayQueryGatewayTest](../backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayQueryGatewayTest.java) thêm fixed-vector HMAC-SHA512 tính độc lập bằng .NET với dummy key: xác minh checksum trong JSON khi có/không có TransactionNo bằng UUID/thời gian cố định, và UTF-8 gồm tiếng Việt, khoảng trắng, ký tự `+ & %`. Source trước thay đổi vốn đã ghép cùng thứ tự; thay đổi làm rõ công thức và bổ sung bằng chứng kiểm thử độc lập, không chứng nhận nguyên nhân mã99 hoặc VNPay thực đã hoạt động.
+[VnpayQueryGatewayTest](../backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayGatewayTest.java) thêm fixed-vector HMAC-SHA512 tính độc lập bằng .NET với dummy key: xác minh checksum trong JSON khi có/không có TransactionNo bằng UUID/thời gian cố định, và UTF-8 gồm tiếng Việt, khoảng trắng, ký tự `+ & %`. Source trước thay đổi vốn đã ghép cùng thứ tự; thay đổi làm rõ công thức và bổ sung bằng chứng kiểm thử độc lập, không chứng nhận nguyên nhân mã99 hoặc VNPay thực đã hoạt động.
 
 Validation: Spotless apply/check đúng hai file Java đạt bằng Maven đã cài với cùng cấu hình repository; wrapper vẫn lỗi `Cannot index into a null array` trước khi Maven khởi động. Lệnh `mvn -q '-Dtest=VnpayQueryGatewayTest,VnpayGatewayTest,VnpayRefundGatewayTest,Payment*Test,Refund*Test,AdminTransaction*Test,PlusEntitlementTest' test` đạt: 163 tests, 153 passed, 10 Mongo integration skipped, 0 failures/errors; riêng VnpayQueryGatewayTest có11 tests đạt. Scoped diff whitespace đạt. Không chạy full suite hoặc gọi VNPay/Mongo/SMTP thật; không thay đổi credentials/config.
 
@@ -447,7 +455,7 @@ Validation backend: mvn -q test đạt 207 tests, 0 failures/errors, gồm 15 te
 
 ## Backend payment snapshot — 2026-11-05
 
-Implemented in source: teacher-only20k/30d purchases,5min new-order expiry, random provider references with separate idempotency hash, legacy-compatible lookup, signed checkout, verified IPN/querydr/authenticated Return, atomic PLUS/outbox, effective entitlement expiry, bounded email retries and safe503 query unavailability. [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [tests](../backend/src/test/java/com/wedu/exam_creation/payment/PaymentUsecaseTest.java).
+Implemented in source: teacher-only20k/30d purchases,5min new-order expiry, random provider references with separate idempotency hash, legacy-compatible lookup, signed checkout, verified IPN/querydr/authenticated Return, atomic PLUS/outbox, effective entitlement expiry, bounded email retries and safe503 query unavailability. [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [tests](../backend/src/test/java/com/wedu/exam_creation/payment/usecase/PaymentUsecaseTest.java).
 
 Validation 2026-11-05: payment/entitlement/gateway suite 64 passed, 5 Mongo integration tests skipped (no dedicated replica set). Full mvn -q test: 445 tests, 438 passed, 2 existing failures (AiUsageRepositoryImplTest.updatesOnlyExpectedRevisionAndAllowsClearingOneLimit; ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite), 5 skipped. No real VNPay/SMTP end-to-end certification.
 
