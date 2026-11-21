@@ -8,6 +8,14 @@ Spotless apply/check trong phạm vi common và 30/30 ca test riêng đạt. Mav
 
 `mvn -q clean test` trên nhánh tách từ `main` chạy 1.027 ca, với 1.017 đạt, 7 skipped và 3 lỗi có sẵn. `AiUsageRepositoryImplTest` kỳ vọng query phẳng trong khi MongoDB dùng `$and`, `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException` và `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 30 ca common đều đạt trong lượt chạy toàn bộ.
 
+## Chuẩn hóa test module AI — 2026-11-21
+
+Chuẩn hóa 6 lớp, 44 test methods theo quy tắc tên method, số thứ tự liên tục, `@DisplayName` tiếng Việt, kiểu Java tường minh và tên/package theo lớp production. Bổ sung các ca cho sinh câu hỏi thành công, JSON phản hồi lỗi, đọc/tạo cấu hình, validation quota/revision, trả danh sách model và contract thành công của API quản trị. Assertion cập nhật ngân sách kiểm tra cả ID lẫn revision trong `$and` của MongoDB, theo query hiện tại. [Danh mục test](source-catalog.md#quản-lý-usagebudget-ai--2026-11-01).
+
+Spotless apply/check trong phạm vi test AI đạt. Maven wrapper không khởi động, nên dùng Maven đã cài với cấu hình repository. Sáu lớp test AI đạt 70/70 ca. Test dùng HTTP giả lập, MockMvc, MongoTemplate mock và transaction manager giả.
+
+`mvn -q test` chạy 1.009 ca, với 1.000 đạt, 7 skipped, 1 failure có sẵn ở `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` và 1 error có sẵn ở `BackendApplicationTests.contextLoads` do thiếu `VNPAY_ENABLED`. Assertion query ngân sách AI đã đạt trong cả lượt chạy riêng và toàn bộ backend.
+
 ## Bổ sung test admin — 2026-11-20
 
 Rà soát lại theo testing rule: đã sửa số test bị reset theo production method thành dãy riêng xuyên suốt từng class: AdminControllerTest001–044, AdminUsecaseTest001–039. Giữ nguyên83 methods/105 cases và assertions. Scoped Spotless apply/check, audit số thứ tự/DisplayName và targeted tests105/105 đạt; wrapper vẫn lỗi khởi động nên dùng Maven cài sẵn cùng cấu hình repository. Không chạy lại full suite trong lượt chỉ đổi tên này; kết quả full suite dưới đây thuộc lượt trước. [Chi tiết rà soát](admin-test-rule-alignment-report.md#rà-soát-lại-và-chuẩn-hóa-số-thứ-tự--2026-11-20).
