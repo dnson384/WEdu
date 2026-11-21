@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Cấu hình smoke test backend — 2026-11-21
+
+`BackendApplicationTests.contextLoads` cấp cấu hình test riêng với `VNPAY_ENABLED=false` và kiểm tra binding của `VnpayProperties`. Mongo client và các bước index/migration phụ thuộc MongoDB lúc khởi động được mock trong smoke test. [BackendApplicationTests.java](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java).
+
+Spotless apply/check và `mvn -q "-Dtest=BackendApplicationTests" test` đạt. `mvn -q clean test` trên `backend/config` chạy 1.099 ca, với 1.091 đạt, 7 Mongo integration tests skipped và 1 failure có sẵn ở `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite`. Smoke test đạt trong lượt chạy toàn bộ.
+
 ## Chuẩn hóa và bổ sung test package moderator — 2026-11-21
 
 Gộp năm lớp MockMvc vào `ModeratorControllerTest`, chuẩn hóa `EditPendingQuestionUsecaseTest` và `ReviewPendingQuestionUsecaseTest`, thêm `ModeratorUsecaseTest`, `QuestionImageReferenceTest` và `StoredDocumentFileTest`. Tổng cộng 90 test methods và 146 ca, tăng 32 ca. Phạm vi bổ sung gồm danh sách tệp, import multipart, giới hạn bộ lọc, nhận diện S3 key và hợp đồng MultipartFile. Hai ca validation approve/reject kiểm ID null và review revision thiếu ở backend. Ca lookup riêng kiểm truyền `NotFoundException` từ QuestionService cho ID không khớp câu hỏi. Next.js vẫn chịu trách nhiệm kiểm định dạng ID 24 ký tự hex cho approve/reject. [Danh mục test](source-catalog.md#backend-tests).
