@@ -152,7 +152,7 @@ Inventory lượt này: 19 files frontend và 7 docs, tổng **26 files**. Khôn
 
 ## Quản lý usage/budget AI — 2026-11-01
 
-Đường dẫn service và hai test dùng constructor package-private đã đồng bộ với package `ai.usecase`. `AiUsageServiceTest` vẫn ở package test `ai.service` vì không cần truy cập package-private. Validation sau chuyển package và vấn đề assertion query ngoài phạm vi ở [current-status](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+Các lớp test AI hiện cùng tên và package với lớp production tương ứng. Kết quả chuẩn hóa và validation ở [current-status](current-status.md#chuẩn-hóa-test-module-ai--2026-11-21).
 
 Inventory AI đã đối chiếu các commit `66c3c92`, `54462e0`, `9c997a0`: 48 files application/tests/config và 9 docs, tổng 57 files; gồm cả hai file question được đồng bộ import sau khi chuyển package AI. Không bao gồm logs/build artifacts hoặc harness tạm ngoài repository. Các declarations/symbols được thêm nằm trong từng file dưới đây; các snapshot cũ phía sau không bao gồm feature này. [API](api-reference.md#quản-lý-usagebudget-ai--2026-11-01), [validation mới nhất](current-status.md#snapshot-main-sau-merge-ai-và-quản-lý-tài-khoản--2026-11-01).
 
@@ -178,12 +178,12 @@ Inventory AI đã đối chiếu các commit `66c3c92`, `54462e0`, `9c997a0`: 48
 | [backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java>) | Truyền nguyên lỗi hạn mức/availability, không bọc thành lỗi sinh lại chung. |
 | [backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java](<../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java>) | Đồng bộ import AIQuestionGenerationService sang package ai.usecase. |
 | [backend/src/main/resources/application.yml](<../backend/src/main/resources/application.yml>) | Thêm bảng giá cao điểm USD cho flash/v4-pro và pricing version; không đổi secrets. |
-| [backend/src/test/java/com/wedu/exam_creation/ai/controller/AiManagementControllerTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/controller/AiManagementControllerTest.java>) | 8 cases auth/roles/no-store/budget conflict/error code và từ chối quota/revision thập phân. |
-| [backend/src/test/java/com/wedu/exam_creation/ai/infrastructure/AiUsageRepositoryImplTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/infrastructure/AiUsageRepositoryImplTest.java>) | 6 cases default/initial race/CAS/clear/stale, aggregation filter/timezone và suspend-resume transaction. |
-| [backend/src/test/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationUsageTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationUsageTest.java>) | 4 cases usage trước parse, block trước HTTP, provider failure/no retry, empty request. |
-| [backend/src/test/java/com/wedu/exam_creation/ai/service/AiUsageServiceTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/service/AiUsageServiceTest.java>) | 14 cases decimal/cache/pricing snapshot, unknown usage, limits và fail-closed. |
+| [AiManagementControllerTest.java](../backend/src/test/java/com/wedu/exam_creation/ai/controller/AiManagementControllerTest.java) | 11 cases về quyền, no-store, payload thành công, conflict, mã lỗi và từ chối số thập phân. |
+| [AiUsageRepositoryImplTest.java](../backend/src/test/java/com/wedu/exam_creation/ai/infrastructure/repository/AiUsageRepositoryImplTest.java) | 8 cases về tạo/đọc/cập nhật ngân sách, conflict, aggregation theo múi giờ, danh sách model và transaction suspension. |
+| [AIQuestionGenerationServiceTest.java](../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationServiceTest.java) | 6 cases về giải mã câu hỏi, ghi usage, chặn trước HTTP, phản hồi lỗi/sai định dạng và yêu cầu rỗng. |
+| [AiUsageServiceTest.java](../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiUsageServiceTest.java) | 14 cases về độ chính xác, cache, bảng giá, usage chưa xác định và lỗi khi kiểm tra giới hạn. |
 | [backend/src/test/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceServiceTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/DeepSeekBalanceServiceTest.java>) | 2 cases TTL/throttle/stale fallback và failure ban đầu không bịa số dư. |
-| [backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecaseTest.java>) | 24 cases filter/ngày/tháng Việt Nam, 80/100%, balance và budget validation. |
+| [AiManagementUsecaseTest.java](../backend/src/test/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecaseTest.java) | 29 cases về ngày/tháng Việt Nam, ngưỡng 80/100%, số dư, đọc ngân sách và validation. |
 | [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java>) | Thêm 1 case lỗi budget giữ nguyên và không ghi/mất lượt sinh lại; không sửa failure cũ. |
 | [backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java>) | Đồng bộ import AIQuestionGenerationService sang package ai.usecase. |
 | [codex/api-reference.md](<../codex/api-reference.md>) | 4 backend + 4 BFF methods, payload DTO, validation và 429/503 codes. |
@@ -753,6 +753,9 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/common/exception` | [GlobalExceptionHandlerTest](../backend/src/test/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandlerTest.java) |
+| `com/wedu/exam_creation/common/util` | [EmailNormalizerTest](../backend/src/test/java/com/wedu/exam_creation/common/util/EmailNormalizerTest.java) |
+| `com/wedu/exam_creation/common/dto/user/mapper` | [UserCommonDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/common/dto/user/mapper/UserCommonDTOMapperTest.java) |
 | `com/wedu/exam_creation/draft/controller` | [DraftControllerTest](../backend/src/test/java/com/wedu/exam_creation/draft/controller/DraftControllerTest.java) |
 | `com/wedu/exam_creation/draft/usecase` | [DraftUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftUsecaseTest.java), [DraftServiceTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftServiceTest.java) |
 | `com/wedu/exam_creation/draft/usecase/util` | [DraftUtilTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/util/DraftUtilTest.java) |
