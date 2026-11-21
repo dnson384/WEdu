@@ -8,6 +8,14 @@ Spotless apply/check trong phạm vi mail và `mvn -q "-Dtest=MailServiceTest" c
 
 `mvn -q clean test` trên nhánh tách từ `main` chạy 1.060 ca, với 1.051 đạt, 7 skipped và hai lỗi có sẵn ngoài package mail. `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException`, còn `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 9 ca mail đều đạt trong lượt chạy toàn bộ.
 
+## Bổ sung test package importer — 2026-11-21
+
+Thêm 7 lớp test cùng package với production, gồm 25 test methods và 32 ca. `ImporterServiceTest` kiểm tra validation, thứ tự parse/lưu, mapping chương bài và câu hỏi, cùng lỗi từ các dependency. `PandocConverterTest` dùng ProcessBuilder và S3 mock để kiểm tra metadata, thống kê, placeholder, đường dẫn ảnh và dọn workspace khi thành công hoặc gặp lỗi. Năm test class cho các helper kiểm tra token AST, cấp heading và so sánh danh sách có phần tử trùng. Luồng import production giữ theo quyết định FROZEN. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi importer và targeted 32/32 ca đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài với cấu hình repository. Các ca dùng thư mục tạm, chưa chạy với Pandoc, MongoDB hay S3 thật.
+
+`mvn -q test` chạy 1.084 ca, với 1.075 đạt, 7 skipped và hai lỗi có sẵn ngoài importer. `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException` và `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 32 ca importer đều đạt trong lượt chạy toàn bộ.
+
 ## Chuẩn hóa và bổ sung test package config — 2026-11-21
 
 Đổi số hai test trong `SecurityConfigTest` từ 001–002 thành 004–005 để có một dãy liên tục trong class. Giữ các ca Google/JWT cũ và tăng kiểm tra callback hủy với state vừa cấp, header chống cache, binding thiếu/sai và route exchange công khai. Thêm bốn lớp test cùng package với production cho UTC/BCrypt, Jackson, Mongo transaction manager và cấu hình S3 client/presigner. Test dùng MockMvc, MongoDB factory mock và thông tin S3 giả để ký cục bộ. [Danh mục test](source-catalog.md#backend-tests).
