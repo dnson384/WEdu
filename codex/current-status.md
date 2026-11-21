@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package config — 2026-11-21
+
+Đổi số hai test trong `SecurityConfigTest` từ 001–002 thành 004–005 để có một dãy liên tục trong class. Giữ các ca Google/JWT cũ và tăng kiểm tra callback hủy với state vừa cấp, header chống cache, binding thiếu/sai và route exchange công khai. Thêm bốn lớp test cùng package với production cho UTC/BCrypt, Jackson, Mongo transaction manager và cấu hình S3 client/presigner. Test dùng MockMvc, MongoDB factory mock và thông tin S3 giả để ký cục bộ. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi config, audit 15 test methods và targeted 18/18 ca đều đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài với cấu hình repository.
+
+`mvn -q clean test` trên nhánh tách từ `main` chạy 1.010 ca, gồm 1.000 đạt, 7 skipped, 2 failures có sẵn ở `AiUsageRepositoryImplTest` và `ReviewPendingQuestionUsecaseTest`, cùng 1 error ở `BackendApplicationTests.contextLoads` do thiếu `VNPAY_ENABLED`. Cả 18 ca config đều đạt trong lượt chạy toàn bộ.
+
 ## Bổ sung test package common — 2026-11-21
 
 Thêm 3 lớp test cùng package với production, gồm 25 test methods và 30 ca. `GlobalExceptionHandlerTest` dùng MockMvc standalone để kiểm tra mã HTTP, body và header của cả 17 handler. `EmailNormalizerTest` kiểm tra chuẩn hóa chữ hoa/khoảng trắng và nhận diện email canonical, gồm null/rỗng. `UserCommonDTOMapperTest` chạy mapper MapStruct để kiểm tra dữ liệu hồ sơ công khai, hạn PLUS và đầu vào null. [Danh mục test](source-catalog.md#backend-tests).
