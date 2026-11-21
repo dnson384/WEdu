@@ -399,7 +399,7 @@ Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creatio
 | Frontend usecases | [ApproveQuestionFileUsecase](../frontend/usecases/moderator/ApproveQuestionFileUsecase.ts), [RejectQuestionFileUsecase](../frontend/usecases/moderator/RejectQuestionFileUsecase.ts) |
 | Next routes/helper | [approve POST](../frontend/app/api/moderator/question-files/approve/route.ts), [reject POST](../frontend/app/api/moderator/question-files/reject/route.ts), [reviewError/reviewHeaders](../frontend/app/api/moderator/question-files/reviewError.ts) |
 | UI | [useQuestionFileReview](../frontend/presentation/hooks/Moderator/useQuestionFileReview.ts) (ReviewComplete export), [QuestionFileReviewForm](../frontend/presentation/components/Moderator/QuestionFileReviewForm.tsx); QuestionFilePreviewDialog nối review; useQuestionFilePreview thêm localFile; useQuestionFiles thêm handleReviewComplete/previewNeedsCleanup |
-| Tests | [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java), [MailRejectionTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailRejectionTest.java); existing content/delete tests thêm mock MailService |
+| Tests | [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java), ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)); existing content/delete tests thêm mock MailService |
 
 [Contracts](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Không thêm model persistence hoặc đổi parser.
 
@@ -753,6 +753,7 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/mail/service` | [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java) |
 | `com/wedu/exam_creation/importer/service` | [ImporterServiceTest](../backend/src/test/java/com/wedu/exam_creation/importer/service/ImporterServiceTest.java) |
 | `com/wedu/exam_creation/importer/infrastructure/pandoc` | [PandocConverterTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverterTest.java) |
 | `com/wedu/exam_creation/importer/infrastructure/pandoc/helper` | [BulletListExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/BulletListExtractorTest.java), [HeaderExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/HeaderExtractorTest.java), [IsArrayEqualTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/IsArrayEqualTest.java), [ParaExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/ParaExtractorTest.java), [TitleExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/TitleExtractorTest.java) |
