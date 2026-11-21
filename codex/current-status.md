@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Cấu hình smoke test backend — 2026-11-21
+
+`BackendApplicationTests.contextLoads` cấp cấu hình test riêng với `VNPAY_ENABLED=false` và kiểm tra binding của `VnpayProperties`. Mongo client và các bước index/migration phụ thuộc MongoDB lúc khởi động được mock trong smoke test. [BackendApplicationTests.java](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java).
+
+Spotless apply/check và `mvn -q "-Dtest=BackendApplicationTests" test` đạt. `mvn -q clean test` trên `backend/config` chạy 1.099 ca, với 1.091 đạt, 7 Mongo integration tests skipped và 1 failure có sẵn ở `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite`. Smoke test đạt trong lượt chạy toàn bộ.
+
 ## Bổ sung test package notification — 2026-11-21
 
 Thêm `TelegramNotificationServiceTest` cùng package với production, gồm 6 test methods và 7 ca. MockRestServiceServer kiểm tra POST tới đúng bot, chat ID, nội dung Markdown, đầu vào rỗng và lỗi HTTP 500 ở cả hai phương thức. Dùng token giả và HTTP giả lập. [Danh mục test](source-catalog.md#backend-tests).
