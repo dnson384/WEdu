@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.payment;
+package com.wedu.exam_creation.payment.usecase;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -7,10 +7,10 @@ import com.wedu.exam_creation.common.exception.BadRequestException;
 import com.wedu.exam_creation.payment.domain.entity.PaymentOrderEntity;
 import com.wedu.exam_creation.payment.domain.repository.IPaymentRepository;
 import com.wedu.exam_creation.payment.dto.AdminTransactionDTO;
-import com.wedu.exam_creation.payment.usecase.AdminTransactionUsecase;
 import java.time.Instant;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class AdminTransactionUsecaseTest {
@@ -32,7 +32,9 @@ class AdminTransactionUsecaseTest {
     }
 
     @Test
-    void filtersUseInclusiveVietnamDaysAndFixedPageSize() {
+    @DisplayName(
+            "trả về trang kích thước cố định khi lọc khoảng ngày bao gồm hai đầu theo giờ Việt Nam")
+    void test_search_001() {
         Instant start = Instant.parse("2026-11-07T17:00:00Z");
         Instant end = Instant.parse("2026-11-08T17:00:00Z");
         when(repository.countTransactions("mail", "PENDING", start, end)).thenReturn(11L);
@@ -46,7 +48,8 @@ class AdminTransactionUsecaseTest {
     }
 
     @Test
-    void invalidFiltersFailBeforeReadingDatabase() {
+    @DisplayName("trả về BadRequestException khi tiêu chí lọc không hợp lệ")
+    void test_search_002() {
         assertThatThrownBy(() -> usecase.search("", "BAD", "", "", 0))
                 .isInstanceOf(BadRequestException.class);
         assertThatThrownBy(() -> usecase.search("", "", "2026-02-30", "", 0))
@@ -61,7 +64,8 @@ class AdminTransactionUsecaseTest {
     }
 
     @Test
-    void returnsStoredSuccessfulPaymentWithoutProviderConfigurationOrWrites() {
+    @DisplayName("trả về giao dịch thành công đã lưu khi không có cấu hình VNPay")
+    void test_search_003() {
         order.setStatus("SUCCEEDED");
         order.getVnpayTransaction().setTransactionNo("123");
         when(repository.countTransactions(id, "SUCCEEDED", null, null)).thenReturn(1L);

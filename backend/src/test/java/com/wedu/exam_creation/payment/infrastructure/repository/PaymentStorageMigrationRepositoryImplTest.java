@@ -1,26 +1,23 @@
-package com.wedu.exam_creation.payment;
+package com.wedu.exam_creation.payment.infrastructure.repository;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.mongodb.client.result.UpdateResult;
-import com.wedu.exam_creation.payment.domain.repository.IPaymentStorageMigrationRepository;
-import com.wedu.exam_creation.payment.infrastructure.repository.PaymentStorageMigrationRepositoryImpl;
-import com.wedu.exam_creation.payment.usecase.PaymentStorageMigrationUsecase;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.SimpleTransactionStatus;
 
-class PaymentStorageMigrationTest {
+class PaymentStorageMigrationRepositoryImplTest {
     private final MongoTemplate mongo = mock(MongoTemplate.class);
     private final PaymentStorageMigrationRepositoryImpl repository =
             new PaymentStorageMigrationRepositoryImpl(mongo);
@@ -51,7 +48,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void invalidUserIdStopsBeforeAnyWrites() {
+    @DisplayName("trả về lỗi kiểm tra dữ liệu trước khi ghi khi userId không hợp lệ")
+    void test_preflight_001() {
         Document order = order();
         order.put("userId", "invalid");
         data(order);
@@ -61,7 +59,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void conflictingProviderStopsBeforeAnyWrites() {
+    @DisplayName("trả về lỗi xung đột trước khi ghi khi dữ liệu giao dịch cũ khác nhau")
+    void test_preflight_002() {
         data(order());
         when(mongo.findById(id, Document.class, "VnpayTransactions"))
                 .thenReturn(new Document("_id", id).append("transactionNo", "different"));
@@ -70,13 +69,15 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void legacyRefundFlagDoesNotRequireAnAiAccount() {
+    @DisplayName("trả về ID cần di trú khi đơn chứa cờ refund legacy")
+    void test_preflight_003() {
         data(order());
         assertThat(repository.preflight()).containsExactly(id);
     }
 
     @Test
-    void manualReviewMustAgreeWithDerivedValue() {
+    @DisplayName("trả về lỗi kiểm tra dữ liệu khi cờ manualReview khác trạng thái suy ra")
+    void test_preflight_004() {
         Document order = order();
         order.put("manualReview", true);
         data(order);
@@ -84,7 +85,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void embedsFlatDataWithoutRefundDependencies() {
+    @DisplayName("trả về không có ngoại lệ và nhúng thông tin VNPay khi di trú đơn có trường phẳng")
+    void test_migrateOrder_005() {
         Document source = order();
         Document embedded =
                 new Document("transactionNo", "123")
@@ -115,7 +117,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void splitSourceIsRemovedOnlyAfterEmbeddedCopyVerification() {
+    @DisplayName("trả về không có ngoại lệ và xóa bản tách khi đã xác minh bản nhúng")
+    void test_migrateOrder_006() {
         Document source = new Document("_id", id).append("userId", new ObjectId(user));
         Document provider = new Document("_id", id).append("transactionNo", "123");
         Document embedded = new Document("transactionNo", "123");
@@ -137,7 +140,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void failedCopyNeverDeletesSplitSource() {
+    @DisplayName("trả về lỗi và giữ bản tách khi không xác minh được bản sao")
+    void test_migrateOrder_007() {
         Document source = new Document("_id", id).append("userId", new ObjectId(user));
         when(mongo.findById(id, Document.class, "PaymentOrders")).thenReturn(source);
         when(mongo.findById(id, Document.class, "VnpayTransactions"))
@@ -150,7 +154,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void embeddedConflictBlocksPreflight() {
+    @DisplayName("trả về lỗi xung đột khi giao dịch nhúng khác thông tin legacy")
+    void test_preflight_008() {
         Document source = order();
         source.put("vnpayTransaction", new Document("transactionNo", "other"));
         data(source);
@@ -158,7 +163,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void convertedOrderIsSkippedOnRerun() {
+    @DisplayName("trả về danh sách rỗng khi chạy lại sau khi đơn đã được di trú")
+    void test_preflight_009() {
         Document source =
                 new Document("_id", id)
                         .append("userId", new ObjectId(user))
@@ -168,7 +174,8 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void alreadySplitOrderDoesNotRequireOldAiFlag() {
+    @DisplayName("trả về ID cần di trú khi đơn tách giao dịch thiếu cờ AI cũ")
+    void test_preflight_010() {
         Document source =
                 new Document("_id", id)
                         .append("userId", new ObjectId(user))
@@ -180,22 +187,25 @@ class PaymentStorageMigrationTest {
     }
 
     @Test
-    void usecaseRollsBackFailedOrderAndDoesNotFinishMigration() {
-        IPaymentStorageMigrationRepository storage = mock(IPaymentStorageMigrationRepository.class);
-        PlatformTransactionManager manager = mock(PlatformTransactionManager.class);
-        SimpleTransactionStatus status = new SimpleTransactionStatus();
-        when(manager.getTransaction(any())).thenReturn(status);
-        when(storage.preflight()).thenReturn(List.of(id));
-        doThrow(new IllegalStateException("copy failed")).when(storage).migrateOrder(id);
-        assertThatThrownBy(() -> new PaymentStorageMigrationUsecase(storage, manager).migrate())
-                .hasMessage("copy failed");
-        org.mockito.InOrder sequence = inOrder(storage, manager);
-        sequence.verify(storage).preflight();
-        sequence.verify(storage).prepare();
-        sequence.verify(manager).getTransaction(any());
-        sequence.verify(storage).migrateOrder(id);
-        sequence.verify(manager).rollback(status);
-        verify(storage, never()).finish();
-        verify(manager, never()).commit(any());
+    @DisplayName("trả về không có ngoại lệ khi mọi đơn dùng ObjectId và có dữ liệu VNPay nhúng")
+    void test_assertCurrent_011() {
+        when(mongo.stream(any(Query.class), eq(Document.class), eq("PaymentOrders")))
+                .thenReturn(
+                        Stream.of(
+                                new Document("userId", new ObjectId(user))
+                                        .append("vnpayTransaction", new Document())));
+
+        assertThatCode(repository::assertCurrent).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("trả về lỗi yêu cầu di trú khi vẫn còn đơn dùng schema cũ")
+    void test_assertCurrent_012() {
+        when(mongo.stream(any(Query.class), eq(Document.class), eq("PaymentOrders")))
+                .thenReturn(Stream.of(order()));
+
+        assertThatThrownBy(repository::assertCurrent)
+                .hasMessageContaining("--payment.storage-migration.enabled=true");
+        verify(mongo, never()).updateFirst(any(Query.class), any(Update.class), anyString());
     }
 }

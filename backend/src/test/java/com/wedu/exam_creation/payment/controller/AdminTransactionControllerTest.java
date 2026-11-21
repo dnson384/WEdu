@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.payment;
+package com.wedu.exam_creation.payment.controller;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.config.SecurityConfig;
-import com.wedu.exam_creation.payment.controller.AdminTransactionController;
 import com.wedu.exam_creation.payment.dto.AdminTransactionDTO;
 import com.wedu.exam_creation.payment.usecase.AdminTransactionUsecase;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
@@ -16,6 +15,7 @@ import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetail
 import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import com.wedu.exam_creation.security.infrastructure.service.*;
 import java.util.List;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -46,7 +46,8 @@ class AdminTransactionControllerTest {
     }
 
     @Test
-    void adminCanReadLocalListWithPrivateNoStore() throws Exception {
+    @DisplayName("trả về HTTP 200 và private no-store khi ADMIN tra cứu giao dịch")
+    void test_search_001() throws Exception {
         authenticate("ROLE_ADMIN");
         when(usecase.search("", "", "", "", 0))
                 .thenReturn(new AdminTransactionDTO.Page(List.of(), 0, 10, 0, 0));
@@ -57,7 +58,8 @@ class AdminTransactionControllerTest {
     }
 
     @Test
-    void otherRolesCannotList() throws Exception {
+    @DisplayName("trả về HTTP 403 khi vai trò khác ADMIN tra cứu giao dịch")
+    void test_search_002() throws Exception {
         for (String role : List.of("ROLE_TEACHER", "ROLE_MODERATOR")) {
             authenticate(role);
             mvc.perform(get("/admin/transactions").header("Authorization", "Bearer token"))
@@ -67,7 +69,8 @@ class AdminTransactionControllerTest {
     }
 
     @Test
-    void anonymousCannotList() throws Exception {
+    @DisplayName("trả về lỗi xác thực khi tra cứu giao dịch mà thiếu token")
+    void test_search_003() throws Exception {
         mvc.perform(get("/admin/transactions")).andExpect(status().is4xxClientError());
         verifyNoInteractions(usecase);
     }

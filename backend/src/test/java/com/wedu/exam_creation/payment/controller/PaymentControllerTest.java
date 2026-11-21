@@ -1,4 +1,4 @@
-package com.wedu.exam_creation.payment;
+package com.wedu.exam_creation.payment.controller;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -8,7 +8,6 @@ import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.ServiceUnavailableException;
 import com.wedu.exam_creation.config.SecurityConfig;
-import com.wedu.exam_creation.payment.controller.PaymentController;
 import com.wedu.exam_creation.payment.dto.PaymentDTO;
 import com.wedu.exam_creation.payment.usecase.PaymentUsecase;
 import com.wedu.exam_creation.security.infrastructure.filter.JwtAuthenticationFilter;
@@ -17,6 +16,7 @@ import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetail
 import com.wedu.exam_creation.security.infrastructure.provider.JwtTokenProvider;
 import com.wedu.exam_creation.security.infrastructure.service.*;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -47,7 +47,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void callbackIsPublicAndReturnsProtocolAcknowledgement() throws Exception {
+    @DisplayName("trả về mã xác nhận đúng giao thức khi VNPay gọi callback công khai")
+    void test_ipn_001() throws Exception {
         when(payments.ipn(any()))
                 .thenReturn(Map.of("RspCode", "97", "Message", "Invalid signature"));
         mvc.perform(
@@ -63,7 +64,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void duplicateCallbackParametersAreRejectedBeforeUsecase() throws Exception {
+    @DisplayName("trả về mã lỗi đầu vào khi callback chứa tham số trùng")
+    void test_ipn_002() throws Exception {
         mvc.perform(
                         get("/payment/vnpay/ipn")
                                 .servletPath("/payment/vnpay/ipn")
@@ -74,7 +76,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void teacherCanReadPlan() throws Exception {
+    @DisplayName("trả về gói PLUS khi giáo viên đã xác thực đọc thông tin gói")
+    void test_plan_003() throws Exception {
         authenticate("ROLE_TEACHER", true);
         when(payments.plan()).thenReturn(new PaymentDTO.Plan(20000, "VND", 30, true));
         mvc.perform(get("/payment/plan").header("Authorization", "Bearer token"))
@@ -83,7 +86,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void moderatorAndAdminCannotCreateOrders() throws Exception {
+    @DisplayName("trả về HTTP 403 khi moderator hoặc admin tạo đơn")
+    void test_create_004() throws Exception {
         for (String role : new String[] {"ROLE_ADMIN", "ROLE_MODERATOR"}) {
             authenticate(role, true);
             mvc.perform(
@@ -96,7 +100,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void lockedTeacherCannotCreateOrders() throws Exception {
+    @DisplayName("trả về HTTP 403 khi giáo viên đã bị khóa tạo đơn")
+    void test_create_005() throws Exception {
         authenticate("ROLE_TEACHER", false);
         mvc.perform(
                         post("/payment/orders")
@@ -107,14 +112,16 @@ class PaymentControllerTest {
     }
 
     @Test
-    void missingAuthenticationCannotReadOrder() throws Exception {
+    @DisplayName("trả về lỗi xác thực khi đọc đơn mà thiếu thông tin đăng nhập")
+    void test_get_006() throws Exception {
         mvc.perform(get("/payment/orders/" + "a".repeat(64)))
                 .andExpect(status().is4xxClientError());
         verifyNoInteractions(payments);
     }
 
     @Test
-    void authenticatedTeacherCanSubmitReturnToOwnedOrderUsecase() throws Exception {
+    @DisplayName("trả về đơn thuộc người gọi khi giáo viên gửi Return đã xác thực")
+    void test_confirmReturn_007() throws Exception {
         authenticate("ROLE_TEACHER", true);
         when(payments.confirmReturn(eq("teacher"), eq("a".repeat(64)), any(), anyString()))
                 .thenReturn(
@@ -137,7 +144,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void returnEndpointRequiresAuthenticationAndTeacherRole() throws Exception {
+    @DisplayName("trả về lỗi xác thực hoặc HTTP 403 khi người gọi Return thiếu quyền giáo viên")
+    void test_confirmReturn_008() throws Exception {
         String path = "/payment/orders/" + "a".repeat(64) + "/return";
         mvc.perform(post(path).contentType("application/json").content("{\"parameters\":[]}"))
                 .andExpect(status().is4xxClientError());
@@ -152,7 +160,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    void unavailableVerificationReturns503AndRetryAfter() throws Exception {
+    @DisplayName("trả về HTTP 503 với Retry-After khi xác minh giao dịch chưa khả dụng")
+    void test_verify_009() throws Exception {
         authenticate("ROLE_TEACHER", true);
         when(payments.verify("teacher", "a".repeat(64), "127.0.0.1"))
                 .thenThrow(new ServiceUnavailableException("Đơn đang chờ xác nhận"));
