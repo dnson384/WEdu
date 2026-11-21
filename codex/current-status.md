@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package mail — 2026-11-21
+
+Thay `MailRejectionTest` bằng `MailServiceTest` cùng package với production. Giữ ca email từ chối gửi UTF-8 dưới dạng văn bản thuần và bổ sung ca OTP, thanh toán, đặt lại mật khẩu HTML, địa chỉ không hợp lệ và lỗi vận chuyển từ JavaMailSender. Cả 9 methods dùng kiểu tường minh, số thứ tự liên tục và `@DisplayName` tiếng Việt. Test tạo MIME message cục bộ với mail sender mock. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi mail và `mvn -q "-Dtest=MailServiceTest" clean test` đạt 9/9 ca. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài với cấu hình repository.
+
+`mvn -q clean test` trên nhánh tách từ `main` chạy 1.060 ca, với 1.051 đạt, 7 skipped và hai lỗi có sẵn ngoài package mail. `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException`, còn `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 9 ca mail đều đạt trong lượt chạy toàn bộ.
+
 ## Chuẩn hóa và bổ sung test package config — 2026-11-21
 
 Đổi số hai test trong `SecurityConfigTest` từ 001–002 thành 004–005 để có một dãy liên tục trong class. Giữ các ca Google/JWT cũ và tăng kiểm tra callback hủy với state vừa cấp, header chống cache, binding thiếu/sai và route exchange công khai. Thêm bốn lớp test cùng package với production cho UTC/BCrypt, Jackson, Mongo transaction manager và cấu hình S3 client/presigner. Test dùng MockMvc, MongoDB factory mock và thông tin S3 giả để ký cục bộ. [Danh mục test](source-catalog.md#backend-tests).
@@ -262,7 +270,7 @@ Implemented theo source: modal preview hỗ trợ duyệt ngay, chọn/xem trư�
 
 Từ chối xác thực email/lý do trước khi xóa; xóa thành công rồi gửi email một lần. Email lỗi chỉ WARN loại exception, không log thông tin SMTP/credentials, không retry/Telegram; API vẫn 204. Không bảo đảm người dùng nhận email. [Contract](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [hook](../frontend/presentation/hooks/Moderator/useQuestionFileReview.ts), [form](../frontend/presentation/components/Moderator/QuestionFileReviewForm.tsx).
 
-Validation: `mvn -q test`: **244 tests**, 0 failures/errors, gồm **27** cases [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) và **1** [MailRejectionTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailRejectionTest.java) mới. Frontend từng đạt 9 kiểm tra BFF/hook/form/preview DOCX trong JSDOM trước khi bộ test được xóa theo yêu cầu; hiện không còn file test frontend trong dự án. TypeScript, ESLint các file liên quan và production build đã đạt cho phần application code không đổi. AWS/SMTP/Pandoc thật và trình duyệt thật chưa kiểm tra; JSDOM dùng polyfill dialog.
+Validation: `mvn -q test`: **244 tests**, 0 failures/errors, gồm **27** cases [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) và **1** ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)) mới. Frontend từng đạt 9 kiểm tra BFF/hook/form/preview DOCX trong JSDOM trước khi bộ test được xóa theo yêu cầu; hiện không còn file test frontend trong dự án. TypeScript, ESLint các file liên quan và production build đã đạt cho phần application code không đổi. AWS/SMTP/Pandoc thật và trình duyệt thật chưa kiểm tra; JSDOM dùng polyfill dialog.
 
 Lần đầu TypeScript bị chặn bởi cache `.next/dev/types` có lỗi cú pháp: đã chuyển cache sinh tự động sang thư mục tạm và generate lại. Build lần đầu không tải được Google Fonts trong sandbox, chạy lại có mạng đạt. Các snapshot cũ bên dưới là lịch sử, không thay thế cập nhật này về kiểm duyệt tệp.
 
