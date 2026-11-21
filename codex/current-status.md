@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Bổ sung test package passwordResetToken — 2026-11-21
+
+Thêm 4 lớp test cùng package với production, gồm 24 test methods và 26 ca. Kiểm tra tạo và lưu hash token hạn 15 phút, gửi mail, xác nhận mật khẩu, từ chối token hết hạn hoặc không tìm thấy và thứ tự cập nhật mật khẩu/đánh dấu đã dùng. Service giữ kết quả và lỗi từ use case. Repository kiểm tra điều kiện theo userId, tokenHash và used; mapper kiểm tra các trường và nguồn null. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi passwordResetToken và `mvn -q "-Dtest=PasswordResetToken*Test" test` đạt 26/26 ca. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài. Test dùng thời gian và nguồn random giả lập, cùng dependency MongoDB và mail mock.
+
+`mvn -q test` chạy 1.236 ca, với 1.229 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors.
+
 ## Cấu hình smoke test backend — 2026-11-21
 
 `BackendApplicationTests.contextLoads` cấp cấu hình test riêng với `VNPAY_ENABLED=false` và kiểm tra binding của `VnpayProperties`. Mongo client và các bước index/migration phụ thuộc MongoDB lúc khởi động được mock trong smoke test. [BackendApplicationTests.java](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java).
