@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Bổ sung test package notification — 2026-11-21
+
+Thêm `TelegramNotificationServiceTest` cùng package với production, gồm 6 test methods và 7 ca. MockRestServiceServer kiểm tra POST tới đúng bot, chat ID, nội dung Markdown, đầu vào rỗng và lỗi HTTP 500 ở cả hai phương thức. Dùng token giả và HTTP giả lập. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi notification và `mvn -q "-Dtest=TelegramNotificationServiceTest" test` đạt 7/7 ca. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài với cấu hình repository.
+
+`mvn -q test` chạy 1.099 ca, gồm 1.090 đạt, 7 skipped và hai lỗi có sẵn ngoài notification. `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException`, còn `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 7 ca notification đều đạt trong lượt chạy toàn bộ.
+
 ## Chuẩn hóa và bổ sung test package mail — 2026-11-21
 
 Thay `MailRejectionTest` bằng `MailServiceTest` cùng package với production. Giữ ca email từ chối gửi UTF-8 dưới dạng văn bản thuần và bổ sung ca OTP, thanh toán, đặt lại mật khẩu HTML, địa chỉ không hợp lệ và lỗi vận chuyển từ JavaMailSender. Cả 9 methods dùng kiểu tường minh, số thứ tự liên tục và `@DisplayName` tiếng Việt. Test tạo MIME message cục bộ với mail sender mock. [Danh mục test](source-catalog.md#backend-tests).

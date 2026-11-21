@@ -753,6 +753,7 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/notification/telegram` | [TelegramNotificationServiceTest](../backend/src/test/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationServiceTest.java) |
 | `com/wedu/exam_creation/mail/service` | [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java) |
 | `com/wedu/exam_creation/importer/service` | [ImporterServiceTest](../backend/src/test/java/com/wedu/exam_creation/importer/service/ImporterServiceTest.java) |
 | `com/wedu/exam_creation/importer/infrastructure/pandoc` | [PandocConverterTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverterTest.java) |
