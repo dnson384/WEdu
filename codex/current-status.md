@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package config — 2026-11-21
+
+Đổi số hai test trong `SecurityConfigTest` từ 001–002 thành 004–005 để có một dãy liên tục trong class. Giữ các ca Google/JWT cũ và tăng kiểm tra callback hủy với state vừa cấp, header chống cache, binding thiếu/sai và route exchange công khai. Thêm bốn lớp test cùng package với production cho UTC/BCrypt, Jackson, Mongo transaction manager và cấu hình S3 client/presigner. Test dùng MockMvc, MongoDB factory mock và thông tin S3 giả để ký cục bộ. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi config, audit 15 test methods và targeted 18/18 ca đều đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài với cấu hình repository.
+
+`mvn -q clean test` trên nhánh tách từ `main` chạy 1.010 ca, gồm 1.000 đạt, 7 skipped, 2 failures có sẵn ở `AiUsageRepositoryImplTest` và `ReviewPendingQuestionUsecaseTest`, cùng 1 error ở `BackendApplicationTests.contextLoads` do thiếu `VNPAY_ENABLED`. Cả 18 ca config đều đạt trong lượt chạy toàn bộ.
+
 ## Bổ sung test admin — 2026-11-20
 
 Rà soát lại theo testing rule: đã sửa số test bị reset theo production method thành dãy riêng xuyên suốt từng class: AdminControllerTest001–044, AdminUsecaseTest001–039. Giữ nguyên83 methods/105 cases và assertions. Scoped Spotless apply/check, audit số thứ tự/DisplayName và targeted tests105/105 đạt; wrapper vẫn lỗi khởi động nên dùng Maven cài sẵn cùng cấu hình repository. Không chạy lại full suite trong lượt chỉ đổi tên này; kết quả full suite dưới đây thuộc lượt trước. [Chi tiết rà soát](admin-test-rule-alignment-report.md#rà-soát-lại-và-chuẩn-hóa-số-thứ-tự--2026-11-20).
