@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package moderator — 2026-11-21
+
+Gộp năm lớp MockMvc vào `ModeratorControllerTest`, chuẩn hóa `EditPendingQuestionUsecaseTest` và `ReviewPendingQuestionUsecaseTest`, thêm `ModeratorUsecaseTest`, `QuestionImageReferenceTest` và `StoredDocumentFileTest`. Tổng cộng 90 test methods và 146 ca, tăng 32 ca. Phạm vi bổ sung gồm danh sách tệp, import multipart, giới hạn bộ lọc, nhận diện S3 key và hợp đồng MultipartFile. Hai ca validation approve/reject kiểm ID null và review revision thiếu ở backend. Ca lookup riêng kiểm truyền `NotFoundException` từ QuestionService cho ID không khớp câu hỏi. Next.js vẫn chịu trách nhiệm kiểm định dạng ID 24 ký tự hex cho approve/reject. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi moderator và targeted clean test 146/146 ca đạt. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài với cấu hình repository. MockMvc dùng security wiring thực với các dependency ngoài giả lập. Các ca transaction dùng transaction manager giả.
+
+`mvn -q test` chạy 1.131 ca, gồm 1.123 đạt, 7 skipped và 1 error có sẵn ở `BackendApplicationTests.contextLoads` do thiếu `VNPAY_ENABLED`. Cả 146 ca moderator đều đạt trong lượt chạy toàn bộ.
+
 ## Bổ sung test package notification — 2026-11-21
 
 Thêm `TelegramNotificationServiceTest` cùng package với production, gồm 6 test methods và 7 ca. MockRestServiceServer kiểm tra POST tới đúng bot, chat ID, nội dung Markdown, đầu vào rỗng và lỗi HTTP 500 ở cả hai phương thức. Dùng token giả và HTTP giả lập. [Danh mục test](source-catalog.md#backend-tests).
@@ -286,7 +294,7 @@ Implemented theo source: modal preview hỗ trợ duyệt ngay, chọn/xem trư�
 
 Từ chối xác thực email/lý do trước khi xóa; xóa thành công rồi gửi email một lần. Email lỗi chỉ WARN loại exception, không log thông tin SMTP/credentials, không retry/Telegram; API vẫn 204. Không bảo đảm người dùng nhận email. [Contract](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [hook](../frontend/presentation/hooks/Moderator/useQuestionFileReview.ts), [form](../frontend/presentation/components/Moderator/QuestionFileReviewForm.tsx).
 
-Validation: `mvn -q test`: **244 tests**, 0 failures/errors, gồm **27** cases [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) và **1** ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)) mới. Frontend từng đạt 9 kiểm tra BFF/hook/form/preview DOCX trong JSDOM trước khi bộ test được xóa theo yêu cầu; hiện không còn file test frontend trong dự án. TypeScript, ESLint các file liên quan và production build đã đạt cho phần application code không đổi. AWS/SMTP/Pandoc thật và trình duyệt thật chưa kiểm tra; JSDOM dùng polyfill dialog.
+Validation: `mvn -q test`: **244 tests**, 0 failures/errors, gồm **27** cases [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) và **1** ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)) mới. Frontend từng đạt 9 kiểm tra BFF/hook/form/preview DOCX trong JSDOM trước khi bộ test được xóa theo yêu cầu; hiện không còn file test frontend trong dự án. TypeScript, ESLint các file liên quan và production build đã đạt cho phần application code không đổi. AWS/SMTP/Pandoc thật và trình duyệt thật chưa kiểm tra; JSDOM dùng polyfill dialog.
 
 Lần đầu TypeScript bị chặn bởi cache `.next/dev/types` có lỗi cú pháp: đã chuyển cache sinh tự động sang thư mục tạm và generate lại. Build lần đầu không tải được Google Fonts trong sandbox, chạy lại có mạng đạt. Các snapshot cũ bên dưới là lịch sử, không thay thế cập nhật này về kiểm duyệt tệp.
 
@@ -301,7 +309,7 @@ Tách component 2026-10-25: JSX của từng dòng tệp trong `QuestionFilesPag
 
 Refactor 2026-10-25: `QuestionFilesPage` chỉ render giao diện và truyền props; [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuestionFiles.ts) quản lý query/mutation, state, handler, cache/refetch và nhãn định dạng tệp. API và hành vi lấy/xóa tệp giữ nguyên. TypeScript, ESLint cho page/hook, production build và kiểm tra hành vi React Query + React DOM trong JSDOM đều đạt sau refactor; chưa kiểm tra trình duyệt hoặc AWS thật.
 
-Cập nhật 2026-10-25: xóa tệp câu hỏi đã có code backend/frontend: DELETE moderator giới hạn prefix, native confirmation dialog, chặn gửi lặp, thông báo và refetch danh sách sau thành công. Dùng S3 DeleteObject hiện có, không thêm database/approval/version purge. [API](api-reference.md), [backend test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java), [UI](../frontend/app/(site)/moderator/question-files/page.tsx).
+Cập nhật 2026-10-25: xóa tệp câu hỏi đã có code backend/frontend: DELETE moderator giới hạn prefix, native confirmation dialog, chặn gửi lặp, thông báo và refetch danh sách sau thành công. Dùng S3 DeleteObject hiện có, không thêm database/approval/version purge. [API](api-reference.md), [backend test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java), [UI](../frontend/app/(site)/moderator/question-files/page.tsx).
 
 Validation tính năng xóa: `mvn -q test` đạt **192 tests**, gồm **17 test xóa** đi qua MVC/security/usecase/storage với S3Client mock. TypeScript, ESLint các file liên quan, `npm.cmd run build` và `git diff --check` đạt. 9 kiểm tra Next DELETE/adapter với HTTP backend giả lập đạt (key đặc biệt, Bearer, 204 lặp, 400/401/403/500/502). Kiểm tra React Query + React DOM trong JSDOM đạt các luồng Hủy/Escape, focus nút Hủy, chặn gửi lặp/đóng khi pending, thành công/refetch, lỗi DELETE và lỗi GET sau DELETE. JSDOM dùng polyfill showModal/close, chưa xác minh focus trap/backdrop trên trình duyệt thật và chưa xóa object AWS thật.
 
@@ -411,7 +419,7 @@ Database/index/version MongoDB thực, nội dung bucket, Pandoc/Node version đ
 
 ## Preview DOCX chỉ đọc — 2026-10-25
 
-Implemented theo source: click dòng/tên file mở modal preview DOCX chỉ đọc, loading/error/retry, Đóng/Escape/Tải xuống; iframe sandbox/CSP cách ly. API content giới hạn moderator/key/prefix/.docx, trả binary từ S3; không đổi database hoặc triển khai approval. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [contract](api-reference.md), [backend test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
+Implemented theo source: click dòng/tên file mở modal preview DOCX chỉ đọc, loading/error/retry, Đóng/Escape/Tải xuống; iframe sandbox/CSP cách ly. API content giới hạn moderator/key/prefix/.docx, trả binary từ S3; không đổi database hoặc triển khai approval. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [contract](api-reference.md), [backend test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java).
 
 Validation: mvn -q test đạt 207 tests (15 content tests mới); TypeScript, ESLint file liên quan và npm.cmd run build đạt. Kiểm tra tạm bằng React DOM/JSDOM và DOCX fixture thực render tiếng Việt/bảng/ảnh/MathML đạt; mở/đóng, Escape trong iframe, khôi phục focus, abort khi unmount, click dòng độc lập Tải xuống/Xóa, lỗi/retry và Next proxy binary/auth/key/error đạt. JSDOM dùng polyfill dialog và MathML style; chưa xác minh layout/focus trap/CSP thực thi trên browser thật hoặc đọc AWS thật. DOCX có thể khác Word về bố cục.
 
@@ -419,7 +427,7 @@ npm install báo 7 vulnerabilities (1 low, 4 high, 2 critical) trong dependency 
 
 ## Backend API nội dung DOCX — 2026-10-25
 
-Implemented theo source: GET /moderator/question-files/content giới hạn ROLE_MODERATOR và key question-files/ có đuôi .docx, trả binary DOCX no-store, 404 khi object không tồn tại và lỗi storage chung. Không đổi schema hoặc triển khai approval/UI. [Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java).
+Implemented theo source: GET /moderator/question-files/content giới hạn ROLE_MODERATOR và key question-files/ có đuôi .docx, trả binary DOCX no-store, 404 khi object không tồn tại và lỗi storage chung. Không đổi schema hoặc triển khai approval/UI. [Controller](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java).
 
 Validation backend: mvn -q test đạt 207 tests, 0 failures/errors, gồm 15 tests content mới (binary/MIME/cache, key, quyền, 404 và lỗi S3) và regression xóa. S3Client được mock; chưa đọc AWS thật. git diff --cached --check đạt cho snapshot backend.
 
