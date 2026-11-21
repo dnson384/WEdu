@@ -248,11 +248,11 @@ Symbols/contracts mới: ReviewPendingQuestionUsecase.approve/reject (backend), 
 | [backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImpl.java>) | Mongo read/upsert setOnInsert và update/delete theo revision, hỗ trợ legacy. |
 | [backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewService.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewService.java>) | Facade common DTO cho state/batch/saveCandidate/delete. |
 | [backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java](<../backend/src/main/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecase.java>) | Quản lý snapshot cuối, count/revision, append/edit/delete và default cũ. |
-| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java>) | Bổ sung mock coordinator cho controller có dependency mới. |
-| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java>) | Bổ sung mock coordinator và xác thực overload editor có revision. |
-| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java>) | Kiểm tra API approve/reject, quyền, no-store và ký ảnh snapshot. |
-| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java>) | Bổ sung mock coordinator, giữ hồi quy nội dung DOCX. |
-| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java>) | Bổ sung mock coordinator, giữ hồi quy kiểm duyệt tệp. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java>) | Bổ sung mock coordinator cho controller có dependency mới. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java>) | Bổ sung mock coordinator và xác thực overload editor có revision. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java>) | Kiểm tra API approve/reject, quyền, no-store và ký ảnh snapshot. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java>) | Bổ sung mock coordinator, giữ hồi quy nội dung DOCX. |
+| [backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java>) | Bổ sung mock coordinator, giữ hồi quy kiểm duyệt tệp. |
 | [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java>) | Cập nhật guard revision, thêm baseline ảnh/options của snapshot cuối. |
 | [backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java](<../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java>) | Kiểm tra lượt 1–5, duyệt, AI lỗi/sai, stale request, conflict và transaction interception. |
 | [backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java](<../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java>) | Bổ sung kiểm tra trạng thái cuối chỉ ghi status/version, timestamp tăng. |
@@ -322,13 +322,13 @@ Inventory toàn bộ file thay đổi trong tính năng editor (không gồm cá
 | File test backend | Thay đổi |
 | --- | --- |
 | [EditPendingQuestionUsecaseTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java) | Upload/replace description, refs lặp, giữ key cũ, cleanup/conflict/unknown acknowledgement, namespaces. |
-| [ModeratorEditPendingQuestionTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorEditPendingQuestionTest.java) | PATCH multipart thực qua MockMvc, quyền/token/JSON/ID/status. |
+| [ModeratorEditPendingQuestionTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) | PATCH multipart thực qua MockMvc, quyền/token/JSON/ID/status. |
 | [PendingQuestionUpdateRepositoryTest.java](../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionUpdateRepositoryTest.java) | Query guard và giới hạn fields update, kết quả no-match. |
 | [QuestionServicePendingQuestionsTest.java](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java) | Chặn sửa câu approved và chuyển no-match thành conflict. |
-| [ModeratorPendingQuestionsTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java) | Mô tả không bị ký URL, fixture media key và mock editor dependency. |
-| [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java) | Mock editor dependency mới của controller. |
-| [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) | Mock editor dependency mới của controller. |
-| [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java) | Mock editor dependency mới của controller. |
+| [ModeratorPendingQuestionsTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) | Mô tả không bị ký URL, fixture media key và mock editor dependency. |
+| [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) | Mock editor dependency mới của controller. |
+| [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) | Mock editor dependency mới của controller. |
+| [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) | Mock editor dependency mới của controller. |
 
 | Tài liệu thay đổi | Nội dung |
 | --- | --- |
@@ -353,7 +353,7 @@ Inventory toàn bộ file thay đổi trong tính năng editor (không gồm cá
 - Đã xóa `question/domain/entity/QuestionPageEntity.java`: repository chỉ trả danh sách entity và count long; DTO phân trang chỉ tạo ở QuestionService. PendingQuestionPageDTO giữ class Lombok `@Data/@NoArgsConstructor/@AllArgsConstructor`. JSON/phân trang không đổi.
 - [QuestionDTOMapper](../backend/src/main/java/com/wedu/exam_creation/question/dto/mapper/QuestionDTOMapper.java): `entityToPendingDTO`, disable builder cho DTO kế thừa. [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java)/[repository](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java): `findPending`.
 - [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java)/[ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java): `listPendingQuestions`; [ChapterService](../backend/src/main/java/com/wedu/exam_creation/chapter/usecase/ChapterService.java): `getAll` qua repository/mapper hiện có.
-- [ModeratorPendingQuestionsTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorPendingQuestionsTest.java), [PendingQuestionsRepositoryTest](../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionsRepositoryTest.java): auth/input/response và query/count/sort/limit. Ba MVC tests tệp hiện có bổ sung mocks ChapterService/QuestionService theo constructor mới.
+- [ModeratorPendingQuestionsTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java), [PendingQuestionsRepositoryTest](../backend/src/test/java/com/wedu/exam_creation/question/infrastructure/repository/PendingQuestionsRepositoryTest.java): auth/input/response và query/count/sort/limit. Ba MVC tests tệp hiện có bổ sung mocks ChapterService/QuestionService theo constructor mới.
 - [QuestionServicePendingQuestionsTest](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePendingQuestionsTest.java): mapping entity → DTO và metadata phân trang thuộc usecase; giữ tổng kết quả khi trang yêu cầu rỗng.
 
 Các file còn lại trong thay đổi nối API:
@@ -362,9 +362,9 @@ Các file còn lại trong thay đổi nối API:
 - [IModeratorRepository.ts](../frontend/domain/repositories/IModeratorRepository.ts): contract getPendingQuestions.
 - [ModeratorRepositoryImpl.ts](../frontend/infrastructure/repositories/ModeratorRepositoryImpl.ts): gọi backend với filters và Bearer phía server.
 - [ModeratorService.ts](../frontend/presentation/services/ModeratorService.ts): gọi Next pending API, hỗ trợ AbortSignal.
-- [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java): thêm mocks hai dependency đọc câu hỏi.
-- [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java): thêm mocks hai dependency đọc câu hỏi.
-- [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java): thêm mocks hai dependency đọc câu hỏi.
+- [ModeratorDeleteQuestionFileTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java): thêm mocks hai dependency đọc câu hỏi.
+- [ModeratorQuestionFileContentTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java): thêm mocks hai dependency đọc câu hỏi.
+- [ModeratorQuestionFileReviewTest.java](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java): thêm mocks hai dependency đọc câu hỏi.
 - Xóa `frontend/presentation/hooks/Moderator/usePendingQuestionPreview.ts`: thay bằng hook query thật; xóa `frontend/presentation/data/pendingQuestionExamples.ts`: bỏ dữ liệu minh họa. Hai file này được tạo ở bước giao diện trước, chưa tracked trong Git.
 - [api-reference.md](api-reference.md): endpoint/query/response/quyền và lỗi mới.
 - [architecture.md](architecture.md): ranh giới đọc dữ liệu, map DTO và ký ảnh.
@@ -399,7 +399,7 @@ Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creatio
 | Frontend usecases | [ApproveQuestionFileUsecase](../frontend/usecases/moderator/ApproveQuestionFileUsecase.ts), [RejectQuestionFileUsecase](../frontend/usecases/moderator/RejectQuestionFileUsecase.ts) |
 | Next routes/helper | [approve POST](../frontend/app/api/moderator/question-files/approve/route.ts), [reject POST](../frontend/app/api/moderator/question-files/reject/route.ts), [reviewError/reviewHeaders](../frontend/app/api/moderator/question-files/reviewError.ts) |
 | UI | [useQuestionFileReview](../frontend/presentation/hooks/Moderator/useQuestionFileReview.ts) (ReviewComplete export), [QuestionFileReviewForm](../frontend/presentation/components/Moderator/QuestionFileReviewForm.tsx); QuestionFilePreviewDialog nối review; useQuestionFilePreview thêm localFile; useQuestionFiles thêm handleReviewComplete/previewNeedsCleanup |
-| Tests | [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileReviewTest.java), ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)); existing content/delete tests thêm mock MailService |
+| Tests | [ModeratorQuestionFileReviewTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java), ca email từ chối (nay thuộc [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java)); existing content/delete tests thêm mock MailService |
 
 [Contracts](api-reference.md#duyệttừ-chối-tệp--2026-10-25), [validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25). Không thêm model persistence hoặc đổi parser.
 
@@ -528,7 +528,7 @@ Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creatio
 
 ### Backend `moderator`
 
-Symbols mới cho xóa tệp: `ModeratorController.deleteQuestionFile(String key)` (DELETE), `ModeratorUsecase.deleteQuestionFile(String key)` (validate prefix/segment, gọi storage). [Test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorDeleteQuestionFileTest.java) đi qua JWT, method security, usecase và S3Service với S3Client mock.
+Symbols mới cho xóa tệp: `ModeratorController.deleteQuestionFile(String key)` (DELETE), `ModeratorUsecase.deleteQuestionFile(String key)` (validate prefix/segment, gọi storage). [Test](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) đi qua JWT, method security, usecase và S3Service với S3Client mock.
 
 | Layer / thư mục | Symbols / source |
 | --- | --- |
@@ -753,6 +753,9 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/moderator/controller` | [ModeratorControllerTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) |
+| `com/wedu/exam_creation/moderator/usecase` | [ModeratorUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecaseTest.java), [ReviewPendingQuestionUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecaseTest.java), [EditPendingQuestionUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecaseTest.java), [QuestionImageReferenceTest](../backend/src/test/java/com/wedu/exam_creation/moderator/usecase/QuestionImageReferenceTest.java) |
+| `com/wedu/exam_creation/moderator/infrastructure` | [StoredDocumentFileTest](../backend/src/test/java/com/wedu/exam_creation/moderator/infrastructure/StoredDocumentFileTest.java) |
 | `com/wedu/exam_creation/notification/telegram` | [TelegramNotificationServiceTest](../backend/src/test/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationServiceTest.java) |
 | `com/wedu/exam_creation/mail/service` | [MailServiceTest](../backend/src/test/java/com/wedu/exam_creation/mail/service/MailServiceTest.java) |
 | `com/wedu/exam_creation/importer/service` | [ImporterServiceTest](../backend/src/test/java/com/wedu/exam_creation/importer/service/ImporterServiceTest.java) |
@@ -784,11 +787,11 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 - [QuestionFilePreviewDialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx): native modal, iframe sandbox, Đóng/Tải xuống, Escape và khôi phục focus.
 - [useQuestionFilePreview](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts): tải binary, import động docx-preview, render, retry, AbortController, bỏ kết quả cũ; export previewDocument chứa CSP. useQuestionFiles thêm previewFile/handlePreviewClick/handleClosePreview; QuestionFileRow thêm onPreview.
 - [Next GET content](../frontend/app/api/moderator/question-files/content/route.ts) → [GetQuestionFileContentUsecase.execute](../frontend/usecases/moderator/GetQuestionFileContentUsecase.ts) → IModeratorRepository.getQuestionFileContent / ModeratorRepositoryImpl.getQuestionFileContent. ModeratorService.getQuestionFileContent gọi BFF với signal.
-- Backend ModeratorController.getQuestionFileContent → ModeratorUsecase.getQuestionFileContent (dùng chung validateQuestionFileKey với xóa) → S3Service.readDocumentFile → S3Client.getObjectAsBytes. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) có 15 cases.
+- Backend ModeratorController.getQuestionFileContent → ModeratorUsecase.getQuestionFileContent (dùng chung validateQuestionFileKey với xóa) → S3Service.readDocumentFile → S3Client.getObjectAsBytes. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) có 15 cases.
 
 ## Backend preview content symbols — 2026-10-25
 
-[ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) là GET /moderator/question-files/content, trả ResponseEntity<byte[]>; [ModeratorUsecase.getQuestionFileContent / validateQuestionFileKey](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) kiểm key/extension và ánh xạ lỗi; [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) đọc binary. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorQuestionFileContentTest.java) có 15 cases MVC/security/usecase/storage mock.
+[ModeratorController.getQuestionFileContent](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java) là GET /moderator/question-files/content, trả ResponseEntity<byte[]>; [ModeratorUsecase.getQuestionFileContent / validateQuestionFileKey](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java) kiểm key/extension và ánh xạ lỗi; [S3Service.readDocumentFile](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java) đọc binary. [ModeratorQuestionFileContentTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java) có 15 cases MVC/security/usecase/storage mock.
 
 ## Backend payment symbols — 2026-11-05
 
