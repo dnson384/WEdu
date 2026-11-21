@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Bổ sung test package common — 2026-11-21
+
+Thêm 3 lớp test cùng package với production, gồm 25 test methods và 30 ca. `GlobalExceptionHandlerTest` dùng MockMvc standalone để kiểm tra mã HTTP, body và header của cả 17 handler. `EmailNormalizerTest` kiểm tra chuẩn hóa chữ hoa/khoảng trắng và nhận diện email canonical, gồm null/rỗng. `UserCommonDTOMapperTest` chạy mapper MapStruct để kiểm tra dữ liệu hồ sơ công khai, hạn PLUS và đầu vào null. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi common và 30/30 ca test riêng đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài với cấu hình repository.
+
+`mvn -q clean test` trên nhánh tách từ `main` chạy 1.027 ca, với 1.017 đạt, 7 skipped và 3 lỗi có sẵn. `AiUsageRepositoryImplTest` kỳ vọng query phẳng trong khi MongoDB dùng `$and`, `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException` và `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 30 ca common đều đạt trong lượt chạy toàn bộ.
+
 ## Bổ sung test admin — 2026-11-20
 
 Rà soát lại theo testing rule: đã sửa số test bị reset theo production method thành dãy riêng xuyên suốt từng class: AdminControllerTest001–044, AdminUsecaseTest001–039. Giữ nguyên83 methods/105 cases và assertions. Scoped Spotless apply/check, audit số thứ tự/DisplayName và targeted tests105/105 đạt; wrapper vẫn lỗi khởi động nên dùng Maven cài sẵn cùng cấu hình repository. Không chạy lại full suite trong lượt chỉ đổi tên này; kết quả full suite dưới đây thuộc lượt trước. [Chi tiết rà soát](admin-test-rule-alignment-report.md#rà-soát-lại-và-chuẩn-hóa-số-thứ-tự--2026-11-20).
