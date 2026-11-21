@@ -753,6 +753,9 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/importer/service` | [ImporterServiceTest](../backend/src/test/java/com/wedu/exam_creation/importer/service/ImporterServiceTest.java) |
+| `com/wedu/exam_creation/importer/infrastructure/pandoc` | [PandocConverterTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverterTest.java) |
+| `com/wedu/exam_creation/importer/infrastructure/pandoc/helper` | [BulletListExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/BulletListExtractorTest.java), [HeaderExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/HeaderExtractorTest.java), [IsArrayEqualTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/IsArrayEqualTest.java), [ParaExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/ParaExtractorTest.java), [TitleExtractorTest](../backend/src/test/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper/TitleExtractorTest.java) |
 | `com/wedu/exam_creation/common/exception` | [GlobalExceptionHandlerTest](../backend/src/test/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandlerTest.java) |
 | `com/wedu/exam_creation/common/util` | [EmailNormalizerTest](../backend/src/test/java/com/wedu/exam_creation/common/util/EmailNormalizerTest.java) |
 | `com/wedu/exam_creation/common/dto/user/mapper` | [UserCommonDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/common/dto/user/mapper/UserCommonDTOMapperTest.java) |
