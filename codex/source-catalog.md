@@ -753,6 +753,9 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/common/exception` | [GlobalExceptionHandlerTest](../backend/src/test/java/com/wedu/exam_creation/common/exception/GlobalExceptionHandlerTest.java) |
+| `com/wedu/exam_creation/common/util` | [EmailNormalizerTest](../backend/src/test/java/com/wedu/exam_creation/common/util/EmailNormalizerTest.java) |
+| `com/wedu/exam_creation/common/dto/user/mapper` | [UserCommonDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/common/dto/user/mapper/UserCommonDTOMapperTest.java) |
 | `com/wedu/exam_creation/draft/controller` | [DraftControllerTest](../backend/src/test/java/com/wedu/exam_creation/draft/controller/DraftControllerTest.java) |
 | `com/wedu/exam_creation/draft/usecase` | [DraftUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftUsecaseTest.java), [DraftServiceTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftServiceTest.java) |
 | `com/wedu/exam_creation/draft/usecase/util` | [DraftUtilTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/util/DraftUtilTest.java) |

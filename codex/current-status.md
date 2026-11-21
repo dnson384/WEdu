@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Bổ sung test package common — 2026-11-21
+
+Thêm 3 lớp test cùng package với production, gồm 25 test methods và 30 ca. `GlobalExceptionHandlerTest` dùng MockMvc standalone để kiểm tra mã HTTP, body và header của cả 17 handler. `EmailNormalizerTest` kiểm tra chuẩn hóa chữ hoa/khoảng trắng và nhận diện email canonical, gồm null/rỗng. `UserCommonDTOMapperTest` chạy mapper MapStruct để kiểm tra dữ liệu hồ sơ công khai, hạn PLUS và đầu vào null. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi common và 30/30 ca test riêng đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài với cấu hình repository.
+
+`mvn -q clean test` trên nhánh tách từ `main` chạy 1.027 ca, với 1.017 đạt, 7 skipped và 3 lỗi có sẵn. `AiUsageRepositoryImplTest` kỳ vọng query phẳng trong khi MongoDB dùng `$and`, `ReviewPendingQuestionUsecaseTest.invalidInputDoesNotReadOrWrite` nhận `NullPointerException` và `BackendApplicationTests.contextLoads` thiếu `VNPAY_ENABLED`. Cả 30 ca common đều đạt trong lượt chạy toàn bộ.
+
 ## Chuẩn hóa test module AI — 2026-11-21
 
 Chuẩn hóa 6 lớp, 44 test methods theo quy tắc tên method, số thứ tự liên tục, `@DisplayName` tiếng Việt, kiểu Java tường minh và tên/package theo lớp production. Bổ sung các ca cho sinh câu hỏi thành công, JSON phản hồi lỗi, đọc/tạo cấu hình, validation quota/revision, trả danh sách model và contract thành công của API quản trị. Assertion cập nhật ngân sách kiểm tra cả ID lẫn revision trong `$and` của MongoDB, theo query hiện tại. [Danh mục test](source-catalog.md#quản-lý-usagebudget-ai--2026-11-01).
