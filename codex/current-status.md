@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package questionReview — 2026-11-22
+
+Đổi tên `QuestionReviewRepositoryTest` thành `QuestionReviewRepositoryImplTest`, chuẩn hóa `QuestionReviewUsecaseTest`, thêm `QuestionReviewServiceTest` và `QuestionReviewMapperTest`. Tổng cộng 30 ca, tăng 22 ca. Test kiểm tra batch tạo/đọc review, snapshot mới nhất, giới hạn lượt, chỉnh sửa giữ lịch sử, revision legacy và xung đột ghi/xóa, cùng nội dung lồng nhau, placeholder và S3 key qua mapper. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi questionReview và `mvn -q "-Dtest=QuestionReview*Test" clean test` đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài. Test sử dụng thời gian cố định và MongoTemplate mock.
+
+`mvn -q clean test` trên nhánh `backend/test/question-review` chạy 1.207 ca, với 1.200 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors. Cả 30 ca questionReview đều đạt.
+
 ## Chuẩn hóa và bổ sung test package payment — 2026-11-21
 
 Đưa unit test payment và test quyền PLUS liên quan về tên/package của lớp production. Gộp các ca checkout và query trong `VnpayGatewayTest`, tách các ca của repository, mapper, document, index và migration về lớp tương ứng. Giữ `PaymentMongoIntegrationTest` là bộ tích hợp opt-in. Các ca mới kiểm tra cấu hình VNPay, trạng thái cần xử lý thủ công, luồng di trú, tác vụ hết hạn, truy vấn đơn và ghi outbox. [Danh mục test](source-catalog.md#backend-tests).
