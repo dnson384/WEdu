@@ -205,7 +205,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về các entity đúng thứ tự khi Mongo có nhiều chương")
-    void test_getAll_001() {
+    void test_getAll_010() {
         ChapterDocument first = document("Bài 1", List.of());
         ChapterDocument second = document("Bài 2", List.of());
         ChapterEntity firstEntity = new ChapterEntity();
@@ -219,7 +219,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi Mongo chưa có chương")
-    void test_getAll_002() {
+    void test_getAll_011() {
         when(mongo.findAll(ChapterDocument.class)).thenReturn(List.of());
         assertThat(repository.getAll()).isEmpty();
         verifyNoInteractions(mapper);
@@ -227,7 +227,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi đọc toàn bộ chương thất bại")
-    void test_getAll_003() {
+    void test_getAll_012() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(mongo.findAll(ChapterDocument.class)).thenThrow(failure);
         assertThatThrownBy(repository::getAll).isSameAs(failure);
@@ -235,7 +235,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về entity đã map khi tìm thấy đúng ID chương")
-    void test_getById_001() {
+    void test_getById_013() {
         ChapterDocument document = document("Bài 1", List.of());
         ChapterEntity entity = new ChapterEntity();
         when(mongo.findById("c1", ChapterDocument.class)).thenReturn(document);
@@ -245,7 +245,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi ID chương không tồn tại")
-    void test_getById_002() {
+    void test_getById_014() {
         assertThatThrownBy(() -> repository.getById("missing"))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Không tồn tại chương này");
@@ -254,7 +254,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi đọc theo ID thất bại")
-    void test_getById_003() {
+    void test_getById_015() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(mongo.findById("c1", ChapterDocument.class)).thenThrow(failure);
         assertThatThrownBy(() -> repository.getById("c1")).isSameAs(failure);
@@ -262,7 +262,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về entity theo thứ tự Mongo khi chỉ tìm thấy một phần ID yêu cầu")
-    void test_getByIds_001() {
+    void test_getByIds_016() {
         ChapterDocument document = document("Bài 1", List.of());
         ChapterDocument second = document("Bài 2", List.of());
         second.setId("c2");
@@ -285,7 +285,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi không ID nào tồn tại")
-    void test_getByIds_002() {
+    void test_getByIds_017() {
         when(mongo.find(any(Query.class), eq(ChapterDocument.class))).thenReturn(List.of());
         assertThatThrownBy(() -> repository.getByIds(List.of("missing")))
                 .isInstanceOf(NotFoundException.class)
@@ -295,7 +295,7 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi danh sách ID rỗng không có kết quả")
-    void test_getByIds_003() {
+    void test_getByIds_018() {
         when(mongo.find(any(Query.class), eq(ChapterDocument.class))).thenReturn(List.of());
         assertThatThrownBy(() -> repository.getByIds(List.of()))
                 .isInstanceOf(NotFoundException.class);
@@ -307,9 +307,33 @@ class ChapterRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi truy vấn danh sách ID thất bại")
-    void test_getByIds_004() {
+    void test_getByIds_019() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(mongo.find(any(Query.class), eq(ChapterDocument.class))).thenThrow(failure);
         assertThatThrownBy(() -> repository.getByIds(List.of("c1"))).isSameAs(failure);
+    }
+
+    @Test
+    @DisplayName(
+            "trả về ID bài trùng tên và chỉ gộp thống kê của bài đó khi chương đã có nhiều bài")
+    void test_saveChapter_020() {
+        ChapterDocument existing = document("Bài 1", new ArrayList<>(List.of(stat(4))));
+        existing.getLessons()
+                .add(new LessonDataDocument("l2", "Bài 2", new ArrayList<>(List.of(stat(6)))));
+        ChapterEntity entity = prepareSave(document("Bài 2", List.of(stat(2))), existing);
+
+        SavedChapterResponse result;
+        try (MockedStatic<Instant> clock = mockStatic(Instant.class)) {
+            clock.when(Instant::now).thenReturn(updated);
+            result = repository.saveChapter(entity);
+        }
+
+        assertThat(result).isEqualTo(new SavedChapterResponse("c1", "l2"));
+        assertThat(existing.getLessons())
+                .containsExactly(
+                        new LessonDataDocument("l1", "Bài 1", List.of(stat(4))),
+                        new LessonDataDocument("l2", "Bài 2", List.of(stat(8))));
+        assertThat(existing.getUpdatedAt()).isEqualTo(updated);
+        verify(mongo).save(existing);
     }
 }
