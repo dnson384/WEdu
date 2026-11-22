@@ -136,7 +136,7 @@ Không thêm dependency mới cho question-file flow. Java ZipInputStream kiểm
 
 Backend avatar giới hạn 5 MiB; question-file 50 MiB, Spring multipart vẫn 50 MB/file và 65 MB/request theo configuration. Frontend upload page ghi50 MB; StorageService.uploadFileToQuestionBank trả Promise<string> tương ứng S3 key. Không coi đây là một package MIME/DOCX mới.
 
-Có test source mới [StorageDocumentServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageDocumentServiceTest.java), [StorageQuestionFilesTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/StorageQuestionFilesTest.java), `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại). Có test legacy endpoint chưa khớp controller hiện tại; lượt này chỉ kiểm tra tài liệu và source, không chạy build/test hoặc gọi AWS.
+Kiểm thử storage hiện tập trung tại [S3ServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/S3ServiceTest.java) và [StorageControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageControllerTest.java). Bộ test dùng Mockito tại ranh giới S3 và MockMvc cho hai route multipart. Ca kiểm duyệt tệp thuộc [ModeratorControllerTest](../backend/src/test/java/com/wedu/exam_creation/moderator/controller/ModeratorControllerTest.java).
 ## Lệnh thực tế
 
 Chạy trong module; không có root build command.
