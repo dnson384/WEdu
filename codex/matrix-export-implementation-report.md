@@ -87,8 +87,8 @@ Các đường dẫn dưới đây liệt kê application code, backend tests v�
 | [ExporterController.java](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java) | Endpoint teacher-only, DOCX header và filename UTF-8. |
 | [ExporterUsecase.java](../backend/src/main/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecase.java) | Gửi snapshot sang Express, kiểm tra binary/MIME và xử lý lỗi. |
 | [ExamUsecaseTest.java](../backend/src/test/java/com/wedu/exam_creation/exam/usecase/ExamUsecaseTest.java) | 4 tests snapshot/owner/missing data ban đầu thuộc ExamMatrixUsecaseTest; được giữ và chuẩn hóa trong ExamUsecaseTest ngày 2026-11-20. [Kiểm tra exam hiện tại](exam-test-rule-alignment-report.md). |
-| [ExporterMatrixUsecaseTest.java](../backend/src/test/java/com/wedu/exam_creation/exporter/usecase/ExporterMatrixUsecaseTest.java) | 3 tests HTTP payload/binary/failure. |
-| [ExporterMatrixControllerTest.java](../backend/src/test/java/com/wedu/exam_creation/exporter/controller/ExporterMatrixControllerTest.java) | 6 tests quyền/input/filename/404/422. |
+| `ExporterMatrixUsecaseTest` (nay thuộc [ExporterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecaseTest.java)) | 3 tests HTTP payload/binary/failure ở lượt ban đầu. |
+| `ExporterMatrixControllerTest` (nay thuộc [ExporterControllerTest](../backend/src/test/java/com/wedu/exam_creation/exporter/controller/ExporterControllerTest.java)) | 6 tests quyền/input/filename/404/422 ở lượt ban đầu. |
 | [MatrixWordPayloadRequestDTO.ts](../exporter-service/src/routes/exporter/dto/request/MatrixWordPayloadRequestDTO.ts) | Type payload và runtime validation. |
 | [MatrixTableBuilder.ts](../exporter-service/src/routes/exporter/infrastructure/builder/MatrixTableBuilder.ts) | Builder bảng ma trận và bảng đặc tả với helper chung. |
 | [generateMatrixWordFile.ts](../exporter-service/src/routes/exporter/usecase/generateMatrixWordFile.ts) | Dựng DOCX hai phần, trang ngang và ngắt trang. |
