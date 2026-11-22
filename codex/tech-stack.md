@@ -144,7 +144,7 @@ Chạy trong module; không có root build command.
 | Module | Install | Run | Build | Lint/test |
 | --- | --- | --- | --- | --- |
 | frontend | `npm ci` | `npm run dev` / `npm start`, cổng 3000 | `npm run build` | `npm run lint`; không có test script |
-| backend Windows | Maven wrapper tự lấy distribution/dependencies | `./mvnw.cmd spring-boot:run` | `./mvnw.cmd clean package` | `./mvnw.cmd test`; lọc: `./mvnw.cmd -Dtest=UserUsecaseMeTest test` |
+| backend Windows | Maven wrapper tự lấy distribution/dependencies | `./mvnw.cmd spring-boot:run` | `./mvnw.cmd clean package` | `./mvnw.cmd test`; lọc: `./mvnw.cmd -Dtest=UserUsecaseTest test` |
 | backend Unix | Như Windows | `./mvnw spring-boot:run` | `./mvnw clean package` | `./mvnw test` |
 | exporter | `npm ci` | `npm run dev`, cổng 8000; `npm start` có caveat output | `npm run build` | `npm test` là placeholder exit 1; không có lint script |
 

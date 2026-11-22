@@ -55,7 +55,7 @@ Route Google callback đổi thành GET `/auth/login/oauth2/code/google`, xử l
 
 ## Email trực tiếp và MIXED — 2026-11-13
 
-Bỏ UserDocument.emailKey và findByGoogleSubject. Common util EmailNormalizer.normalize/isCanonical dùng chung. UserService/UserUsecase.hasGoogleLink(email,subject) chỉ kiểm tra subject sau lookup email; UserRepositoryImpl.linkGoogle(id,subject,loginMethod) ghi liên kết và phương thức cùng lúc. AuthIndexConfig kiểm email canonical/legacy index và unique email index. Thêm UserRepositoryEmailTest, UserUsecaseGoogleTest, AuthIndexConfigTest; test script Node đã thay bằng JUnit như mục mới ở trên. [Inventory từng file và validation mới](email-login-method-implementation-report.md).
+Bỏ UserDocument.emailKey và findByGoogleSubject. Common util EmailNormalizer.normalize/isCanonical dùng chung. UserService/UserUsecase.hasGoogleLink(email,subject) chỉ kiểm tra subject sau lookup email; UserRepositoryImpl.linkGoogle(id,subject,loginMethod) ghi liên kết và phương thức cùng lúc. AuthIndexConfig kiểm email canonical/legacy index và unique email index. Các ca email và liên kết Google của đợt đó hiện thuộc `UserRepositoryImplTest`, `UserUsecaseTest` và `AuthIndexConfigTest`; test script Node đã thay bằng JUnit như mục mới ở trên. [Inventory từng file và validation mới](email-login-method-implementation-report.md).
 
 ## Inventory Auth OTP/Google — 2026-11-13
 
@@ -777,6 +777,7 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | `com/wedu/exam_creation/payment` | [PaymentMongoIntegrationTest](../backend/src/test/java/com/wedu/exam_creation/payment/PaymentMongoIntegrationTest.java) |
 | `com/wedu/exam_creation/user/domain/entity` | [PlusEntitlementTest](../backend/src/test/java/com/wedu/exam_creation/user/domain/entity/PlusEntitlementTest.java) |
 | `com/wedu/exam_creation/user/dto/mapper` | [UserDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/user/dto/mapper/UserDTOMapperTest.java) |
+| `com/wedu/exam_creation/user/infrastructure/mapper` | [UserMapperTest](../backend/src/test/java/com/wedu/exam_creation/user/infrastructure/mapper/UserMapperTest.java) |
 | `com/wedu/exam_creation/user/infrastructure/repository` | [UserRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/user/infrastructure/repository/UserRepositoryImplTest.java) |
 | `com/wedu/exam_creation/passwordResetToken/usecase` | [PasswordResetTokenServiceTest](../backend/src/test/java/com/wedu/exam_creation/passwordResetToken/usecase/PasswordResetTokenServiceTest.java), [PasswordResetTokenUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/passwordResetToken/usecase/PasswordResetTokenUsecaseTest.java) |
 | `com/wedu/exam_creation/passwordResetToken/infrastructure/repository` | [PasswordResetTokenRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/passwordResetToken/infrastructure/repository/PasswordResetTokenRepositoryImplTest.java) |
@@ -812,8 +813,8 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | `com/wedu/exam_creation/moderator/controller` | `ModeratorQuestionFilesTest` (snapshot cũ; file không còn trong source hiện tại) |
 | `com/wedu/exam_creation/storage/controller` | [StorageControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageControllerTest.java) |
 | `com/wedu/exam_creation/storage/service` | [S3ServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/S3ServiceTest.java) |
-| `com/wedu/exam_creation/user/controller` | [UserControllerMeTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerMeTest.java), [UserControllerUpdateAvatarTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerUpdateAvatarTest.java), [UserControllerUpdateUsernameTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerUpdateUsernameTest.java) |
-| `com/wedu/exam_creation/user/usecase` | [UserUsecaseMeTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseMeTest.java), [UserUsecaseUpdateAvatarTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseUpdateAvatarTest.java), [UserUsecaseUpdateUsernameTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseUpdateUsernameTest.java) |
+| `com/wedu/exam_creation/user/controller` | [UserControllerTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerTest.java) |
+| `com/wedu/exam_creation/user/usecase` | [UserUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseTest.java), [UserServiceTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserServiceTest.java) |
 
 ## Symbols preview DOCX — 2026-10-25
 

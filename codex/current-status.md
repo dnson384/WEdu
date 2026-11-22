@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package user — 2026-11-22
+
+Gom các test hồ sơ về [UserControllerTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerTest.java) và [UserUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseTest.java). Gom kiểm tra email và liên kết Google vào [UserRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/user/infrastructure/repository/UserRepositoryImplTest.java). Bổ sung kiểm tra tìm và xóa tài khoản, thu hồi refresh token, giữ quyền PLUS khi cập nhật từng trường, hợp đồng của UserService và ánh xạ dữ liệu. Unit test mô phỏng MongoDB, S3, Telegram và service thu hồi token. MockMvc kiểm tra ba route hồ sơ và tài khoản gắn với phiên xác thực. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check và kiểm tra 112 test methods đều đạt. Lệnh `mvn -q '-Dtest=UserControllerTest,UserUsecaseTest,UserServiceTest,UserRepositoryImplTest,UserMapperTest,UserDTOMapperTest,PlusEntitlementTest' test` đạt 130/130 lượt. Toàn bộ backend với `mvn -q test` ghi nhận 1.370 lượt, gồm 1.363 đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động.
+
 ## Chuẩn hóa và bổ sung test package storage — 2026-11-22
 
 Hợp nhất ba lớp test service thành [S3ServiceTest](../backend/src/test/java/com/wedu/exam_creation/storage/service/S3ServiceTest.java) và thay lớp test avatar bằng [StorageControllerTest](../backend/src/test/java/com/wedu/exam_creation/storage/controller/StorageControllerTest.java). Giữ các ca hồi quy về nội dung ảnh, DOCX trùng tên, upload đồng thời, retry và phân trang. Bổ sung HTTP contract của upload DOCX, email lấy từ principal, upload tệp cục bộ, ký URL, đọc và xóa đối tượng qua S3 giả lập. Các nhánh xác thực JWT dùng chung tiếp tục được kiểm tra trong [JwtAuthenticationFilterTest](../backend/src/test/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilterTest.java).

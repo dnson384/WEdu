@@ -229,7 +229,7 @@ Chạy trong từng module; npm có lockfile riêng, không có root build scrip
 | Module | Install/run | Build/check |
 | --- | --- | --- |
 | Frontend | `npm ci`; `npm run dev` | `npm run build`; `npm run lint`; `npm start` phục vụ production build |
-| Backend Windows | `./mvnw.cmd spring-boot:run` | `./mvnw.cmd test`; `./mvnw.cmd clean package`; lọc test: `./mvnw.cmd -Dtest=UserUsecaseMeTest test` |
+| Backend Windows | `./mvnw.cmd spring-boot:run` | `./mvnw.cmd test`; `./mvnw.cmd clean package`; lọc test: `./mvnw.cmd -Dtest=UserUsecaseTest test` |
 | Backend Unix | `./mvnw spring-boot:run` | `./mvnw test`; `./mvnw clean package` |
 | Exporter | `npm ci`; `npm run dev` | `npm run build`; `npm start` cần `dist/app.js` nhưng `outDir` đang comment |
 
