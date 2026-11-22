@@ -756,6 +756,10 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | Package | Test source |
 | --- | --- |
 | `com/wedu/exam_creation` | [BackendApplicationTests](../backend/src/test/java/com/wedu/exam_creation/BackendApplicationTests.java) |
+| `com/wedu/exam_creation/refreshToken/usecase` | [RefreshTokenServiceTest](../backend/src/test/java/com/wedu/exam_creation/refreshToken/usecase/RefreshTokenServiceTest.java) |
+| `com/wedu/exam_creation/refreshToken/infrastructure/repository` | [RefreshTokenRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/refreshToken/infrastructure/repository/RefreshTokenRepositoryImplTest.java) |
+| `com/wedu/exam_creation/refreshToken/infrastructure/mapper` | [RefreshTokenMapperTest](../backend/src/test/java/com/wedu/exam_creation/refreshToken/infrastructure/mapper/RefreshTokenMapperTest.java) |
+| `com/wedu/exam_creation/refreshToken/dto/mapper` | [RefreshTokenDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/refreshToken/dto/mapper/RefreshTokenDTOMapperTest.java) |
 | `com/wedu/exam_creation/questionReview/usecase` | [QuestionReviewServiceTest](../backend/src/test/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewServiceTest.java), [QuestionReviewUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/questionReview/usecase/QuestionReviewUsecaseTest.java) |
 | `com/wedu/exam_creation/questionReview/infrastructure/repository` | [QuestionReviewRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/questionReview/infrastructure/repository/QuestionReviewRepositoryImplTest.java) |
 | `com/wedu/exam_creation/questionReview/infrastructure/mapper` | [QuestionReviewMapperTest](../backend/src/test/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapperTest.java) |
