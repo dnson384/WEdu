@@ -30,7 +30,7 @@ class ExamServiceTest {
 
     @Test
     @DisplayName("trả về snapshot khi usecase tìm thấy ma trận của owner")
-    void test_getExamMatrixById_001() {
+    void test_getExamMatrixById_003() {
         ExamMatrixDTO result = new ExamMatrixDTO("Đề", List.of(), List.of());
         when(usecase.getExamMatrixById("owner", "exam")).thenReturn(result);
         assertThat(service.getExamMatrixById("owner", "exam")).isSameAs(result);
@@ -38,7 +38,7 @@ class ExamServiceTest {
 
     @Test
     @DisplayName("trả về UnprocessableEntityException khi đề thiếu snapshot")
-    void test_getExamMatrixById_002() {
+    void test_getExamMatrixById_004() {
         UnprocessableEntityException failure = new UnprocessableEntityException("Thiếu ma trận");
         when(usecase.getExamMatrixById("owner", "exam")).thenThrow(failure);
         assertThatThrownBy(() -> service.getExamMatrixById("owner", "exam")).isSameAs(failure);
@@ -46,7 +46,7 @@ class ExamServiceTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi snapshot đề không thuộc owner")
-    void test_getExamMatrixById_003() {
+    void test_getExamMatrixById_005() {
         NotFoundException failure = new NotFoundException("Không tồn tại bài kiểm tra");
         when(usecase.getExamMatrixById("other", "exam")).thenThrow(failure);
         assertThatThrownBy(() -> service.getExamMatrixById("other", "exam")).isSameAs(failure);

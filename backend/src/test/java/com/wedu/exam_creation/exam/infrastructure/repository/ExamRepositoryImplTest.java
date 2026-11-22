@@ -65,7 +65,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về entity khi query kết hợp ID đề và owner tìm thấy document")
-    void test_getExamById_001() {
+    void test_getExamById_004() {
         ExamDocument document = new ExamDocument();
         ExamEntity entity = new ExamEntity();
         when(mongo.findOne(any(Query.class), eq(ExamDocument.class))).thenReturn(document);
@@ -78,7 +78,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi query theo owner không tìm thấy đề")
-    void test_getExamById_002() {
+    void test_getExamById_005() {
         assertThatThrownBy(() -> repository.getExamById("owner", "exam"))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Không tồn tại bài kiểm tra");
@@ -90,7 +90,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi đọc đề theo owner thất bại")
-    void test_getExamById_003() {
+    void test_getExamById_006() {
         when(mongo.findOne(any(Query.class), eq(ExamDocument.class))).thenThrow(failure);
         assertThatThrownBy(() -> repository.getExamById("owner", "exam")).isSameAs(failure);
         verifyNoInteractions(mapper);
@@ -98,7 +98,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về entity đúng thứ tự khi truy vấn tất cả đề của owner")
-    void test_getAllUserExams_001() {
+    void test_getAllUserExams_007() {
         ExamDocument first = new ExamDocument();
         first.setId("e1");
         ExamDocument second = new ExamDocument();
@@ -119,7 +119,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi owner chưa có đề")
-    void test_getAllUserExams_002() {
+    void test_getAllUserExams_008() {
         when(mongo.find(any(Query.class), eq(ExamDocument.class))).thenReturn(List.of());
         assertThatThrownBy(() -> repository.getAllUserExams("owner"))
                 .isInstanceOf(NotFoundException.class)
@@ -129,7 +129,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi đọc danh sách đề thất bại")
-    void test_getAllUserExams_003() {
+    void test_getAllUserExams_009() {
         when(mongo.find(any(Query.class), eq(ExamDocument.class))).thenThrow(failure);
         assertThatThrownBy(() -> repository.getAllUserExams("owner")).isSameAs(failure);
     }
@@ -137,7 +137,7 @@ class ExamRepositoryImplTest {
     @Test
     @DisplayName(
             "trả về entity theo thứ tự Mongo khi query recent lọc owner sắp xếp giảm dần và giới hạn 5")
-    void test_getRecentExams_001() {
+    void test_getRecentExams_010() {
         ExamDocument first = new ExamDocument();
         first.setId("new");
         ExamDocument second = new ExamDocument();
@@ -160,7 +160,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có đề recent")
-    void test_getRecentExams_002() {
+    void test_getRecentExams_011() {
         when(mongo.find(any(Query.class), eq(ExamDocument.class))).thenReturn(List.of());
         assertThat(repository.getRecentExams("owner")).isEmpty();
         verifyNoInteractions(mapper);
@@ -168,14 +168,14 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi query recent thất bại")
-    void test_getRecentExams_003() {
+    void test_getRecentExams_012() {
         when(mongo.find(any(Query.class), eq(ExamDocument.class))).thenThrow(failure);
         assertThatThrownBy(() -> repository.getRecentExams("owner")).isSameAs(failure);
     }
 
     @Test
     @DisplayName("trả về true khi xóa đúng một đề với điều kiện ID và owner")
-    void test_deleteExam_001() {
+    void test_deleteExam_013() {
         when(mongo.remove(any(Query.class), eq(ExamDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(1));
         assertThat(repository.deleteExam("owner", "exam")).isTrue();
@@ -192,7 +192,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false khi không đề nào khớp ID và owner cần xóa")
-    void test_deleteExam_002() {
+    void test_deleteExam_014() {
         when(mongo.remove(any(Query.class), eq(ExamDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(0));
         assertThat(repository.deleteExam("owner", "exam")).isFalse();
@@ -209,7 +209,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về InternalServerException khi Mongo báo xóa nhiều hơn một đề")
-    void test_deleteExam_003() {
+    void test_deleteExam_015() {
         when(mongo.remove(any(Query.class), eq(ExamDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(2));
         assertThatThrownBy(() -> repository.deleteExam("owner", "exam"))
@@ -219,7 +219,7 @@ class ExamRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi xóa đề thất bại")
-    void test_deleteExam_004() {
+    void test_deleteExam_016() {
         when(mongo.remove(any(Query.class), eq(ExamDocument.class))).thenThrow(failure);
         assertThatThrownBy(() -> repository.deleteExam("owner", "exam")).isSameAs(failure);
     }

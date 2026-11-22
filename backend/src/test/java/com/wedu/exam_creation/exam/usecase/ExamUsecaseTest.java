@@ -200,7 +200,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về DTO đúng thứ tự khi owner có nhiều đề")
-    void test_getAllUserExams_001() {
+    void test_getAllUserExams_007() {
         ExamEntity first = new ExamEntity();
         first.setId("e1");
         ExamEntity second = new ExamEntity();
@@ -215,7 +215,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi repository báo owner chưa có đề")
-    void test_getAllUserExams_002() {
+    void test_getAllUserExams_008() {
         NotFoundException failure = new NotFoundException("Danh sách bài kiểm tra trống");
         when(repo.getAllUserExams("owner")).thenThrow(failure);
         assertThatThrownBy(() -> usecase.getAllUserExams("owner")).isSameAs(failure);
@@ -224,7 +224,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi repository trả danh sách đề rỗng")
-    void test_getAllUserExams_003() {
+    void test_getAllUserExams_009() {
         when(repo.getAllUserExams("owner")).thenReturn(List.of());
         assertThat(usecase.getAllUserExams("owner")).isEmpty();
         verifyNoInteractions(responses);
@@ -232,7 +232,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về chi tiết được map khi đọc đúng owner và gom ID câu hỏi của mọi nhóm")
-    void test_getExamById_001() {
+    void test_getExamById_010() {
         ExamEntity exam = new ExamEntity();
         exam.setQuestions(
                 List.of(
@@ -248,7 +248,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không đọc câu hỏi khi đề không thuộc owner")
-    void test_getExamById_002() {
+    void test_getExamById_011() {
         when(repo.getExamById("other", "exam"))
                 .thenThrow(new NotFoundException("Không tồn tại bài kiểm tra"));
         assertThatThrownBy(() -> usecase.getExamById("other", "exam"))
@@ -258,7 +258,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi câu hỏi và không map chi tiết khi không hydrate được câu hỏi")
-    void test_getExamById_003() {
+    void test_getExamById_012() {
         ExamEntity exam = new ExamEntity();
         exam.setQuestions(List.of());
         when(repo.getExamById("owner", "exam")).thenReturn(exam);
@@ -270,7 +270,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách gần đây đúng thứ tự repository khi owner có đề")
-    void test_getRecentExams_001() {
+    void test_getRecentExams_013() {
         ExamEntity first = new ExamEntity();
         first.setId("e2");
         ExamEntity second = new ExamEntity();
@@ -285,7 +285,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có đề gần đây")
-    void test_getRecentExams_002() {
+    void test_getRecentExams_014() {
         when(repo.getRecentExams("owner")).thenReturn(List.of());
         assertThat(usecase.getRecentExams("owner")).isEmpty();
         verifyNoInteractions(responses);
@@ -293,7 +293,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi không đọc được đề gần đây")
-    void test_getRecentExams_003() {
+    void test_getRecentExams_015() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(repo.getRecentExams("owner")).thenThrow(failure);
         assertThatThrownBy(() -> usecase.getRecentExams("owner")).isSameAs(failure);
@@ -302,7 +302,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về true và không xóa câu hỏi khi xóa được đề của owner")
-    void test_deleteExam_001() {
+    void test_deleteExam_016() {
         when(repo.deleteExam("owner", "exam")).thenReturn(true);
         assertThat(usecase.deleteExam("owner", "exam")).isTrue();
         verify(repo).deleteExam("owner", "exam");
@@ -311,7 +311,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi đề cần xóa không tồn tại hoặc không thuộc owner")
-    void test_deleteExam_002() {
+    void test_deleteExam_017() {
         assertThatThrownBy(() -> usecase.deleteExam("other", "exam"))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Không tìm thấy đề kiểm tra để xóa");
@@ -320,7 +320,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi thao tác xóa đề thất bại")
-    void test_deleteExam_003() {
+    void test_deleteExam_018() {
         IllegalStateException failure = new IllegalStateException("delete failed");
         when(repo.deleteExam("owner", "exam")).thenThrow(failure);
         assertThatThrownBy(() -> usecase.deleteExam("owner", "exam")).isSameAs(failure);
@@ -338,7 +338,7 @@ class ExamUsecaseTest {
             })
     @DisplayName(
             "trả về UnprocessableEntityException khi snapshot không có đủ dòng ma trận và đặc tả")
-    void test_getExamMatrixById_005(String missing) {
+    void test_getExamMatrixById_019(String missing) {
         LessonExamEntity lesson =
                 new LessonExamEntity(
                         "l",
@@ -367,7 +367,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi không đọc được snapshot đề")
-    void test_getExamMatrixById_006() {
+    void test_getExamMatrixById_020() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(repo.getExamById("owner", "exam")).thenThrow(failure);
         assertThatThrownBy(() -> usecase.getExamMatrixById("owner", "exam")).isSameAs(failure);
@@ -375,7 +375,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về đề không có errors và giữ đủ snapshot khi nháp có nhiều chương và bài")
-    void test_generateExam_007() throws Exception {
+    void test_generateExam_021() throws Exception {
         DraftDTO draft = prepareGeneration();
         LessonDraftDTO second = new LessonDraftDTO("l2", "Bài 2", List.of(), List.of());
         LessonDraftDTO third = new LessonDraftDTO("l3", "Bài 3", List.of(), List.of());
@@ -424,7 +424,7 @@ class ExamUsecaseTest {
     @Test
     @DisplayName(
             "trả về snapshot đủ trường theo thứ tự chương bài khi có nhiều chương và chương không có lessons")
-    void test_getExamMatrixById_007() {
+    void test_getExamMatrixById_022() {
         LessonExamEntity first =
                 new LessonExamEntity(
                         "l1",
@@ -484,7 +484,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về snapshot đúng thứ tự gồm số lượng 0 khi đề có đủ ma trận và đặc tả")
-    void test_getExamMatrixById_001() {
+    void test_getExamMatrixById_023() {
         LessonExamEntity lesson =
                 new LessonExamEntity(
                         "l",
@@ -520,7 +520,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi đề không thuộc owner hoặc không tồn tại")
-    void test_getExamMatrixById_002() {
+    void test_getExamMatrixById_024() {
         when(repo.getExamById("other", "exam"))
                 .thenThrow(new NotFoundException("Không tồn tại bài kiểm tra"));
         assertThatThrownBy(() -> usecase.getExamMatrixById("other", "exam"))
@@ -529,7 +529,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về UnprocessableEntityException khi đề không có snapshot chương")
-    void test_getExamMatrixById_003() {
+    void test_getExamMatrixById_025() {
         when(repo.getExamById("owner", "exam")).thenReturn(new ExamEntity());
         assertThatThrownBy(() -> usecase.getExamMatrixById("owner", "exam"))
                 .isInstanceOf(UnprocessableEntityException.class);
@@ -537,7 +537,7 @@ class ExamUsecaseTest {
 
     @Test
     @DisplayName("trả về UnprocessableEntityException khi bài có ma trận nhưng thiếu đặc tả")
-    void test_getExamMatrixById_004() {
+    void test_getExamMatrixById_026() {
         LessonExamEntity lesson =
                 new LessonExamEntity(
                         "l",
@@ -549,5 +549,31 @@ class ExamUsecaseTest {
         when(repo.getExamById("owner", "exam")).thenReturn(exam);
         assertThatThrownBy(() -> usecase.getExamMatrixById("owner", "exam"))
                 .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    @DisplayName(
+            "trả về UnprocessableEntityException khi bài sau thiếu đặc tả dù bài đầu đủ ma trận")
+    void test_getExamMatrixById_027() {
+        List<ExamMatrixItemEntity> matrix =
+                List.of(new ExamMatrixItemEntity("Đúng sai", "Thông hiểu", 1));
+        LessonExamEntity complete =
+                new LessonExamEntity(
+                        "l1",
+                        "Bài 1",
+                        matrix,
+                        List.of(
+                                new ExamMatrixDetailItemEntity(
+                                        "Dạng", "Thông hiểu", "Yêu cầu", "Đúng sai", 1)));
+        LessonExamEntity incomplete = new LessonExamEntity("l2", "Bài 2", matrix, List.of());
+        ExamEntity exam = new ExamEntity();
+        exam.setChapters(
+                List.of(new ChapterExamEntity(List.of(complete, incomplete), "c", "Chương")));
+        when(repo.getExamById("owner", "exam")).thenReturn(exam);
+
+        assertThatThrownBy(() -> usecase.getExamMatrixById("owner", "exam"))
+                .isInstanceOf(UnprocessableEntityException.class)
+                .hasMessage("Đề kiểm tra thiếu ma trận hoặc bản đặc tả ma trận đề");
+        verifyNoInteractions(questions, storage);
     }
 }
