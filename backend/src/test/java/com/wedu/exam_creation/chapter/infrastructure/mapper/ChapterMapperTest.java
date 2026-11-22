@@ -17,21 +17,21 @@ class ChapterMapperTest {
 
     @Test
     @DisplayName("trả về các trường null khi entity thiếu dữ liệu tùy chọn")
-    void test_toDocument_004() {
+    void test_toDocument_001() {
         assertThat(mapper.toDocument(new ChapterEntity()))
                 .isEqualTo(new ChapterDocument(null, null, null, null, null, null));
     }
 
     @Test
     @DisplayName("trả về các trường null khi document thiếu dữ liệu tùy chọn")
-    void test_toEntity_004() {
+    void test_toEntity_002() {
         assertThat(mapper.toEntity(new ChapterDocument(null, null, null, null, null, null)))
                 .isEqualTo(new ChapterEntity());
     }
 
     @Test
     @DisplayName("trả về document đầy đủ dữ liệu lồng nhau và timestamp khi map entity")
-    void test_toDocument_001() {
+    void test_toDocument_003() {
         ChapterEntity entity =
                 new ChapterEntity(
                         "c1",
@@ -59,20 +59,20 @@ class ChapterMapperTest {
 
     @Test
     @DisplayName("trả về null khi entity đầu vào null")
-    void test_toDocument_002() {
+    void test_toDocument_004() {
         assertThat(mapper.toDocument(null)).isNull();
     }
 
     @Test
     @DisplayName("trả về danh sách bài rỗng khi entity không có bài")
-    void test_toDocument_003() {
+    void test_toDocument_005() {
         assertThat(mapper.toDocument(new ChapterEntity("c1", null, null, List.of(), null, null)))
                 .isEqualTo(new ChapterDocument("c1", null, null, List.of(), null, null));
     }
 
     @Test
     @DisplayName("trả về entity đầy đủ dữ liệu lồng nhau và timestamp khi map document")
-    void test_toEntity_001() {
+    void test_toEntity_006() {
         ChapterDocument document =
                 new ChapterDocument(
                         "c1",
@@ -98,13 +98,13 @@ class ChapterMapperTest {
 
     @Test
     @DisplayName("trả về null khi document đầu vào null")
-    void test_toEntity_002() {
+    void test_toEntity_007() {
         assertThat(mapper.toEntity(null)).isNull();
     }
 
     @Test
     @DisplayName("trả về danh sách bài rỗng khi document không có bài")
-    void test_toEntity_003() {
+    void test_toEntity_008() {
         assertThat(mapper.toEntity(new ChapterDocument("c1", null, null, List.of(), null, null)))
                 .isEqualTo(new ChapterEntity("c1", null, null, List.of(), null, null));
     }

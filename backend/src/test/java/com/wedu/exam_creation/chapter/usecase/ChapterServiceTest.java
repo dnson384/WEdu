@@ -61,15 +61,19 @@ class ChapterServiceTest {
     @Test
     @DisplayName("trả về lỗi persistence khi lưu chương thất bại")
     void test_insert_003() {
+        NewLessonDataDTO lesson = new NewLessonDataDTO(List.of(), "Bài 1");
+        NewChapterDTO input = new NewChapterDTO("Vật lý", "Chương 1", List.of(lesson));
+        when(mapper.newLessonDTOToEntity(lesson))
+                .thenReturn(new LessonDataEntity(null, "Bài 1", List.of()));
         IllegalStateException failure = new IllegalStateException("save failed");
         when(repository.saveChapter(any(ChapterEntity.class))).thenThrow(failure);
-        assertThatThrownBy(() -> service.insert(new NewChapterDTO("Vật lý", "Chương 1", List.of())))
-                .isSameAs(failure);
+
+        assertThatThrownBy(() -> service.insert(input)).isSameAs(failure);
     }
 
     @Test
     @DisplayName("trả về DTO đã map khi có chương trong repository")
-    void test_getAll_001() {
+    void test_getAll_004() {
         ChapterEntity entity = new ChapterEntity();
         ChapterResponseDTO dto = new ChapterResponseDTO("c1", "Vật lý", "Chương 1", List.of());
         when(repository.getAll()).thenReturn(List.of(entity));
@@ -79,7 +83,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi repository chưa có chương")
-    void test_getAll_002() {
+    void test_getAll_005() {
         when(repository.getAll()).thenReturn(List.of());
         assertThat(service.getAll()).isEmpty();
         verifyNoInteractions(mapper);
@@ -87,7 +91,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi không đọc được chương")
-    void test_getAll_003() {
+    void test_getAll_006() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(repository.getAll()).thenThrow(failure);
         assertThatThrownBy(service::getAll).isSameAs(failure);
@@ -96,7 +100,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về chương và bài đúng thứ tự repository khi đọc theo danh sách ID")
-    void test_getByIds_001() {
+    void test_getByIds_007() {
         LessonDataEntity lesson = new LessonDataEntity("l1", "Bài 1", List.of());
         LessonDataResponseDTO lessonDTO = new LessonDataResponseDTO("l1", "Bài 1", List.of());
         ChapterEntity first =
@@ -112,7 +116,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi repository trả về rỗng")
-    void test_getByIds_002() {
+    void test_getByIds_008() {
         when(repository.getByIds(List.of())).thenReturn(List.of());
         assertThat(service.getByIds(List.of())).isEmpty();
         verifyNoInteractions(mapper);
@@ -120,7 +124,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi repository không tìm thấy chương")
-    void test_getByIds_003() {
+    void test_getByIds_009() {
         NotFoundException failure = new NotFoundException("Không tồn tại chương này");
         when(repository.getByIds(List.of("missing"))).thenThrow(failure);
         assertThatThrownBy(() -> service.getByIds(List.of("missing"))).isSameAs(failure);
@@ -129,7 +133,7 @@ class ChapterServiceTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi truy vấn danh sách ID thất bại")
-    void test_getByIds_004() {
+    void test_getByIds_010() {
         IllegalStateException failure = new IllegalStateException("read failed");
         when(repository.getByIds(List.of("c1"))).thenThrow(failure);
         assertThatThrownBy(() -> service.getByIds(List.of("c1"))).isSameAs(failure);

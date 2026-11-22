@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Rà soát test package chapter — 2026-11-22
+
+Chuẩn hóa số thứ tự xuyên suốt `ChapterServiceTest`, `ChapterRepositoryImplTest`, `ChapterDTOMapperTest` và `ChapterMapperTest`. [ChapterControllerTest](../backend/src/test/java/com/wedu/exam_creation/chapter/controller/ChapterControllerTest.java) chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản được mock. Route trả 400 khi thiếu Authorization, 401 khi JWT bị từ chối và 403 khi tài khoản bị khóa. [ChapterRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImplTest.java) kiểm tra gộp thống kê theo bài trùng tên ở chương có nhiều bài. Fixture lỗi ghi của `ChapterServiceTest` dùng dữ liệu có bài học hợp lệ.
+
+Spotless apply/check và kiểm tra quy cách của 61 test methods đạt. `mvn -q '-Dtest=Chapter*Test' clean test` đạt 66/66 lượt. Toàn bộ backend với `mvn -q test` có 1.393 lượt đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động.
+
 ## Rà soát và bổ sung test package auth — 2026-11-22
 
 Chuẩn hóa số thứ tự xuyên suốt sáu lớp test từng reset số theo method. Bổ sung MockMvc cho metadata, gửi lại và xác minh OTP, cùng hai nhánh HTTP thành công và payload sai định dạng của Google exchange. Bổ sung kiểm thử hạn OTP gần cuối phiên, xung đột khi gửi lại, lưu và cập nhật trạng thái OTP trong repository. Thêm test cho hai mapper và các lớp chủ động ẩn định danh và giá trị băm khỏi `toString()`. Các test dùng fixture cố định và mock tại ranh giới MongoDB, mail và xác thực. [Danh mục test](source-catalog.md#backend-tests).
