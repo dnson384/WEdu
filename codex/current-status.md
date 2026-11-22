@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package questionReview — 2026-11-22
+
+Đổi tên `QuestionReviewRepositoryTest` thành `QuestionReviewRepositoryImplTest`, chuẩn hóa `QuestionReviewUsecaseTest`, thêm `QuestionReviewServiceTest` và `QuestionReviewMapperTest`. Tổng cộng 30 ca, tăng 22 ca. Test kiểm tra batch tạo/đọc review, snapshot mới nhất, giới hạn lượt, chỉnh sửa giữ lịch sử, revision legacy và xung đột ghi/xóa, cùng nội dung lồng nhau, placeholder và S3 key qua mapper. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi questionReview và `mvn -q "-Dtest=QuestionReview*Test" clean test` đạt. Maven Wrapper lỗi khởi động, nên chạy bằng Maven đã cài. Test sử dụng thời gian cố định và MongoTemplate mock.
+
+`mvn -q clean test` trên nhánh `backend/test/question-review` chạy 1.207 ca, với 1.200 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors. Cả 30 ca questionReview đều đạt.
+
 ## Chuẩn hóa và bổ sung test package question — 2026-11-22
 
 Gộp hai nhóm service vào `QuestionServiceTest` và hai nhóm repository vào `QuestionRepositoryImplTest`. Thêm `QuestionDTOMapperTest` và `QuestionMapperTest`. Bổ sung các ca nhập DOCX với trạng thái APPROVED, chọn câu tránh lặp, bù câu PLUS bằng AI, luồng duyệt và chỉnh sửa, truy vấn theo ID/bài học, timestamp khi lưu và mapping nội dung/placeholder/status legacy. Unit test gọi dependency giả lập cho MongoDB, AI, Telegram và dữ liệu review. [Danh mục test](source-catalog.md#backend-tests).
