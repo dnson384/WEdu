@@ -61,7 +61,7 @@ class DraftDTOMapperTest {
 
     @Test
     @DisplayName("trả về entity giữ nguyên dữ liệu khi chuyển qua DTO và ngược lại")
-    void test_toEntity_001() {
+    void test_toEntity_003() {
 
         DraftEntity entity = entity();
         assertThat(mapper.toEntity(mapper.toDTO(entity))).isEqualTo(entity);
@@ -69,13 +69,13 @@ class DraftDTOMapperTest {
 
     @Test
     @DisplayName("trả về null khi dữ liệu đầu vào null")
-    void test_toEntity_002() {
+    void test_toEntity_004() {
         assertThat(mapper.toEntity(null)).isNull();
     }
 
     @Test
     @DisplayName("trả về trường tùy chọn null được giữ nguyên khi entity chưa có chương")
-    void test_toDTO_003() {
+    void test_toDTO_005() {
 
         DraftEntity entity = new DraftEntity();
         entity.setId("draft");
@@ -84,7 +84,7 @@ class DraftDTOMapperTest {
 
     @Test
     @DisplayName("trả về đủ năm trường đặc tả khi DTO hợp lệ")
-    void test_detailDTOToEntity_001() {
+    void test_detailDTOToEntity_006() {
 
         MatrixDetailItemDTO dto =
                 new MatrixDetailItemDTO("Dạng", "Thông hiểu", "Kiến thức", "Đúng sai", 0);
@@ -96,7 +96,7 @@ class DraftDTOMapperTest {
 
     @Test
     @DisplayName("trả về null khi DTO đặc tả null")
-    void test_detailDTOToEntity_002() {
+    void test_detailDTOToEntity_007() {
         assertThat(mapper.detailDTOToEntity(null)).isNull();
     }
 }
