@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Rà soát test package exam — 2026-11-22
+
+Chuẩn hóa số thứ tự xuyên suốt sáu lớp test và giữ các ca snapshot đã có. [ExamControllerTest](../backend/src/test/java/com/wedu/exam_creation/exam/controller/ExamControllerTest.java) chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản được mock. Cả năm route trả HTTP 400 khi thiếu Authorization. Thêm ca HTTP 401 khi JWT bị từ chối và HTTP 403 khi tài khoản bị khóa. [ExamUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exam/usecase/ExamUsecaseTest.java) kiểm tra từ chối trả snapshot ma trận nếu bài phía sau thiếu đặc tả dù bài đầu đầy đủ.
+
+Spotless apply/check và kiểm tra quy cách của 90 test methods đạt. `mvn -q '-Dtest=Exam*Test' clean test` đạt 97/97 lượt. Toàn bộ backend với `mvn -q test` có 1.396 lượt đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động.
+
 ## Rà soát test package chapter — 2026-11-22
 
 Chuẩn hóa số thứ tự xuyên suốt `ChapterServiceTest`, `ChapterRepositoryImplTest`, `ChapterDTOMapperTest` và `ChapterMapperTest`. [ChapterControllerTest](../backend/src/test/java/com/wedu/exam_creation/chapter/controller/ChapterControllerTest.java) chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản được mock. Route trả 400 khi thiếu Authorization, 401 khi JWT bị từ chối và 403 khi tài khoản bị khóa. [ChapterRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImplTest.java) kiểm tra gộp thống kê theo bài trùng tên ở chương có nhiều bài. Fixture lỗi ghi của `ChapterServiceTest` dùng dữ liệu có bài học hợp lệ.
