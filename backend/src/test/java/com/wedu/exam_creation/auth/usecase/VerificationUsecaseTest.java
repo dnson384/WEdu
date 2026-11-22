@@ -8,6 +8,7 @@ import com.wedu.exam_creation.auth.domain.entity.VerificationEntity;
 import com.wedu.exam_creation.auth.domain.repository.IVerificationRepository;
 import com.wedu.exam_creation.auth.dto.mapper.AuthDTOMapper;
 import com.wedu.exam_creation.auth.dto.response.UserResponseDTO;
+import com.wedu.exam_creation.auth.dto.response.VerificationResponseDTO;
 import com.wedu.exam_creation.auth.infrastructure.mapper.VerificationMapper;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
@@ -249,7 +250,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về JWT đúng một lần khi OTP hợp lệ và không cho dùng lại")
-    void test_verify_001() {
+    void test_verify_004() {
         VerificationUsecase.Pending pending = usecase.register(input());
         tokens();
         when(users.createNewUser(any(), eq("bcrypt-hash"))).thenReturn(teacher());
@@ -262,7 +263,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi hết lượt và không tạo user khi nhập sai OTP năm lần")
-    void test_verify_002() {
+    void test_verify_005() {
         VerificationUsecase.Pending pending = usecase.register(input());
         String wrong = sent.get(0).equals("000000") ? "111111" : "000000";
         for (int i = 0; i < 5; i++)
@@ -277,7 +278,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi hết hạn khi OTP đủ năm phút hoặc phiên đủ ba mươi phút")
-    void test_verify_003() {
+    void test_verify_006() {
         VerificationUsecase.Pending pending = usecase.register(input());
         time.set(now.plusSeconds(300));
         assertThatThrownBy(() -> usecase.verify(pending.token(), sent.get(0)))
@@ -288,7 +289,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về OTP mới sau thời gian chờ khi đã đủ một trăm hai mươi giây")
-    void test_resend_001() {
+    void test_resend_007() {
         VerificationUsecase.Pending pending = usecase.register(input());
         assertThatThrownBy(() -> usecase.resend(pending.token()))
                 .isInstanceOf(VerificationException.class);
@@ -304,7 +305,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi gửi OTP và không đánh dấu sẵn sàng khi SMTP thất bại")
-    void test_register_004() {
+    void test_register_008() {
         doThrow(new RuntimeException("SMTP failure"))
                 .when(mail)
                 .sendVerificationOtp(anyString(), anyString());
@@ -317,7 +318,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi giới hạn và không gửi email khi quota email đã hết")
-    void test_register_005() {
+    void test_register_009() {
         doThrow(new VerificationException("OTP_RATE_LIMIT", "wait", 429, 120))
                 .when(repo)
                 .reserveEmail(eq("teacher@example.com"), any());
@@ -328,7 +329,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về ConflictException và rollback khi email được đăng ký trong lúc chờ OTP")
-    void test_verify_004() {
+    void test_verify_010() {
         VerificationUsecase.Pending pending = usecase.register(input());
         when(users.findByEmail("teacher@example.com")).thenReturn(Optional.of(teacher()));
         assertThatThrownBy(() -> usecase.verify(pending.token(), sent.get(0)))
@@ -339,7 +340,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về InternalServerException và rollback khi lưu refresh token thất bại")
-    void test_verify_005() {
+    void test_verify_011() {
         VerificationUsecase.Pending pending = usecase.register(input());
         when(users.createNewUser(any(), any())).thenReturn(teacher());
         when(auth.generateToken(any())).thenReturn(new AuthUsecase.TokenResult(false, "at", "rt"));
@@ -351,7 +352,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về phiên chờ OTP khi tài khoản Google chưa tồn tại")
-    void test_exchange_001() {
+    void test_exchange_012() {
         VerificationUsecase.Exchange result =
                 usecase.exchange(google("teacher@example.com", true), "verifier");
         assertThat(result.authorized()).isNull();
@@ -364,7 +365,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về tài khoản GOOGLE không có mật khẩu LOCAL khi xác thực OTP thành công")
-    void test_verify_006() {
+    void test_verify_013() {
         VerificationUsecase.Exchange result =
                 usecase.exchange(google("teacher@example.com", true), "verifier");
         tokens();
@@ -378,7 +379,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về liên kết Google sau OTP khi email ngoài chưa liên kết")
-    void test_verify_007() {
+    void test_verify_014() {
         when(users.findByEmail("teacher@example.com")).thenReturn(Optional.of(teacher()));
         VerificationUsecase.Exchange result =
                 usecase.exchange(google("teacher@example.com", false), "verifier");
@@ -393,7 +394,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về JWT và liên kết trực tiếp khi email Google có thẩm quyền trùng tài khoản")
-    void test_exchange_002() {
+    void test_exchange_015() {
         CommonUserResponseAllDTO teacher = teacher();
         teacher.setEmail("teacher@gmail.com");
         when(users.findByEmail("teacher@gmail.com")).thenReturn(Optional.of(teacher));
@@ -411,7 +412,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về JWT không gửi OTP khi email ngoài đã liên kết Google")
-    void test_exchange_003() {
+    void test_exchange_016() {
         CommonUserResponseAllDTO mixed = teacher();
         mixed.setLoginMethod("MIXED");
         when(users.findByEmail("teacher@example.com")).thenReturn(Optional.of(mixed));
@@ -426,7 +427,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về phiên chờ OTP khi Google đổi email và không tìm user theo subject cũ")
-    void test_exchange_004() {
+    void test_exchange_017() {
         VerificationUsecase.Exchange result =
                 usecase.exchange(google("changed@gmail.com", true), "verifier");
         assertThat(result.pending()).isNotNull();
@@ -438,7 +439,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về ConflictException và rollback khi tài khoản đã liên kết subject khác")
-    void test_exchange_005() {
+    void test_exchange_018() {
         CommonUserResponseAllDTO user = teacher();
         user.setEmail("teacher@gmail.com");
         when(users.findByEmail("teacher@gmail.com")).thenReturn(Optional.of(user));
@@ -452,7 +453,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về ConflictException không cấp JWT khi Google subject thuộc email khác")
-    void test_exchange_006() {
+    void test_exchange_019() {
         CommonUserResponseAllDTO user = teacher();
         user.setEmail("teacher@gmail.com");
         when(users.findByEmail("teacher@gmail.com")).thenReturn(Optional.of(user));
@@ -467,7 +468,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về ForbiddenException khi user không phải giáo viên hoặc bị khóa")
-    void test_exchange_007() {
+    void test_exchange_020() {
         for (String role : List.of("ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_USER")) {
             CommonUserResponseAllDTO user = teacher();
             user.setRole(role);
@@ -487,7 +488,7 @@ class VerificationUsecaseTest {
     @Test
     @DisplayName(
             "trả về lỗi xác thực khi trình duyệt khác đổi handoff hoặc handoff đã dùng hay hết hạn")
-    void test_exchange_008() {
+    void test_exchange_021() {
         String code = google("teacher@example.com", true);
         assertThatThrownBy(() -> usecase.exchange(code, "another-browser"))
                 .isInstanceOf(VerificationException.class);
@@ -502,7 +503,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về BadRequestException trước persistence khi Google email chưa xác minh")
-    void test_googleHandoff_001() {
+    void test_googleHandoff_022() {
         assertThatThrownBy(
                         () ->
                                 usecase.googleHandoff(
@@ -518,10 +519,9 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về metadata che email và thời gian cố định khi phiên còn hiệu lực")
-    void test_metadata_001() {
+    void test_metadata_023() {
         VerificationUsecase.Pending pending = usecase.register(input());
-        com.wedu.exam_creation.auth.dto.response.VerificationResponseDTO metadata =
-                usecase.metadata(pending.token());
+        VerificationResponseDTO metadata = usecase.metadata(pending.token());
         assertThat(metadata.getEmail()).isEqualTo("t***@example.com");
         assertThat(metadata.getServerTime()).isEqualTo(now);
         assertThat(metadata.getRemainingAttempts()).isEqualTo(5);
@@ -530,7 +530,7 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về VERIFICATION_EXPIRED khi token không có đúng định dạng")
-    void test_metadata_002() {
+    void test_metadata_024() {
         assertThatThrownBy(() -> usecase.metadata("invalid"))
                 .isInstanceOfSatisfying(
                         VerificationException.class,
@@ -543,11 +543,63 @@ class VerificationUsecaseTest {
 
     @Test
     @DisplayName("trả về VERIFICATION_EXPIRED khi phiên không tồn tại trong repository")
-    void test_metadata_003() {
+    void test_metadata_025() {
         assertThatThrownBy(() -> usecase.metadata("a".repeat(64)))
                 .isInstanceOfSatisfying(
                         VerificationException.class,
                         error -> assertThat(error.getCode()).isEqualTo("VERIFICATION_EXPIRED"));
         verifyNoInteractions(auth, mail);
+    }
+
+    @Test
+    @DisplayName(
+            "trả về ConflictException và không gửi email khi phiên thay đổi trước lúc ghi OTP gửi lại")
+    void test_resend_026() {
+        VerificationUsecase.Pending pending = usecase.register(input());
+        time.set(now.plusSeconds(120));
+        doReturn(false).when(repo).replaceOtp(any(VerificationEntity.class), eq(time.get()));
+        clearInvocations(mail, repo);
+
+        assertThatThrownBy(() -> usecase.resend(pending.token()))
+                .isInstanceOf(ConflictException.class);
+
+        verifyNoInteractions(mail, auth);
+        verify(repo, never()).markReady(anyString(), anyString(), anyBoolean());
+    }
+
+    @Test
+    @DisplayName("trả về OTP có hạn không vượt quá hạn phiên khi gửi lại gần cuối phiên xác thực")
+    void test_resend_027() {
+        VerificationUsecase.Pending pending = usecase.register(input());
+        time.set(now.plusSeconds(1799));
+
+        VerificationResponseDTO metadata = usecase.resend(pending.token());
+
+        assertThat(metadata.getOtpExpiresAt()).isEqualTo(now.plusSeconds(1800));
+        assertThat(metadata.getExpiresAt()).isEqualTo(metadata.getOtpExpiresAt());
+        assertThat(metadata.getRemainingAttempts()).isEqualTo(5);
+        assertThat(sent).hasSize(2).doesNotHaveDuplicates();
+    }
+
+    @Test
+    @DisplayName(
+            "trả về mã handoff và lưu định danh đã chuẩn hóa có hạn 60 giây khi email Google đã xác minh")
+    void test_googleHandoff_028() {
+        String code =
+                usecase.googleHandoff(
+                        "Teacher@Example.COM", "", "google-subject", true, true, "a".repeat(64));
+
+        assertThat(code).matches("[a-f0-9]{64}");
+        VerificationEntity identity = storage.get(VerificationUsecase.hash(code));
+        assertThat(identity).isNotNull();
+        assertThat(identity.getId()).isNotEqualTo(code);
+        assertThat(identity.getPurpose()).isEqualTo("HANDOFF");
+        assertThat(identity.getEmail()).isEqualTo("teacher@example.com");
+        assertThat(identity.getUsername()).isEqualTo("Teacher");
+        assertThat(identity.getGoogleSubject()).isEqualTo("google-subject");
+        assertThat(identity.getBindingHash()).isEqualTo("a".repeat(64));
+        assertThat(identity.isAuthoritativeEmail()).isTrue();
+        assertThat(identity.getExpiresAt()).isEqualTo(now.plusSeconds(60));
+        verifyNoInteractions(users, auth, mail);
     }
 }

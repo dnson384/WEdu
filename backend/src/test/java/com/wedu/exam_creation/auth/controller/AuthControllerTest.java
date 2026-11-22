@@ -538,7 +538,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 200 khi true khi usecase đăng xuất thành công")
-    void test_logout_001() throws Exception {
+    void test_logout_028() throws Exception {
         when(authUsecase.logout(AUTHORIZATION)).thenReturn(true);
 
         mockMvc.perform(post(LOGOUT_URL).header("Authorization", AUTHORIZATION))
@@ -552,7 +552,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 200 khi false khi usecase trả về false")
-    void test_logout_002() throws Exception {
+    void test_logout_029() throws Exception {
         when(authUsecase.logout(AUTHORIZATION)).thenReturn(false);
 
         mockMvc.perform(post(LOGOUT_URL).header("Authorization", AUTHORIZATION))
@@ -565,7 +565,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 400 khi Thiếu header Authorization")
-    void test_logout_003() throws Exception {
+    void test_logout_030() throws Exception {
         mockMvc.perform(post(LOGOUT_URL))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Thiếu header Authorization"));
@@ -575,7 +575,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 404 khi Usecase không tìm thấy refresh token")
-    void test_logout_004() throws Exception {
+    void test_logout_031() throws Exception {
         when(authUsecase.logout(AUTHORIZATION))
                 .thenThrow(new NotFoundException("Không tìm thấy RT"));
 
@@ -589,7 +589,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 500 khi Usecase gặp lỗi khi xóa refresh token")
-    void test_logout_005() throws Exception {
+    void test_logout_032() throws Exception {
         when(authUsecase.logout(AUTHORIZATION))
                 .thenThrow(new InternalServerException("Dữ liệu không nhất quán, xóa dư"));
 
@@ -603,7 +603,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 405 khi Gọi logout bằng GET")
-    void test_logout_006() throws Exception {
+    void test_logout_033() throws Exception {
         mockMvc.perform(get(LOGOUT_URL).header("Authorization", AUTHORIZATION))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message").value("Phương thức HTTP không được hỗ trợ"));
@@ -613,7 +613,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 200 và access token mới khi refresh cookie hợp lệ")
-    void test_regenerateAccessToken_001() throws Exception {
+    void test_regenerateAccessToken_034() throws Exception {
         when(authUsecase.regenerateAccessToken("rt")).thenReturn("new-at");
         mockMvc.perform(
                         post("/auth/regenerate-access-token")
@@ -624,14 +624,14 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 400 trước usecase khi thiếu refresh cookie")
-    void test_regenerateAccessToken_002() throws Exception {
+    void test_regenerateAccessToken_035() throws Exception {
         mockMvc.perform(post("/auth/regenerate-access-token")).andExpect(status().isBadRequest());
         verifyNoInteractions(authUsecase);
     }
 
     @Test
     @DisplayName("trả về 401 khi refresh token đã bị thu hồi")
-    void test_regenerateAccessToken_003() throws Exception {
+    void test_regenerateAccessToken_036() throws Exception {
         when(authUsecase.regenerateAccessToken("revoked"))
                 .thenThrow(new UnAuthorizedException("revoked"));
         mockMvc.perform(
@@ -642,7 +642,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 200 khi usecase nhận yêu cầu quên mật khẩu")
-    void test_forgotPassword_001() throws Exception {
+    void test_forgotPassword_037() throws Exception {
         mockMvc.perform(post("/auth/forgot-password").param("email", "teacher@example.com"))
                 .andExpect(status().isOk());
         verify(authUsecase).forgotPassword("teacher@example.com");
@@ -650,14 +650,14 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 400 trước usecase khi thiếu email quên mật khẩu")
-    void test_forgotPassword_002() throws Exception {
+    void test_forgotPassword_038() throws Exception {
         mockMvc.perform(post("/auth/forgot-password")).andExpect(status().isBadRequest());
         verifyNoInteractions(authUsecase);
     }
 
     @Test
     @DisplayName("trả về 200 khi token và mật khẩu đặt lại được usecase chấp nhận")
-    void test_resetPassword_001() throws Exception {
+    void test_resetPassword_039() throws Exception {
         mockMvc.perform(
                         post("/auth/reset-password")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -669,7 +669,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 400 trước usecase khi mật khẩu đặt lại rỗng")
-    void test_resetPassword_002() throws Exception {
+    void test_resetPassword_040() throws Exception {
         mockMvc.perform(
                         post("/auth/reset-password")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -680,7 +680,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 200 và dùng ID principal khi yêu cầu đổi mật khẩu hợp lệ")
-    void test_changePassword_001() throws Exception {
+    void test_changePassword_041() throws Exception {
         CommonUserResponseAllDTO user = new CommonUserResponseAllDTO();
         user.setId("owner-id");
         CustomUserDetails principal = new CustomUserDetails(user);
@@ -712,7 +712,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 400 trước usecase khi thiếu Authorization đổi mật khẩu")
-    void test_changePassword_002() throws Exception {
+    void test_changePassword_042() throws Exception {
         mockMvc.perform(
                         patch("/auth/change-password")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -723,7 +723,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("trả về 401 khi usecase từ chối token đặt lại mật khẩu")
-    void test_resetPassword_003() throws Exception {
+    void test_resetPassword_043() throws Exception {
         doThrow(new UnAuthorizedException("expired"))
                 .when(authUsecase)
                 .resetPassword("expired", "Password123@", "Password123@");

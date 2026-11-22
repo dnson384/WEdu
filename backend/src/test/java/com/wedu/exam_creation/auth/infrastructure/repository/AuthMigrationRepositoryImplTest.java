@@ -65,7 +65,7 @@ class AuthMigrationRepositoryImplTest {
 
     @Test
     @DisplayName("trả về chỉ xóa index emailKey khi tồn tại các index user khác")
-    void test_dropLegacyIndexes_001() {
+    void test_dropLegacyIndexes_002() {
         ListIndexesIterable<Document> indexes = mock(ListIndexesIterable.class);
         when(users.listIndexes()).thenReturn(indexes);
         doAnswer(
@@ -92,7 +92,7 @@ class AuthMigrationRepositoryImplTest {
     @Test
     @DisplayName(
             "trả về partial update giữ ID và credential khác khi chuẩn hóa email và loginMethod")
-    void test_apply_001() {
+    void test_apply_003() {
         ObjectId id = new ObjectId("507f1f77bcf86cd799439011");
         repository.apply(
                 List.of(
@@ -116,7 +116,7 @@ class AuthMigrationRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng không thao tác collection khi collection chưa tồn tại")
-    void test_findUsers_002() {
+    void test_findUsers_004() {
         when(mongo.collectionExists(UserDocument.class)).thenReturn(false);
         assertThat(repository.findUsers()).isEmpty();
         repository.dropLegacyIndexes();
@@ -125,7 +125,7 @@ class AuthMigrationRepositoryImplTest {
 
     @Test
     @DisplayName("trả về không ghi database khi danh sách thay đổi rỗng")
-    void test_apply_002() {
+    void test_apply_005() {
         repository.apply(List.of());
         verifyNoInteractions(users);
     }
