@@ -63,7 +63,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về true khi tổng bằng hoặc vượt số câu yêu cầu")
-    void test_hasMatrixDetail_001() {
+    void test_hasMatrixDetail_004() {
 
         LessonDraftDTO lesson = lesson("one", 0);
         lesson.setMatrixDetails(
@@ -78,7 +78,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về false khi tổng thiếu và số lượng null được tính bằng không")
-    void test_hasMatrixDetail_002() {
+    void test_hasMatrixDetail_005() {
 
         LessonDraftDTO lesson = lesson("one", 0);
         lesson.setMatrixDetails(
@@ -92,7 +92,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về false khi các bài chưa có dữ liệu và yêu cầu lớn hơn không")
-    void test_hasMatrixDetail_003() {
+    void test_hasMatrixDetail_006() {
 
         LessonDraftDTO first = lesson("one", 0);
         first.setMatrixDetails(null);
@@ -104,7 +104,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về ma trận giữ tổng và tỷ lệ loại câu cùng mức độ khi sinh mười câu")
-    void test_generateMatrix_001() {
+    void test_generateMatrix_007() {
 
         LessonDraftDTO first = lesson("one", 99);
         LessonDraftDTO second = lesson("two", 99);
@@ -128,7 +128,7 @@ class DraftUtilTest {
     @Test
     @DisplayName(
             "trả về phần dư vào loại cuối và các mức có phần thập phân lớn nhất khi sinh bảy câu")
-    void test_generateMatrix_002() {
+    void test_generateMatrix_008() {
 
         LessonDraftDTO lesson = lesson("one", 0);
         util.generateMatrix(chapters(lesson), TYPES, 7);
@@ -143,7 +143,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về ma trận toàn số không khi yêu cầu không câu hoặc số âm")
-    void test_generateMatrix_003() {
+    void test_generateMatrix_009() {
 
         for (Integer count : List.of(0, -1)) {
             LessonDraftDTO lesson = lesson("one", 99);
@@ -158,7 +158,7 @@ class DraftUtilTest {
     @Test
     @DisplayName(
             "trả về toàn bộ câu vào loại duy nhất và chia vòng qua nhiều chương khi chỉ chọn một loại")
-    void test_generateMatrix_004() {
+    void test_generateMatrix_010() {
 
         LessonDraftDTO first = lesson("one", 0);
         LessonDraftDTO second = lesson("two", 0);
@@ -177,7 +177,7 @@ class DraftUtilTest {
     @Test
     @DisplayName(
             "trả về tích outcome và dạng bài không trùng cùng tổng phân bổ khi bankStats có metadata lặp")
-    void test_generateMatrixDetails_001() {
+    void test_generateMatrixDetails_011() {
 
         LessonDraftDTO lesson = lesson("one", 7);
         BankStatResponseDTO stat =
@@ -213,7 +213,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về metadata mặc định khi không có danh mục hoặc bankStats thiếu trường")
-    void test_generateMatrixDetails_002() {
+    void test_generateMatrixDetails_012() {
 
         LessonDraftDTO lesson = lesson("one", 3);
         util.generateMatrixDetails(null, List.of(lesson));
@@ -250,7 +250,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về ô đặc tả bằng không khi selectedCount null hoặc bằng không")
-    void test_generateMatrixDetails_003() {
+    void test_generateMatrixDetails_013() {
 
         LessonDraftDTO lesson = lesson("one", null);
         lesson.getMatrix().add(new MatrixItemDTO("Đúng sai", "Thông hiểu", 0));
@@ -262,7 +262,7 @@ class DraftUtilTest {
 
     @Test
     @DisplayName("trả về bài không có ma trận được giữ nguyên khi sinh đặc tả")
-    void test_generateMatrixDetails_004() {
+    void test_generateMatrixDetails_014() {
 
         LessonDraftDTO first = lesson("one", 0);
         first.setMatrix(null);

@@ -94,7 +94,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về entity khi truy vấn có cả draft ID và owner ID")
-    void test_getDraft_001() {
+    void test_getDraft_003() {
 
         DraftEntity entity = existing();
         assertThat(repo.getDraft(DRAFT, OWNER)).isSameAs(entity);
@@ -111,7 +111,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi không có dữ liệu khớp draft và owner")
-    void test_getDraft_002() {
+    void test_getDraft_004() {
 
         assertThatThrownBy(() -> repo.getDraft(DRAFT, OWNER))
                 .isInstanceOf(NotFoundException.class)
@@ -121,7 +121,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi đọc dữ liệu thất bại")
-    void test_getDraft_003() {
+    void test_getDraft_005() {
 
         when(mongo.findOne(any(Query.class), eq(DraftDocument.class)))
                 .thenThrow(new IllegalStateException("read failed"));
@@ -132,7 +132,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true và chỉ thêm mục mới khi payload gồm mục đã tồn tại")
-    void test_updateChapters_001() {
+    void test_updateChapters_006() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -158,7 +158,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false và không ghi khi payload rỗng hoặc chỉ thêm mục đã tồn tại")
-    void test_updateChapters_002() {
+    void test_updateChapters_007() {
 
         existing();
         assertThat(
@@ -181,7 +181,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về điều kiện pull đúng ID khi xóa mục được chọn")
-    void test_updateChapters_003() {
+    void test_updateChapters_008() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -203,7 +203,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false khi Mongo không sửa document nào")
-    void test_updateChapters_004() {
+    void test_updateChapters_009() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -220,7 +220,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không ghi khi không tìm thấy draft của owner")
-    void test_updateChapters_005() {
+    void test_updateChapters_010() {
 
         assertThatThrownBy(
                         () ->
@@ -234,7 +234,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về IllegalArgumentException và không ghi khi ID cần xóa sai định dạng")
-    void test_updateChapters_006() {
+    void test_updateChapters_011() {
 
         existing();
         assertThatThrownBy(
@@ -249,7 +249,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi update thất bại")
-    void test_updateChapters_007() {
+    void test_updateChapters_012() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -267,7 +267,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true và chỉ thêm mục mới khi payload gồm mục đã tồn tại")
-    void test_updateLessons_001() {
+    void test_updateLessons_013() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -297,7 +297,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false và không ghi khi payload rỗng hoặc chỉ thêm mục đã tồn tại")
-    void test_updateLessons_002() {
+    void test_updateLessons_014() {
 
         existing();
         assertThat(
@@ -322,7 +322,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về điều kiện pull đúng ID khi xóa mục được chọn")
-    void test_updateLessons_003() {
+    void test_updateLessons_015() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -344,7 +344,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false khi Mongo không sửa document nào")
-    void test_updateLessons_004() {
+    void test_updateLessons_016() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -362,7 +362,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không ghi khi không tìm thấy draft của owner")
-    void test_updateLessons_005() {
+    void test_updateLessons_017() {
 
         assertThatThrownBy(
                         () ->
@@ -376,7 +376,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về IllegalArgumentException và không ghi khi ID cần xóa sai định dạng")
-    void test_updateLessons_006() {
+    void test_updateLessons_018() {
 
         existing();
         assertThatThrownBy(
@@ -395,7 +395,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi update thất bại")
-    void test_updateLessons_007() {
+    void test_updateLessons_019() {
 
         existing();
         when(mongo.updateFirst(any(Query.class), any(Update.class), eq(DraftDocument.class)))
@@ -414,7 +414,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không ghi khi chương không thuộc draft")
-    void test_updateLessons_008() {
+    void test_updateLessons_020() {
 
         existing();
         assertThatThrownBy(
@@ -430,7 +430,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true cùng cập nhật đúng chapter lesson và dữ liệu khi bulk thành công")
-    void test_updateMatrix_001() {
+    void test_updateMatrix_021() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -463,7 +463,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true và không gọi Mongo khi payload null hoặc rỗng")
-    void test_updateMatrix_002() {
+    void test_updateMatrix_022() {
 
         assertThat(repo.updateMatrix(null)).isTrue();
         assertThat(repo.updateMatrix(List.of())).isTrue();
@@ -472,7 +472,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi thực thi bulk thất bại")
-    void test_updateMatrix_003() {
+    void test_updateMatrix_023() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -489,7 +489,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về IllegalArgumentException và không execute khi ID sai định dạng")
-    void test_updateMatrix_004() {
+    void test_updateMatrix_024() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -507,7 +507,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true cùng cập nhật đúng chapter lesson và dữ liệu khi bulk thành công")
-    void test_updateMatrixDetails_001() {
+    void test_updateMatrixDetails_025() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -542,7 +542,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true và không gọi Mongo khi payload null hoặc rỗng")
-    void test_updateMatrixDetails_002() {
+    void test_updateMatrixDetails_026() {
 
         assertThat(repo.updateMatrixDetails(null)).isTrue();
         assertThat(repo.updateMatrixDetails(List.of())).isTrue();
@@ -551,7 +551,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi thực thi bulk thất bại")
-    void test_updateMatrixDetails_003() {
+    void test_updateMatrixDetails_027() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -568,7 +568,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về IllegalArgumentException và không execute khi ID sai định dạng")
-    void test_updateMatrixDetails_004() {
+    void test_updateMatrixDetails_028() {
 
         BulkOperations bulk = mock(BulkOperations.class);
         when(mongo.bulkOps(BulkOperations.BulkMode.UNORDERED, DraftDocument.class))
@@ -586,7 +586,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về true và điều kiện cả draft lẫn owner khi Mongo xóa một document")
-    void test_deleteDraft_001() {
+    void test_deleteDraft_029() {
 
         when(mongo.remove(any(Query.class), eq(DraftDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(1));
@@ -604,7 +604,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về false khi không có draft khớp owner")
-    void test_deleteDraft_002() {
+    void test_deleteDraft_030() {
 
         when(mongo.remove(any(Query.class), eq(DraftDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(0));
@@ -613,7 +613,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về InternalServerException khi xóa vượt một document")
-    void test_deleteDraft_003() {
+    void test_deleteDraft_031() {
 
         when(mongo.remove(any(Query.class), eq(DraftDocument.class)))
                 .thenReturn(DeleteResult.acknowledged(2));
@@ -623,7 +623,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về IllegalArgumentException trước khi gọi Mongo khi ID sai định dạng")
-    void test_deleteDraft_004() {
+    void test_deleteDraft_032() {
 
         assertThatThrownBy(() -> repo.deleteDraft("invalid", OWNER))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -632,7 +632,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi remove thất bại")
-    void test_deleteDraft_005() {
+    void test_deleteDraft_033() {
 
         when(mongo.remove(any(Query.class), eq(DraftDocument.class)))
                 .thenThrow(new IllegalStateException("delete failed"));
@@ -642,7 +642,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách đã map theo owner và giảm dần thời gian cập nhật khi có dữ liệu")
-    void test_getRecentDraft_001() {
+    void test_getRecentDraft_034() {
 
         DraftDocument first = new DraftDocument();
         first.setId(DRAFT);
@@ -666,7 +666,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có nháp")
-    void test_getRecentDraft_002() {
+    void test_getRecentDraft_035() {
 
         when(mongo.find(any(Query.class), eq(DraftDocument.class))).thenReturn(List.of());
         assertThat(repo.getRecentDraft(OWNER)).isEmpty();
@@ -675,7 +675,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi truy vấn thất bại")
-    void test_getRecentDraft_003() {
+    void test_getRecentDraft_036() {
 
         when(mongo.find(any(Query.class), eq(DraftDocument.class)))
                 .thenThrow(new IllegalStateException("read failed"));
@@ -686,7 +686,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách đã map theo owner và giảm dần thời gian cập nhật khi có dữ liệu")
-    void test_getAllUserDrafts_001() {
+    void test_getAllUserDrafts_037() {
 
         DraftDocument first = new DraftDocument();
         first.setId(DRAFT);
@@ -710,7 +710,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có nháp")
-    void test_getAllUserDrafts_002() {
+    void test_getAllUserDrafts_038() {
 
         when(mongo.find(any(Query.class), eq(DraftDocument.class))).thenReturn(List.of());
         assertThat(repo.getAllUserDrafts(OWNER)).isEmpty();
@@ -719,7 +719,7 @@ class DraftRepositoryImplTest {
 
     @Test
     @DisplayName("trả về lỗi Mongo khi truy vấn thất bại")
-    void test_getAllUserDrafts_003() {
+    void test_getAllUserDrafts_039() {
 
         when(mongo.find(any(Query.class), eq(DraftDocument.class)))
                 .thenThrow(new IllegalStateException("read failed"));

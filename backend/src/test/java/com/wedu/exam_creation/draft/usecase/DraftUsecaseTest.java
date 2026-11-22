@@ -94,7 +94,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về DTO đã map khi owner có bản nháp")
-    void test_getDraft_001() {
+    void test_getDraft_003() {
 
         DraftDTO dto = draft();
         assertThat(usecase.getDraft("draft", "owner")).isSameAs(dto);
@@ -102,7 +102,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi draft không tồn tại hoặc không thuộc owner")
-    void test_getDraft_002() {
+    void test_getDraft_004() {
 
         when(repo.getDraft("draft", "other")).thenThrow(new NotFoundException("missing"));
         assertThatThrownBy(() -> usecase.getDraft("draft", "other"))
@@ -113,7 +113,7 @@ class DraftUsecaseTest {
     @Test
     @DisplayName(
             "trả về true cùng payload thêm xóa và owner chính xác khi repository cập nhật thành công")
-    void test_updateChapters_001() {
+    void test_updateChapters_005() {
 
         UpdateDraftDTO request =
                 new UpdateDraftDTO(List.of(new UpdateParamDTO("added", "Tên")), List.of("removed"));
@@ -136,7 +136,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi repository báo không có thay đổi")
-    void test_updateChapters_002() {
+    void test_updateChapters_006() {
 
         UpdateDraftDTO request = new UpdateDraftDTO(List.of(), List.of());
         assertThat(usecase.updateChapters("draft", request, "owner")).isFalse();
@@ -146,7 +146,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi không có draft thuộc owner")
-    void test_updateChapters_003() {
+    void test_updateChapters_007() {
 
         UpdateDraftDTO request = new UpdateDraftDTO(List.of(), List.of());
         when(repo.updateChapters(any())).thenThrow(new NotFoundException("missing"));
@@ -157,7 +157,7 @@ class DraftUsecaseTest {
     @Test
     @DisplayName(
             "trả về true cùng payload thêm xóa và owner chính xác khi repository cập nhật thành công")
-    void test_updateLessons_001() {
+    void test_updateLessons_008() {
 
         UpdateDraftDTO request =
                 new UpdateDraftDTO(List.of(new UpdateParamDTO("added", "Tên")), List.of("removed"));
@@ -182,7 +182,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi repository báo không có thay đổi")
-    void test_updateLessons_002() {
+    void test_updateLessons_009() {
 
         UpdateDraftDTO request = new UpdateDraftDTO(List.of(), List.of());
         assertThat(usecase.updateLessons("draft", "chapter", request, "owner")).isFalse();
@@ -194,7 +194,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi không có draft thuộc owner")
-    void test_updateLessons_003() {
+    void test_updateLessons_010() {
 
         UpdateDraftDTO request = new UpdateDraftDTO(List.of(), List.of());
         when(repo.updateLessons(any())).thenThrow(new NotFoundException("missing"));
@@ -204,7 +204,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về kết quả lưu với đúng chapter lesson owner và nội dung khi sinh ma trận")
-    void test_generateMatrix_001() {
+    void test_generateMatrix_011() {
 
         DraftDTO dto = draft();
         doAnswer(
@@ -234,7 +234,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi repository không lưu được ma trận")
-    void test_generateMatrix_002() {
+    void test_generateMatrix_012() {
 
         draft();
         when(repo.updateMatrix(anyList())).thenReturn(false);
@@ -243,7 +243,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không sinh hoặc ghi khi khác owner")
-    void test_generateMatrix_003() {
+    void test_generateMatrix_013() {
 
         when(repo.getDraft("draft", "other")).thenThrow(new NotFoundException("missing"));
         assertThatThrownBy(() -> usecase.generateMatrix("draft", "other"))
@@ -254,7 +254,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi sinh và không ghi khi utility thất bại")
-    void test_generateMatrix_004() {
+    void test_generateMatrix_014() {
 
         draft();
         doThrow(new IllegalStateException("generation failed"))
@@ -267,7 +267,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về kết quả lưu danh sách rỗng khi draft chưa chọn chương")
-    void test_generateMatrix_005() {
+    void test_generateMatrix_015() {
 
         DraftDTO dto = draft();
         dto.setChapters(List.of());
@@ -278,7 +278,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi ghi ma trận thất bại")
-    void test_generateMatrix_006() {
+    void test_generateMatrix_016() {
 
         draft();
         IllegalStateException failure = new IllegalStateException("write failed");
@@ -288,7 +288,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về payload đặc tả đã map với đúng owner khi danh mục và dữ liệu hợp lệ")
-    void test_generateMatrixDetails_001() {
+    void test_generateMatrixDetails_017() {
 
         DraftDTO dto = draft();
         List<ChapterResponseDTO> categories =
@@ -320,7 +320,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách ghi rỗng khi bài không có đặc tả")
-    void test_generateMatrixDetails_002() {
+    void test_generateMatrixDetails_018() {
 
         draft();
         when(chapters.getByIds(List.of("chapter"))).thenReturn(List.of());
@@ -331,7 +331,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException và không đọc danh mục hay ghi khi khác owner")
-    void test_generateMatrixDetails_003() {
+    void test_generateMatrixDetails_019() {
 
         when(repo.getDraft("draft", "other")).thenThrow(new NotFoundException("missing"));
         assertThatThrownBy(() -> usecase.generateMatrixDetails("draft", "other"))
@@ -342,7 +342,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi dependency và không ghi khi đọc danh mục thất bại")
-    void test_generateMatrixDetails_004() {
+    void test_generateMatrixDetails_020() {
 
         draft();
         when(chapters.getByIds(anyList()))
@@ -355,7 +355,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi repository không lưu được đặc tả")
-    void test_generateMatrixDetails_005() {
+    void test_generateMatrixDetails_021() {
 
         draft();
         when(chapters.getByIds(anyList())).thenReturn(List.of());
@@ -364,7 +364,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi dependency và không ghi khi utility sinh đặc tả thất bại")
-    void test_generateMatrixDetails_006() {
+    void test_generateMatrixDetails_022() {
 
         draft();
         when(chapters.getByIds(anyList())).thenReturn(List.of());
@@ -378,7 +378,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi ghi đặc tả thất bại")
-    void test_generateMatrixDetails_007() {
+    void test_generateMatrixDetails_023() {
 
         draft();
         when(chapters.getByIds(anyList())).thenReturn(List.of());
@@ -390,7 +390,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách DTO theo đúng thứ tự khi owner có nhiều nháp")
-    void test_getRecentDraft_001() {
+    void test_getRecentDraft_024() {
 
         DraftEntity first = new DraftEntity();
         DraftEntity second = new DraftEntity();
@@ -406,7 +406,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có nháp")
-    void test_getRecentDraft_002() {
+    void test_getRecentDraft_025() {
 
         when(repo.getRecentDraft("owner")).thenReturn(List.of());
         assertThat(usecase.getRecentDraft("owner")).isEmpty();
@@ -415,7 +415,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi truy vấn danh sách thất bại")
-    void test_getRecentDraft_003() {
+    void test_getRecentDraft_026() {
 
         when(repo.getRecentDraft("owner"))
                 .thenThrow(new IllegalStateException("database unavailable"));
@@ -426,7 +426,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách DTO theo đúng thứ tự khi owner có nhiều nháp")
-    void test_getAllUserDrafts_001() {
+    void test_getAllUserDrafts_027() {
 
         DraftEntity first = new DraftEntity();
         DraftEntity second = new DraftEntity();
@@ -442,7 +442,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về danh sách rỗng khi owner chưa có nháp")
-    void test_getAllUserDrafts_002() {
+    void test_getAllUserDrafts_028() {
 
         when(repo.getAllUserDrafts("owner")).thenReturn(List.of());
         assertThat(usecase.getAllUserDrafts("owner")).isEmpty();
@@ -451,7 +451,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi truy vấn danh sách thất bại")
-    void test_getAllUserDrafts_003() {
+    void test_getAllUserDrafts_029() {
 
         when(repo.getAllUserDrafts("owner"))
                 .thenThrow(new IllegalStateException("database unavailable"));
@@ -462,7 +462,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về true khi repository xóa đúng draft của owner")
-    void test_deleteDraft_001() {
+    void test_deleteDraft_030() {
 
         when(repo.deleteDraft("draft", "owner")).thenReturn(true);
         assertThat(usecase.deleteDraft("draft", "owner")).isTrue();
@@ -471,7 +471,7 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi draft không tồn tại hoặc không thuộc owner")
-    void test_deleteDraft_002() {
+    void test_deleteDraft_031() {
 
         when(repo.deleteDraft("draft", "owner")).thenReturn(false);
         assertThatThrownBy(() -> usecase.deleteDraft("draft", "owner"))
@@ -481,11 +481,72 @@ class DraftUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi xóa thất bại")
-    void test_deleteDraft_003() {
+    void test_deleteDraft_032() {
 
         when(repo.deleteDraft("draft", "owner"))
                 .thenThrow(new IllegalStateException("write failed"));
         assertThatThrownBy(() -> usecase.deleteDraft("draft", "owner"))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("trả về true và ghi đúng chương bài khi chỉ một số bài trong bản nháp có đặc tả")
+    void test_generateMatrixDetails_033() {
+        DraftDTO dto = draft();
+        LessonDraftDTO first = dto.getChapters().get(0).getLessons().get(0);
+        LessonDraftDTO skipped = new LessonDraftDTO("empty", "Bài bỏ qua", List.of(), List.of());
+        LessonDraftDTO last =
+                new LessonDraftDTO("other-lesson", "Bài 2", first.getMatrix(), List.of());
+        dto.setChapters(
+                List.of(
+                        new ChapterDraftDTO("chapter", "Chương 1", List.of(first, skipped)),
+                        new ChapterDraftDTO("other-chapter", "Chương 2", List.of(last))));
+        List<ChapterResponseDTO> context =
+                List.of(
+                        new ChapterResponseDTO("chapter", "Vật lý", "Chương 1", List.of()),
+                        new ChapterResponseDTO("other-chapter", "Vật lý", "Chương 2", List.of()));
+        when(chapters.getByIds(List.of("chapter", "other-chapter"))).thenReturn(context);
+        MatrixDetailItemDTO firstDetail =
+                new MatrixDetailItemDTO("Dạng 1", "Thông hiểu", "Kiến thức 1", "Đúng sai", 1);
+        MatrixDetailItemDTO lastDetail =
+                new MatrixDetailItemDTO("Dạng 2", "Thông hiểu", "Kiến thức 2", "Đúng sai", 1);
+        MatrixDetailItemEntity firstMapped =
+                new MatrixDetailItemEntity("Dạng 1", "Thông hiểu", "Kiến thức 1", "Đúng sai", 1);
+        MatrixDetailItemEntity lastMapped =
+                new MatrixDetailItemEntity("Dạng 2", "Thông hiểu", "Kiến thức 2", "Đúng sai", 1);
+        Map<String, List<MatrixDetailItemDTO>> detailsByLesson =
+                Map.of("lesson", List.of(firstDetail), "other-lesson", List.of(lastDetail));
+        doAnswer(
+                        call -> {
+                            List<LessonDraftDTO> lessons = call.getArgument(1);
+                            lessons.forEach(
+                                    lesson ->
+                                            lesson.setMatrixDetails(
+                                                    detailsByLesson.getOrDefault(
+                                                            lesson.getId(), List.of())));
+                            return null;
+                        })
+                .when(util)
+                .generateMatrixDetails(eq(context), anyList());
+        when(mapper.detailDTOToEntity(firstDetail)).thenReturn(firstMapped);
+        when(mapper.detailDTOToEntity(lastDetail)).thenReturn(lastMapped);
+        List<UpdateMatrixDetailsPayload> expected =
+                List.of(
+                        new UpdateMatrixDetailsPayload(
+                                "draft", "owner", "chapter", "lesson", List.of(firstMapped)),
+                        new UpdateMatrixDetailsPayload(
+                                "draft",
+                                "owner",
+                                "other-chapter",
+                                "other-lesson",
+                                List.of(lastMapped)));
+        when(repo.updateMatrixDetails(expected)).thenReturn(true);
+
+        assertThat(usecase.generateMatrixDetails("draft", "owner")).isTrue();
+
+        verify(repo).updateMatrixDetails(expected);
+        assertThat(first.getMatrixDetails()).containsExactly(firstDetail);
+        assertThat(skipped.getMatrixDetails()).isEmpty();
+        assertThat(last.getMatrixDetails()).containsExactly(lastDetail);
     }
 }
