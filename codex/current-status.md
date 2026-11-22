@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Rà soát test package draft — 2026-11-22
+
+Chuẩn hóa số thứ tự xuyên suốt bảy lớp test. [DraftControllerTest](../backend/src/test/java/com/wedu/exam_creation/draft/controller/DraftControllerTest.java) mô tả riêng hợp đồng từng route trong DisplayName và chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản mô phỏng. Cả chín route trả HTTP 400 khi thiếu Authorization. Bổ sung ca HTTP 401 khi JWT bị từ chối và HTTP 403 khi tài khoản bị khóa. [DraftUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftUsecaseTest.java) kiểm tra ghi đúng chủ bản nháp, chương và bài khi chỉ một số bài có đặc tả.
+
+Spotless apply/check và kiểm tra quy cách của 139 test methods đạt. `mvn -q '-Dtest=Draft*Test' clean test` và lượt chạy lại bằng `mvn -q '-Dtest=Draft*Test' test` cùng đạt 139/139. Trên nhánh `backend/test/draft` từ `main` tại `3f5d8d1`, `mvn -q clean test` có 1.396 lượt đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động.
+
 ## Rà soát test package exam — 2026-11-22
 
 Chuẩn hóa số thứ tự xuyên suốt sáu lớp test và giữ các ca snapshot đã có. [ExamControllerTest](../backend/src/test/java/com/wedu/exam_creation/exam/controller/ExamControllerTest.java) chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản được mock. Cả năm route trả HTTP 400 khi thiếu Authorization. Thêm ca HTTP 401 khi JWT bị từ chối và HTTP 403 khi tài khoản bị khóa. [ExamUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exam/usecase/ExamUsecaseTest.java) kiểm tra từ chối trả snapshot ma trận nếu bài phía sau thiếu đặc tả dù bài đầu đầy đủ.

@@ -48,7 +48,7 @@ class DraftServiceTest {
 
     @Test
     @DisplayName("trả về không có ngoại lệ khi repository xóa thành công")
-    void test_deleteDraft_001() {
+    void test_deleteDraft_004() {
 
         when(repo.deleteDraft("draft", "owner")).thenReturn(true);
         service.deleteDraft("draft", "owner");
@@ -58,7 +58,7 @@ class DraftServiceTest {
 
     @Test
     @DisplayName("trả về không có ngoại lệ khi repository báo không có bản nháp để xóa")
-    void test_deleteDraft_002() {
+    void test_deleteDraft_005() {
 
         when(repo.deleteDraft("draft", "owner")).thenReturn(false);
         assertThatCode(() -> service.deleteDraft("draft", "owner")).doesNotThrowAnyException();
@@ -67,7 +67,7 @@ class DraftServiceTest {
 
     @Test
     @DisplayName("trả về lỗi repository khi thao tác xóa thất bại")
-    void test_deleteDraft_003() {
+    void test_deleteDraft_006() {
 
         IllegalStateException failure = new IllegalStateException("database unavailable");
         doThrow(failure).when(repo).deleteDraft("draft", "owner");

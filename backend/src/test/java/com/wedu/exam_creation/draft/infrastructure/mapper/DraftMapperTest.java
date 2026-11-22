@@ -61,7 +61,7 @@ class DraftMapperTest {
 
     @Test
     @DisplayName("trả về entity giữ nguyên dữ liệu khi chuyển qua document và ngược lại")
-    void test_toEntity_001() {
+    void test_toEntity_003() {
 
         DraftEntity entity = entity();
         assertThat(mapper.toEntity(mapper.toDocument(entity))).isEqualTo(entity);
@@ -69,13 +69,13 @@ class DraftMapperTest {
 
     @Test
     @DisplayName("trả về null khi dữ liệu đầu vào null")
-    void test_toEntity_002() {
+    void test_toEntity_004() {
         assertThat(mapper.toEntity(null)).isNull();
     }
 
     @Test
     @DisplayName("trả về questionTypes rỗng và trường còn lại null khi entity chưa có chương")
-    void test_toDocument_003() {
+    void test_toDocument_005() {
 
         DraftEntity entity = new DraftEntity();
         entity.setId("draft");
