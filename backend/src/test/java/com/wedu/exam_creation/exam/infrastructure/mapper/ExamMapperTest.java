@@ -112,7 +112,7 @@ class ExamMapperTest {
 
     @Test
     @DisplayName("trả về entity giữ đủ snapshot ID câu hỏi và timestamps khi map dữ liệu lồng nhau")
-    void test_docToEntity_001() {
+    void test_docToEntity_005() {
         ExamDocument source =
                 new ExamDocument(
                         "exam",
@@ -184,13 +184,13 @@ class ExamMapperTest {
 
     @Test
     @DisplayName("trả về null khi docToEntity nhận đầu vào null")
-    void test_docToEntity_002() {
+    void test_docToEntity_006() {
         assertThat(mapper.docToEntity(null)).isNull();
     }
 
     @Test
     @DisplayName("trả về entity giữ hai danh sách rỗng khi đề không có chương và nhóm câu")
-    void test_docToEntity_003() {
+    void test_docToEntity_007() {
         assertThat(
                         mapper.docToEntity(
                                 new ExamDocument(
@@ -200,7 +200,7 @@ class ExamMapperTest {
 
     @Test
     @DisplayName("trả về entity giữ các trường null khi đầu vào thiếu thông tin tùy chọn")
-    void test_docToEntity_004() {
+    void test_docToEntity_008() {
         assertThat(mapper.docToEntity(new ExamDocument())).isEqualTo(new ExamEntity());
     }
 }

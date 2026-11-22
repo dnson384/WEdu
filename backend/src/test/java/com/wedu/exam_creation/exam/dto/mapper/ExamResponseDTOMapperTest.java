@@ -188,7 +188,7 @@ class ExamResponseDTOMapperTest {
 
     @Test
     @DisplayName("trả về metadata chương bài và tổng số ID câu hỏi khi đề có nhiều nhóm")
-    void test_convertToExamResponse_001() {
+    void test_convertToExamResponse_006() {
         assertThat(mapper.convertToExamResponse(exam()))
                 .isEqualTo(
                         new ExamDTO(
@@ -202,7 +202,7 @@ class ExamResponseDTOMapperTest {
 
     @Test
     @DisplayName("trả về danh sách chương rỗng và số câu 0 khi đề không có chương hoặc nhóm câu")
-    void test_convertToExamResponse_002() {
+    void test_convertToExamResponse_007() {
         assertThat(
                         mapper.convertToExamResponse(
                                 new ExamEntity(
@@ -212,7 +212,7 @@ class ExamResponseDTOMapperTest {
 
     @Test
     @DisplayName("trả về số câu 0 và lessonIds rỗng khi chương chưa có bài và nhóm câu chưa có ID")
-    void test_convertToExamResponse_003() {
+    void test_convertToExamResponse_008() {
         ExamEntity entity =
                 new ExamEntity(
                         "exam",
