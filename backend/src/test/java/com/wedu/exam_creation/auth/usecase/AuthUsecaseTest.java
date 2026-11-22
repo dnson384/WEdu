@@ -254,7 +254,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về true khi xóa refresh token thành công")
-    void test_logout_001() {
+    void test_logout_008() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         when(refreshTokenService.delete(PARENT_JTI)).thenReturn(true);
@@ -266,7 +266,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi service xóa refresh token trả về false")
-    void test_logout_002() {
+    void test_logout_009() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         when(refreshTokenService.delete(PARENT_JTI)).thenReturn(false);
@@ -278,7 +278,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi refresh token không tồn tại")
-    void test_logout_003() {
+    void test_logout_010() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         NotFoundException failure = new NotFoundException("Không tìm thấy RT");
@@ -293,7 +293,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về InternalServerException khi xóa refresh token thất bại")
-    void test_logout_004() {
+    void test_logout_011() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         InternalServerException failure =
@@ -310,7 +310,7 @@ public class AuthUsecaseTest {
     @Test
     @DisplayName(
             "trả về UnAuthorizedException và không xóa refresh token khi parse access token thất bại")
-    void test_logout_005() {
+    void test_logout_012() {
         UnAuthorizedException failure = new UnAuthorizedException("Access Token không hợp lệ");
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN)).thenThrow(failure);
 
@@ -333,7 +333,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về access token mới khi refresh token thuộc phiên còn tồn tại")
-    void test_regenerateAccessToken_001() {
+    void test_regenerateAccessToken_013() {
         RTPayload payload = new RTPayload(PARENT_JTI, "user-123", "anv@gmail.com", "ROLE_TEACHER");
         RTResponseDTO stored = mock(RTResponseDTO.class);
         when(stored.getUserId()).thenReturn("user-123");
@@ -353,7 +353,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về UnAuthorizedException khi refresh token đã bị thu hồi")
-    void test_regenerateAccessToken_002() {
+    void test_regenerateAccessToken_014() {
         when(securityService.getPayloadFromRefreshToken("rt"))
                 .thenReturn(new RTPayload(PARENT_JTI, "user-123", "anv@gmail.com", "ROLE_TEACHER"));
         assertThatThrownBy(() -> authUsecase.regenerateAccessToken("rt"))
@@ -365,7 +365,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi user của refresh token không tồn tại")
-    void test_regenerateAccessToken_003() {
+    void test_regenerateAccessToken_015() {
         RTResponseDTO stored = mock(RTResponseDTO.class);
         when(stored.getUserId()).thenReturn("missing");
         when(securityService.getPayloadFromRefreshToken("rt"))
@@ -378,7 +378,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về UnAuthorizedException khi parse refresh token ném JwtException")
-    void test_regenerateAccessToken_004() {
+    void test_regenerateAccessToken_016() {
         when(securityService.getPayloadFromRefreshToken("rt"))
                 .thenThrow(new JwtException("invalid"));
         assertThatThrownBy(() -> authUsecase.regenerateAccessToken("rt"))
@@ -389,7 +389,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi xác thực trước lookup khi validate refresh token thất bại")
-    void test_regenerateAccessToken_005() {
+    void test_regenerateAccessToken_017() {
         doThrow(new UnAuthorizedException("expired"))
                 .when(securityService)
                 .validateRefreshToken("rt");
@@ -402,14 +402,14 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về không có ngoại lệ khi yêu cầu đặt lại mật khẩu bằng email hợp lệ")
-    void test_forgotPassword_001() {
+    void test_forgotPassword_018() {
         authUsecase.forgotPassword("teacher@example.com");
         verify(passwordResetTokenService).requestReset("teacher@example.com");
     }
 
     @Test
     @DisplayName("trả về BadRequestException khi email đặt lại mật khẩu sai định dạng")
-    void test_forgotPassword_002() {
+    void test_forgotPassword_019() {
         assertThatThrownBy(() -> authUsecase.forgotPassword("invalid"))
                 .isInstanceOf(BadRequestException.class);
         verifyNoInteractions(passwordResetTokenService);
@@ -417,7 +417,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi dịch vụ khi gửi yêu cầu đặt lại mật khẩu thất bại")
-    void test_forgotPassword_003() {
+    void test_forgotPassword_020() {
         doThrow(new InternalServerException("delivery failed"))
                 .when(passwordResetTokenService)
                 .requestReset("teacher@example.com");
@@ -428,7 +428,7 @@ public class AuthUsecaseTest {
     @Test
     @DisplayName(
             "trả về không có ngoại lệ khi dịch vụ đặt lại mật khẩu chấp nhận token và mật khẩu")
-    void test_resetPassword_001() {
+    void test_resetPassword_021() {
         authUsecase.resetPassword("reset-token", "password123", "password123");
         verify(passwordResetTokenService)
                 .resetPassword("reset-token", "password123", "password123");
@@ -436,7 +436,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi xác thực khi dịch vụ từ chối token đặt lại mật khẩu")
-    void test_resetPassword_002() {
+    void test_resetPassword_022() {
         doThrow(new UnAuthorizedException("expired"))
                 .when(passwordResetTokenService)
                 .resetPassword("expired", "password123", "password123");
@@ -451,7 +451,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về true và giữ phiên hiện tại khi đổi mật khẩu hợp lệ")
-    void test_changePassword_001() {
+    void test_changePassword_023() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         when(userService.findById("user-123")).thenReturn(activeLocalUser);
@@ -467,7 +467,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về UnAuthorizedException trước lookup khi xác nhận mật khẩu mới không khớp")
-    void test_changePassword_002() {
+    void test_changePassword_024() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         ChangePasswordRequestDTO input = passwordChange();
@@ -479,7 +479,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về NotFoundException khi tài khoản đổi mật khẩu không tồn tại")
-    void test_changePassword_003() {
+    void test_changePassword_025() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         assertThatThrownBy(
@@ -491,7 +491,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về UnAuthorizedException khi mật khẩu cũ không đúng")
-    void test_changePassword_004() {
+    void test_changePassword_026() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenReturn(accessTokenPayload);
         when(userService.findById("user-123")).thenReturn(activeLocalUser);
@@ -507,7 +507,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về true và chỉ thu hồi phiên khác khi lưu mật khẩu và xóa token thành công")
-    void test_saveUserAndRevokeRT_001() {
+    void test_saveUserAndRevokeRT_027() {
         RTResponseDTO current = mock(RTResponseDTO.class);
         RTResponseDTO other = mock(RTResponseDTO.class);
         when(current.getJti()).thenReturn(PARENT_JTI);
@@ -522,14 +522,14 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về false và không thu hồi token khi cập nhật mật khẩu không trả user")
-    void test_saveUserAndRevokeRT_002() {
+    void test_saveUserAndRevokeRT_028() {
         assertThat(authUsecase.saveUserAndRevokeRT(activeLocalUser, PARENT_JTI)).isFalse();
         verifyNoInteractions(refreshTokenService);
     }
 
     @Test
     @DisplayName("trả về false và đánh dấu rollback khi repository cập nhật mật khẩu ném lỗi")
-    void test_saveUserAndRevokeRT_003() {
+    void test_saveUserAndRevokeRT_029() {
         when(userService.updatePassword(activeLocalUser))
                 .thenThrow(new IllegalStateException("database unavailable"));
         TransactionStatus transaction = mock(TransactionStatus.class);
@@ -546,7 +546,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về false khi dịch vụ thu hồi các phiên khác trả false")
-    void test_saveUserAndRevokeRT_004() {
+    void test_saveUserAndRevokeRT_030() {
         RTResponseDTO other = mock(RTResponseDTO.class);
         when(other.getJti()).thenReturn("other-jti");
         when(userService.updatePassword(activeLocalUser)).thenReturn(activeLocalUser);
@@ -559,7 +559,7 @@ public class AuthUsecaseTest {
     @ValueSource(booleans = {true, false})
     @DisplayName(
             "trả về token và kết quả lưu refresh tương ứng khi persistence thành công hoặc từ chối")
-    void test_generateToken_001(boolean saved) {
+    void test_generateToken_031(boolean saved) {
         NewRTRequestDTO metadata = mock(NewRTRequestDTO.class);
         when(securityService.generateAccessToken(any())).thenReturn("at");
         when(securityService.generateRefreshToken(any())).thenReturn("rt");
@@ -584,7 +584,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về lỗi dịch vụ khi lưu refresh metadata ném ngoại lệ")
-    void test_generateToken_002() {
+    void test_generateToken_032() {
         when(securityService.generateAccessToken(any())).thenReturn("at");
         when(securityService.generateRefreshToken(any())).thenReturn("rt");
         NewRTRequestDTO metadata = mock(NewRTRequestDTO.class);
@@ -599,7 +599,7 @@ public class AuthUsecaseTest {
     @Test
     @DisplayName(
             "trả về UnAuthorizedException trước lookup khi access token đổi mật khẩu không hợp lệ")
-    void test_changePassword_005() {
+    void test_changePassword_033() {
         when(securityService.getPayloadFromAccessToken(ACCESS_TOKEN))
                 .thenThrow(new UnAuthorizedException("invalid"));
         assertThatThrownBy(
@@ -612,7 +612,7 @@ public class AuthUsecaseTest {
 
     @Test
     @DisplayName("trả về true không thu hồi phiên hiện tại khi không có phiên khác")
-    void test_saveUserAndRevokeRT_005() {
+    void test_saveUserAndRevokeRT_034() {
         RTResponseDTO current = mock(RTResponseDTO.class);
         when(current.getJti()).thenReturn(PARENT_JTI);
         when(userService.updatePassword(activeLocalUser)).thenReturn(activeLocalUser);

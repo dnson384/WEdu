@@ -1,5 +1,11 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Rà soát và bổ sung test package auth — 2026-11-22
+
+Chuẩn hóa số thứ tự xuyên suốt sáu lớp test từng reset số theo method. Bổ sung MockMvc cho metadata, gửi lại và xác minh OTP, cùng hai nhánh HTTP thành công và payload sai định dạng của Google exchange. Bổ sung kiểm thử hạn OTP gần cuối phiên, xung đột khi gửi lại, lưu và cập nhật trạng thái OTP trong repository. Thêm test cho hai mapper và các lớp chủ động ẩn định danh và giá trị băm khỏi `toString()`. Các test dùng fixture cố định và mock tại ranh giới MongoDB, mail và xác thực. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check và kiểm tra quy cách của 189 test methods đạt. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động. Chạy riêng package auth với `mvn -q '-Dtest=AuthControllerTest,VerificationControllerTest,AuthMigrationChangeEntityTest,AuthMigrationUserEntityTest,VerificationEntityTest,AuthDTOMapperTest,AuthIndexConfigTest,AuthMigrationRunnerTest,VerificationDocumentTest,VerificationMapperTest,AuthMigrationRepositoryImplTest,VerificationRepositoryImplTest,AuthMigrationUsecaseTest,AuthUsecaseTest,VerificationUsecaseTest' test` đạt 197/197 lượt. Toàn bộ backend với `mvn -q test` ghi nhận 1.397 lượt, gồm 1.390 đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi.
+
 ## Chuẩn hóa và bổ sung test package user — 2026-11-22
 
 Gom các test hồ sơ về [UserControllerTest](../backend/src/test/java/com/wedu/exam_creation/user/controller/UserControllerTest.java) và [UserUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/user/usecase/UserUsecaseTest.java). Gom kiểm tra email và liên kết Google vào [UserRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/user/infrastructure/repository/UserRepositoryImplTest.java). Bổ sung kiểm tra tìm và xóa tài khoản, thu hồi refresh token, giữ quyền PLUS khi cập nhật từng trường, hợp đồng của UserService và ánh xạ dữ liệu. Unit test mô phỏng MongoDB, S3, Telegram và service thu hồi token. MockMvc kiểm tra ba route hồ sơ và tài khoản gắn với phiên xác thực. [Danh mục test](source-catalog.md#backend-tests).
