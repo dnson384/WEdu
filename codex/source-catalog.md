@@ -749,6 +749,8 @@ Hook mới [useQuestionFiles](../frontend/presentation/hooks/Moderator/useQuesti
 | [latexToOmml](../exporter-service/src/routes/exporter/infrastructure/converter/latexToOmml.ts) | `routes/exporter/infrastructure/converter/latexToOmml.ts` |
 | [generateWordFile](../exporter-service/src/routes/exporter/usecase/generateWordFile.ts) | `routes/exporter/usecase/generateWordFile.ts` |
 
+Test TypeScript chạy bằng `npm test` trong exporter-service. [Test DOCX đề thi](../exporter-service/test/exam.test.ts), [test ma trận](../exporter-service/test/matrix.test.ts).
+
 ## Backend tests
 
 Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQuestionFilesTest kiểm route /storage/documents; file này không còn trong source hiện tại, không dùng nhận định đó để kết luận tests hiện tại. Validation mới nhất ở đầu current-status.md.
@@ -799,6 +801,8 @@ Test tồn tại không đồng nghĩa pass. Snapshot cũ ghi nhận ModeratorQu
 | `com/wedu/exam_creation/draft/dto/mapper` | [DraftDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/draft/dto/mapper/DraftDTOMapperTest.java) |
 | `com/wedu/exam_creation/draft/infrastructure/mapper` | [DraftMapperTest](../backend/src/test/java/com/wedu/exam_creation/draft/infrastructure/mapper/DraftMapperTest.java) |
 | `com/wedu/exam_creation/draft/infrastructure/repository` | [DraftRepositoryImplTest](../backend/src/test/java/com/wedu/exam_creation/draft/infrastructure/repository/DraftRepositoryImplTest.java) |
+| `com/wedu/exam_creation/exporter/controller` | [ExporterControllerTest](../backend/src/test/java/com/wedu/exam_creation/exporter/controller/ExporterControllerTest.java) |
+| `com/wedu/exam_creation/exporter/usecase` | [ExporterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecaseTest.java) |
 | `com/wedu/exam_creation/auth/controller` | [AuthControllerTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/AuthControllerTest.java), [VerificationControllerTest](../backend/src/test/java/com/wedu/exam_creation/auth/controller/VerificationControllerTest.java) |
 | `com/wedu/exam_creation/auth/domain/entity` | [AuthMigrationChangeEntityTest](../backend/src/test/java/com/wedu/exam_creation/auth/domain/entity/AuthMigrationChangeEntityTest.java), [AuthMigrationUserEntityTest](../backend/src/test/java/com/wedu/exam_creation/auth/domain/entity/AuthMigrationUserEntityTest.java), [VerificationEntityTest](../backend/src/test/java/com/wedu/exam_creation/auth/domain/entity/VerificationEntityTest.java) |
 | `com/wedu/exam_creation/auth/dto/mapper` | [AuthDTOMapperTest](../backend/src/test/java/com/wedu/exam_creation/auth/dto/mapper/AuthDTOMapperTest.java) |

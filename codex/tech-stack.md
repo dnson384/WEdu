@@ -119,7 +119,7 @@ Nguồn: [package.json](../exporter-service/package.json), [tsconfig.json](../ex
 | Dependency | Khai báo | Mục đích |
 | --- | --- | --- |
 | Express / @types/express | ^5.2.1 / ^5.0.6 | HTTP route/controller và types. |
-| TypeScript / tsx | ^6.0.3 / ^4.23.0 | Compile và dev watch. |
+| TypeScript / tsx | ^6.0.3 / ^4.23.0 | Compile, dev watch và chạy test TypeScript bằng Node.js. |
 | ts-node | ^10.9.2 | Được khai báo; scripts hiện dùng tsx/tsc/node. |
 | @types/node | ^26.1.0 | Node types, không phải runtime requirement đã pin. |
 | docx | ^9.7.1 | Document, paragraphs, images, packing. |
@@ -146,7 +146,7 @@ Chạy trong module; không có root build command.
 | frontend | `npm ci` | `npm run dev` / `npm start`, cổng 3000 | `npm run build` | `npm run lint`; không có test script |
 | backend Windows | Maven wrapper tự lấy distribution/dependencies | `./mvnw.cmd spring-boot:run` | `./mvnw.cmd clean package` | `./mvnw.cmd test`; lọc: `./mvnw.cmd -Dtest=UserUsecaseTest test` |
 | backend Unix | Như Windows | `./mvnw spring-boot:run` | `./mvnw clean package` | `./mvnw test` |
-| exporter | `npm ci` | `npm run dev`, cổng 8000; `npm start` có caveat output | `npm run build` | `npm test` là placeholder exit 1; không có lint script |
+| exporter | `npm ci` | `npm run dev`, cổng 8000; `npm start` có caveat output | `npm run build` | `npm test` chạy `node:test` qua tsx; không có lint script |
 
 Không coi việc script tồn tại là build/test đã pass. Backend Docker build bỏ tests. Không thấy coverage threshold được cấu hình trong manifest/config hiện tại.
 

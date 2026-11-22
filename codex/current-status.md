@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Rà soát và bổ sung test exporter — 2026-11-22
+
+Chuẩn hóa hai lớp Java thành [ExporterControllerTest](../backend/src/test/java/com/wedu/exam_creation/exporter/controller/ExporterControllerTest.java) và [ExporterUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecaseTest.java). MockMvc kiểm tra hai route, tên tệp, phân quyền xuất ma trận và các phản hồi lỗi. Test use case kiểm tra thứ tự nhóm câu, cache Base64, payload snapshot và lỗi dịch vụ xuất bằng HTTP giả lập.
+
+`exporter-service` có `npm test` chạy `node:test` qua tsx với dependency hiện có. Test dùng dữ liệu mẫu trong bộ nhớ để kiểm tra validation, tính điểm, hai bảng ma trận, ảnh câu hỏi và công thức OMML trong DOCX. [Danh mục test](source-catalog.md#exporter).
+
+Spotless apply/check và audit quy cách của 17 test method Java đạt. `mvn -q '-Dtest=ExporterControllerTest,ExporterUsecaseTest' test` đạt 20/20 lượt. Trên nhánh `backend/test/exporter` từ `main` tại `3f5d8d1`, `mvn -q clean test` có 1.404 lượt đạt, 7 ca tích hợp MongoDB được bỏ qua và 0 lỗi. Dùng Maven đã cài vì Maven Wrapper lỗi khởi động. `npm test` đạt 6/6 lượt và `npm run build -- --noEmit` đạt. `tsx` cần chạy ngoài sandbox Windows do lỗi `uv_os_get_passwd` trong sandbox.
+
 ## Rà soát test package draft — 2026-11-22
 
 Chuẩn hóa số thứ tự xuyên suốt bảy lớp test. [DraftControllerTest](../backend/src/test/java/com/wedu/exam_creation/draft/controller/DraftControllerTest.java) mô tả riêng hợp đồng từng route trong DisplayName và chạy JWT filter thật với bộ xác thực và dịch vụ tra cứu tài khoản mô phỏng. Cả chín route trả HTTP 400 khi thiếu Authorization. Bổ sung ca HTTP 401 khi JWT bị từ chối và HTTP 403 khi tài khoản bị khóa. [DraftUsecaseTest](../backend/src/test/java/com/wedu/exam_creation/draft/usecase/DraftUsecaseTest.java) kiểm tra ghi đúng chủ bản nháp, chương và bài khi chỉ một số bài có đặc tả.

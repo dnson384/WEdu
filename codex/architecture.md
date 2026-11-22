@@ -233,7 +233,7 @@ Chạy trong từng module; npm có lockfile riêng, không có root build scrip
 | Backend Unix | `./mvnw spring-boot:run` | `./mvnw test`; `./mvnw clean package` |
 | Exporter | `npm ci`; `npm run dev` | `npm run build`; `npm start` cần `dist/app.js` nhưng `outDir` đang comment |
 
-Backend tests dùng JUnit Jupiter, Mockito, AssertJ, `@WebMvcTest`/MockMvc và context test `@SpringBootTest`, gồm auth/user/storage và moderator listing; có thêm test DOCX/list pagination chưa được chạy lại trong lượt tài liệu này. Test đặt ở `src/test/java`, tên `*Test.java`. Chưa thấy coverage threshold hoặc lint command backend/exporter. Frontend không có test script; exporter `npm test` placeholder luôn exit 1. Docker build bỏ test không chứng minh test pass.
+Backend tests dùng JUnit Jupiter, Mockito, AssertJ, `@WebMvcTest`/MockMvc và context test `@SpringBootTest`. Test đặt ở `src/test/java`, tên `*Test.java`. Chưa có coverage threshold hoặc lint command backend/exporter. Frontend chưa có test script. Trong `exporter-service`, `npm test` chạy test TypeScript bằng `node:test` qua tsx và kiểm tra DOCX trong bộ nhớ. [Lệnh và kết quả kiểm tra](current-status.md).
 
 Backend cần biến môi trường theo `application.yml`: MongoDB, Google OAuth, JWT, AWS, DeepSeek, Telegram, SMTP, `FRONTEND_URL`, `EXPRESS_EXPORTER_URL`. Chỉ ghi tên biến, không ghi giá trị secrets. Chưa thấy cơ chế Spring nạp `.env`; cung cấp qua môi trường/IDE/deployment. Frontend repository chọn `NEXT_PUBLIC_BACKEND_DEV_URL`/`NEXT_PUBLIC_BACKEND_PROD_URL`; proxy dùng `BACKEND_URL` và server-only `JWT_ACCESS_SECRET`, phải đồng bộ với backend.
 
