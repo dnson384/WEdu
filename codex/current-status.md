@@ -8,6 +8,14 @@ Spotless apply/check trong phạm vi questionReview và `mvn -q "-Dtest=Question
 
 `mvn -q clean test` trên nhánh `backend/test/question-review` chạy 1.207 ca, với 1.200 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors. Cả 30 ca questionReview đều đạt.
 
+## Chuẩn hóa và bổ sung test package question — 2026-11-22
+
+Gộp hai nhóm service vào `QuestionServiceTest` và hai nhóm repository vào `QuestionRepositoryImplTest`. Thêm `QuestionDTOMapperTest` và `QuestionMapperTest`. Bổ sung các ca nhập DOCX với trạng thái APPROVED, chọn câu tránh lặp, bù câu PLUS bằng AI, luồng duyệt và chỉnh sửa, truy vấn theo ID/bài học, timestamp khi lưu và mapping nội dung/placeholder/status legacy. Unit test gọi dependency giả lập cho MongoDB, AI, Telegram và dữ liệu review. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check trong phạm vi question và audit 39 test methods đạt. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài với cấu hình repository.
+
+Targeted 40/40 ca đạt. `mvn -q test` chạy 1.210 ca, gồm 1.203 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors.
+
 ## Chuẩn hóa và bổ sung test package payment — 2026-11-21
 
 Đưa unit test payment và test quyền PLUS liên quan về tên/package của lớp production. Gộp các ca checkout và query trong `VnpayGatewayTest`, tách các ca của repository, mapper, document, index và migration về lớp tương ứng. Giữ `PaymentMongoIntegrationTest` là bộ tích hợp opt-in. Các ca mới kiểm tra cấu hình VNPay, trạng thái cần xử lý thủ công, luồng di trú, tác vụ hết hạn, truy vấn đơn và ghi outbox. [Danh mục test](source-catalog.md#backend-tests).
