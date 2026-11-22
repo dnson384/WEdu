@@ -80,7 +80,7 @@ So với working tree ngay trước task, không phải diff so với HEAD. Các
 | `backend/src/test/java/com/wedu/exam_creation/payment/RefundUsecaseTest.java` | Xóa | Xóa file chuyên cho flow hoàn tiền và các entrypoint/dependency tương ứng. |
 | [backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayQueryGatewayTest.java](../backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayGatewayTest.java) | Sửa | Giữ checksum độc lập cho query thanh toán; bỏ queryRefund và optional TransactionNo. |
 | `backend/src/test/java/com/wedu/exam_creation/payment/infrastructure/VnpayRefundGatewayTest.java` | Xóa | Xóa file chuyên cho flow hoàn tiền và các entrypoint/dependency tương ứng. |
-| [backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePlusAccessTest.java](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePlusAccessTest.java) | Thêm | Kiểm tra stale/locked PLUS bị chặn, active PLUS tới provider, FREE không gọi AI. |
+| [backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServicePlusAccessTest.java](../backend/src/test/java/com/wedu/exam_creation/question/usecase/QuestionServiceTest.java) | Thêm | Kiểm tra stale/locked PLUS bị chặn, active PLUS tới provider, FREE không gọi AI. |
 | [codex/api-reference.md](../codex/api-reference.md) | Sửa | Đồng bộ scope/symbol/contract hiện hành và links sau khi gỡ refund; đánh dấu snapshot lịch sử. |
 | [codex/architecture.md](../codex/architecture.md) | Sửa | Đồng bộ scope/symbol/contract hiện hành và links sau khi gỡ refund; đánh dấu snapshot lịch sử. |
 | [codex/business-flows.md](../codex/business-flows.md) | Sửa | Đồng bộ scope/symbol/contract hiện hành và links sau khi gỡ refund; đánh dấu snapshot lịch sử. |
