@@ -1,5 +1,13 @@
 # Trạng thái triển khai và điểm cần xác nhận
 
+## Chuẩn hóa và bổ sung test package security — 2026-11-22
+
+Giữ ba ca JWT filter theo quy tắc hiện có, bổ sung các nhánh xác thực filter và thêm sáu lớp test khớp tên/package production. Phạm vi gồm JWT claims/TTL, lỗi chữ ký/hết hạn, principal và quyền lấy từ tài khoản hiện tại, tải người dùng, claim OIDC, redirect handoff Google và xử lý session, cùng việc truyền kết quả và lỗi qua SecurityService. Test dùng khóa giả, OIDC fixture cục bộ và dependency mock. [Danh mục test](source-catalog.md#backend-tests).
+
+Spotless apply/check theo phạm vi security và audit 44 test methods đạt. Maven Wrapper lỗi khởi động, nên dùng Maven đã cài.
+
+Targeted 49/49 ca đạt. `mvn -q clean test` trên nhánh `backend/test/security` chạy 1.278 ca, với 1.271 đạt, 7 ca tích hợp MongoDB skipped, 0 failures và 0 errors.
+
 ## Bổ sung test package refreshToken — 2026-11-22
 
 Thêm bốn lớp test khớp tên và package production, gồm 24 test methods và 29 ca. Service kiểm tra truyền metadata, kết quả và lỗi từ repository. Repository kiểm tra lưu, lọc đồng thời theo JTI và user ID, đọc theo chủ phiên, xóa một token và xóa theo danh sách. Hai mapper kiểm tra ánh xạ metadata và nguồn null. Test dùng MongoTemplate mock và timestamp cố định. [Danh mục test](source-catalog.md#backend-tests).
