@@ -1,5 +1,12 @@
 # Luồng nghiệp vụ và trạng thái WEdu
 
+## Draft flow - 2026-11-24
+
+`useSelectLessonPage` theo dõi điều hướng Tiếp tục bằng `useTransition`; Loader và khóa submit duy trì trong lúc lưu hoặc chuyển trang, bao gồm nhánh không thay đổi nội dung. Kết thúc mutation không làm form nội dung hiện lại khi trang đích còn chờ. Lỗi lưu/refetch giải phóng trạng thái submitting để thử lại. [Validation và giới hạn](current-status.md#lesson-navigation-loading-fix--2026-11-24).
+
+[useSelectChapterPage](../frontend/presentation/hooks/Generate/Child/useSelectChapterPage.ts) chờ refetch bản nháp sau khi lưu chương trước khi chuyển sang nội dung. [useSelectLessonPage](../frontend/presentation/hooks/Generate/Child/useSelectLessonPage.ts) refetch sau khi lưu nội dung và sinh matrix thành công trước khi chuyển bước. Cache chung `["draft", draftId]` nhận snapshot mới; lỗi refetch giữ trang và hiển thị lỗi dù mutation trước đó có thể đã lưu thành công. Hai hook giữ lựa chọn chưa lưu khi nhận snapshot cùng draft/chapter, khởi tạo lại khi đổi draft/chapter. Chương không thay đổi thì chuyển bước mà không PUT. Không đổi contract hay chính sách matrix. [Validation](current-status.md#draft-chapter-and-lesson-cache-fix--2026-11-24).
+
+
 ## Nghiệp vụ KLTN sau gỡ refund — 2026-11-19
 
 Không còn gửi/duyệt/từ chối/hủy/đối soát hoàn tiền, khóa AI vì refund hoặc tự thu hồi PLUS theo refund. Tài khoản active có quyền PLUS hiện hành vẫn dùng AI theo budget/usage hiện có. Giữ checkout → signed IPN/Return → lưu kết quả/cấp PLUS/email, và tra cứu ADMIN từ DB. Không tự hoàn tác quyền PLUS hoặc xóa các yêu cầu refund lịch sử. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
@@ -10,7 +17,7 @@ Sau Google xác thực → backend chuyển handoff về Next callback → excha
 
 ## Payment embedded VNPay - 2026-11-18
 
-Checkout URLs use current request IP without persisting clientIp. manualReview is derived from SUCCEEDED with absent plusExpiresAt and remains an API/email value. AI coverage requires trackedSince <= paidAt; tracking is initialized before paidAt on a new grant, and legacy exceptions/PLUS protection retain their existing rules.
+URL thanh toán dùng IP của request hiện tại, không lưu clientIp. manualReview được suy ra khi đơn SUCCEEDED nhưng thiếu plusExpiresAt và tiếp tục được trả qua API/email. Sau khi gỡ refund ngày 2026-11-19, luồng cấp PLUS không còn khởi tạo hoặc kiểm tra AI coverage phục vụ hoàn tiền. PaymentUsecase.process gọi UserService.grantPaidPlus và lưu kết quả thanh toán/outbox; không thu hồi quyền lợi theo refund. Bằng chứng: [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [UserService](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserService.java).
 
 VNPay results live in PaymentOrders.vnpayTransaction. Result updates use dotted paths and order revision; verification claims the nested timestamp with user ownership in the same update. ADMIN searches vnpayTransaction.transactionNo directly with existing date/status/email filters before pagination/count. Migration embeds old data and conditionally removes a split source only after verification in the same transaction. [Report](payment-storage-refactor-report.md).
 
