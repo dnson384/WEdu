@@ -31,6 +31,7 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
     data: fetchedDraft,
     error: fetchError,
     isLoading: isLoadingDraft,
+    refetch: refetchDraft,
   } = useQuery<DraftEntity, AxiosError<ApiError>>({
     queryKey: ["draft", draftId],
     queryFn: () => draftService.get(draftId),
@@ -48,14 +49,14 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
     [],
   );
 
-  const [syncedDraftId, setSyncedDraftId] = useState<string | null>(null);
-  if (fetchedDraft && fetchedDraft.id !== syncedDraftId) {
-    setSyncedDraftId(fetchedDraft.id);
+  const [hasSelectionChanges, setHasSelectionChanges] = useState(false);
+  if (fetchedDraft && fetchedDraft !== draft) {
     setDraft(fetchedDraft);
 
-    if (fetchedDraft.chapters.length > 0) {
+    if (fetchedDraft.id !== draft.id || !hasSelectionChanges) {
+      setHasSelectionChanges(false);
       setSelectedChapters(
-        Object.values(fetchedDraft.chapters).map((chapter) => ({
+        fetchedDraft.chapters.map((chapter) => ({
           id: chapter.id,
           name: chapter.name,
         })),
@@ -85,11 +86,13 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
 
   const handleAddChapter = (chapter: UpdateDraftParam) => {
     if (!selectedChapters.find((c) => c.id === chapter.id)) {
+      setHasSelectionChanges(true);
       setSelectedChapters((prev) => [...prev, chapter]);
     }
   };
 
   const handleRemoveChapter = (chapterId: string) => {
+    setHasSelectionChanges(true);
     setSelectedChapters((prev) => prev.filter((c) => c.id !== chapterId));
   };
 
@@ -113,6 +116,7 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
 
     if (payload.add.length === 0 && payload.del.length === 0) {
       router.push(targetUrl);
+      return;
     }
 
     setErrorMessage(null);
@@ -121,6 +125,7 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
     try {
       const response = await draftService.updateChapters(draftId, payload);
       if (response) {
+        await refetchDraft({ throwOnError: true });
         router.push(targetUrl);
       }
     } catch (err: unknown) {
@@ -130,6 +135,7 @@ export default function useSelectChapterPage(chapters: ChapterEntity[]) {
       } else {
         setErrorMessage("Đã có lỗi xảy ra, vui lòng thử lại sau");
       }
+    } finally {
       setIsSubmitting(false);
     }
   };

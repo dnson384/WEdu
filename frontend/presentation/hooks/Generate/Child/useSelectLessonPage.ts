@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AxiosError, isAxiosError } from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { ChapterEntity } from "@/domain/entities/chapter.entity";
 import { DraftEntity } from "@/domain/entities/draft.entity";
@@ -32,6 +32,7 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
     data: fetchedDraft,
     error: fetchError,
     isLoading: isLoadingDraft,
+    refetch: refetchDraft,
   } = useQuery<DraftEntity, AxiosError<ApiError>>({
     queryKey: ["draft", draftId],
     queryFn: () => draftService.get(draftId),
@@ -45,6 +46,7 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
   const [draft, setDraft] = useState<DraftEntity>(initalDraftEntity);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isNavigating, startNavigation] = useTransition();
   const [selectedLessons, setSelectedLessons] = useState<UpdateDraftParam[]>(
     [],
   );
@@ -53,23 +55,25 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
     return chapters.find((c) => c.id === chapterId);
   }, [chapters, chapterId]);
 
+  const [hasSelectionChanges, setHasSelectionChanges] = useState(false);
   const [syncedKey, setSyncedKey] = useState<string | null>(null);
   const currentKey = `${fetchedDraft?.id}-${chapterId}`;
 
-  if (fetchedDraft && currentKey !== syncedKey) {
+  if (fetchedDraft && (fetchedDraft !== draft || currentKey !== syncedKey)) {
     setSyncedKey(currentKey);
     setDraft(fetchedDraft);
 
-    const draftChapter = fetchedDraft.chapters?.find((c) => c.id === chapterId);
-    if (draftChapter?.lessons?.length) {
+    if (currentKey !== syncedKey || !hasSelectionChanges) {
+      setHasSelectionChanges(false);
+      const draftChapter = fetchedDraft.chapters.find(
+        (c) => c.id === chapterId,
+      );
       setSelectedLessons(
-        draftChapter.lessons.map((lesson) => ({
+        (draftChapter?.lessons ?? []).map((lesson) => ({
           id: lesson.id,
           name: lesson.name,
         })),
       );
-    } else {
-      setSelectedLessons([]);
     }
   }
 
@@ -81,11 +85,13 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
 
   const handleAddLesson = (lesson: UpdateDraftParam) => {
     if (!selectedLessons.find((l) => l.id === lesson.id)) {
+      setHasSelectionChanges(true);
       setSelectedLessons((prev) => [...prev, lesson]);
     }
   };
 
   const handleRemoveLesson = (lessonId: string) => {
+    setHasSelectionChanges(true);
     setSelectedLessons((prev) => prev.filter((l) => l.id !== lessonId));
   };
 
@@ -94,6 +100,8 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
   };
 
   const handleContinueClick = async () => {
+    if (isSubmitting || isNavigating) return;
+
     if (selectedLessons.length === 0) {
       return setErrorMessage("Vui lòng chọn nội dung");
     }
@@ -124,7 +132,7 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
     };
 
     if (payload.add.length === 0 && payload.del.length === 0) {
-      router.push(nextUrl);
+      startNavigation(() => router.push(nextUrl));
       return;
     }
 
@@ -138,22 +146,10 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
         payload,
       );
       if (updateLessonsResult) {
-        try {
-          const generateMatrixResult =
-            await draftService.generateMatrix(draftId);
-          if (generateMatrixResult) {
-            router.push(nextUrl);
-          }
-        } catch (err: unknown) {
-          if (isAxiosError(err)) {
-            const resMessage = (err.response?.data as ApiError)?.message;
-            setErrorMessage(
-              resMessage || "Không thể cập nhật bài học cho chương",
-            );
-          } else {
-            setErrorMessage("Đã có lỗi xảy ra, vui lòng thử lại sau");
-          }
-          setIsSubmitting(false);
+        const generateMatrixResult = await draftService.generateMatrix(draftId);
+        if (generateMatrixResult) {
+          await refetchDraft({ throwOnError: true });
+          startNavigation(() => router.push(nextUrl));
         }
       }
     } catch (err: unknown) {
@@ -163,6 +159,7 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
       } else {
         setErrorMessage("Đã có lỗi xảy ra, vui lòng thử lại sau");
       }
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -186,9 +183,9 @@ export default function useSelectLessonPage(chapters: ChapterEntity[]) {
   return {
     currentChapter,
     draft,
-    isLoading: isLoadingDraft || isSubmitting,
+    isLoading: isLoadingDraft || isSubmitting || isNavigating,
     isLoadingDraft,
-    isSubmitting,
+    isSubmitting: isSubmitting || isNavigating,
     errorMessage: errorMessage || fetchError?.response?.data?.message || null,
     selectedLessons,
     unSelectedLessons,
