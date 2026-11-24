@@ -1,7 +1,260 @@
-# Draft flow
+# Luồng nghiệp vụ và trạng thái WEdu
+
+## Nghiệp vụ KLTN sau gỡ refund — 2026-11-19
+
+Không còn gửi/duyệt/từ chối/hủy/đối soát hoàn tiền, khóa AI vì refund hoặc tự thu hồi PLUS theo refund. Tài khoản active có quyền PLUS hiện hành vẫn dùng AI theo budget/usage hiện có. Giữ checkout → signed IPN/Return → lưu kết quả/cấp PLUS/email, và tra cứu ADMIN từ DB. Không tự hoàn tác quyền PLUS hoặc xóa các yêu cầu refund lịch sử. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+Sau Google xác thực → backend chuyển handoff về Next callback → exchange trả200 thì redirect `/`, trả202 thì redirect `/auth/verify-email`, lỗi thì redirect `/auth/google-error`. Cả ba dùng frontend `FRONTEND_URL` khi cấu hình để tránh redirect về `https://localhost:3000` qua ngrok. Mutation OTP chấp nhận đúng origin cấu hình, vẫn chặn origin khác/thiếu hoặc cross-site. Không cấu hình thì giữ origin từ request cho local development. Không đổi điều kiện OTP/liên kết/tạo user hoặc phát JWT. [Source](../frontend/app/api/auth/google/callback/route.ts).
+
+## Payment embedded VNPay - 2026-11-18
+
+Checkout URLs use current request IP without persisting clientIp. manualReview is derived from SUCCEEDED with absent plusExpiresAt and remains an API/email value. AI coverage requires trackedSince <= paidAt; tracking is initialized before paidAt on a new grant, and legacy exceptions/PLUS protection retain their existing rules.
+
+VNPay results live in PaymentOrders.vnpayTransaction. Result updates use dotted paths and order revision; verification claims the nested timestamp with user ownership in the same update. ADMIN searches vnpayTransaction.transactionNo directly with existing date/status/email filters before pagination/count. Migration embeds old data and conditionally removes a split source only after verification in the same transaction. [Report](payment-storage-refactor-report.md).
+
+## Chuẩn bị dữ liệu auth bằng Java — 2026-11-14
+
+Trong maintenance window, bật auth.migration.enabled=true rồi khởi động backend: đọc Users → kiểm đủ ID/email, trùng email chuẩn hóa/Google subject và credential nhất quán trên toàn bộ snapshot → drop index emailKey cũ → partial update email, unset emailKey, đổi LOCAL đã có Google link + password thành MIXED → AuthIndexConfig bảo đảm indexes. Không merge/delete tài khoản, không đổi password/role/PLUS, không gọi mail/Google. Tắt flag và khởi động bình thường sau khi hoàn tất. Nếu preflight lỗi thì chưa có ghi migration; lỗi DB trong DDL/bulk có thể để lại tiến độ một phần, chạy lại sau khi xử lý lỗi. [Cách chạy/tests](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+Sau Google consent, browser về backend `/auth/login/oauth2/code/google` để xác minh code/state/nonce rồi mới chuyển Next `/api/auth/google/callback`. Cập nhật Authorized redirect URIs trong Google Console theo URL backend mới; các bước OTP/liên kết/phát JWT giữ nguyên.8 tests OAuth/JWT filter đạt, chưa kiểm Google thật. [Chi tiết](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Đăng ký OTP/Google — 2026-11-13
+
+LOCAL: validate + kiểm tra email → lưu hồ sơ tạm với BCrypt → reserve quota email → gửi OTP → /auth/verify-email → OTP đúng → transaction consume/create user/lưu refresh metadata → JWT cookies → /. Email đã tồn tại trả409, không gửi OTP. Trước OTP không tạo user/JWT. Sai mã tăng attempts bằng conditional update ngoài transaction hoàn tất; resend thay hash/reset attempts. SMTP lỗi không đánh dấu ready, không cấp phiên; vẫn giữ cooldown/quota để tránh lạm dụng.
+
+Google: Next tạo verifier cookie → Spring OIDC state/nonce/session tạm → callback lưu handoff60 giây ràng buộc hash verifier → Next đổi handoff phía server. Tìm tài khoản theo email, kiểm tra sub đã liên kết/teacher/active rồi đăng nhập. Chưa liên kết: Gmail/Workspace verified trùng user thì liên kết trực tiếp; email ngoài phải OTP. User mới luôn OTP trước create. LOCAL giữ mật khẩu và chuyển MIXED khi liên kết thành công; Google mới dùng tên Google, avatar S3 mặc định, không có mật khẩu local. Tài khoản bị khóa/role khác bị từ chối; không migrate ROLE_USER cũ.
+
+OTP6 số/5 phút/5 lần sai, resend120 giây, tối đa5 lần gửi/email trong60 phút gần nhất; session30 phút. Transaction rollback consume/create/link nếu lưu refresh thất bại. Các mô tả local-register tạo user ngay và OAuth partial cũ bên dưới đã được thay thế. [Usecase](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/VerificationUsecase.java), [validation/rollout](google-auth-implementation-report.md).
+
+## Giáo viên xuất ma trận đề — 2026-11-12
+
+Tại trang xem trước, giáo viên chọn “Xuất ma trận đề”. Hook khóa thao tác lặp, gọi Next rồi Java với examId/examName. Java xác thực role/owner, đọc matrix/matrixDetails đã lưu trong Exam và tên đề từ database, giữ thứ tự cùng dòng số lượng 0. Không dựng lại theo câu hỏi thực tế; đề sinh thiếu có thể khác số lượng snapshot. Thiếu phần dữ liệu trả 422, không xuất tài liệu thiếu.
+
+Java gửi hai danh sách dòng sang Express `/exporter/matrix`. DOCX gồm tiêu đề đánh số, bảng ma trận, ngắt trang, bảng đặc tả theo mẫu trong docs/format_file_ma_tran_de.docx; tên bài kiểm tra không xuất hiện trong nội dung file. Exporter nhóm các dòng theo chương/bài (bản đặc tả thêm dạng bài/yêu cầu cần đạt), đưa số câu vào cột loại câu × mức độ; gộp Vận dụng cao vào Vận dụng ở presentation. Dạng bài và learningOutcome cùng xuất trong cột Yêu cầu cần đạt. Chương/bài số lượng 0 vẫn xuất. Loại câu hoặc nhãn mức độ bổ sung được thêm cột để tránh mất dữ liệu.
+
+Điểm mỗi câu bằng 10/N, N là tổng số câu của matrix snapshot; cả hai bảng dùng chung N. Điểm/tỷ lệ nhóm tính theo số câu, chỉ làm tròn khi hiển thị tối đa 2 số thập phân; N=0 thì điểm/tỷ lệ=0. Tổng của từng bảng phản ánh dữ liệu riêng của bảng đó, không tự sửa khi matrix/matrixDetails lệch nhau. Binary trả qua Java/Next và browser tự tải `<tên đề>_ma trận đề.docx`. Khi lỗi, UI thông báo và mở lại thao tác, không tải JSON thành file. Không ghi DB/S3 hoặc cập nhật đề. [Source và kiểm tra](matrix-export-implementation-report.md).
+
+## Refund processing — 2026-11-09
+
+**Đã gỡ khỏi phạm vi KLTN ngày 2026-11-19.** Không còn route, service, job hoặc model runtime của flow này. Dữ liệu lịch sử không bị xóa trên DB thật. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md) ghi nhận phạm vi hiện hành; [báo cáo cũ](refund-implementation-report.md) chỉ là lịch sử triển khai.
+
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Luồng hiện tại đã có quản lý tài khoản/AI, kiểm duyệt tệp/câu hỏi AI và mua PLUS. Giá20.000đ/30 ngày; đơn mới có5 phút thanh toán, retry giữ expiry cũ. IPN, querydr hoặc Return có chữ ký được backend kiểm tra mới ghi nhận kết quả.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
+## Cấu hình giới hạn AI — 2026-11-01
+
+1. ADMIN vào `/admin/ai`, xem giới hạn đã lưu và chọn **Cấu hình giới hạn** để mở form tại chỗ. Form điền sẵn cấu hình; Hủy bỏ draft, mở lại dùng dữ liệu đã lưu.
+2. Nhập budget USD và/hoặc tổng token tháng; để trống tắt từng giới hạn. Validation budget/quota tách khỏi lỗi bộ lọc báo cáo. Lưu khóa gửi lặp; Hủy/tải lại không chạy khi mutation đang xử lý.
+3. PUT budget thành công cập nhật cache cấu hình, đóng form, thông báo và refetch status. Panel hiển thị giới hạn, đã dùng/còn lại và tỷ lệ; nếu refetch lỗi, thông báo rõ cấu hình đã lưu nhưng trạng thái chưa cập nhật, dùng Làm mới để thử lại.
+4. Lỗi lưu giữ draft. Revision conflict khóa lưu tới khi tải lại thành công, kể cả khi Hủy rồi mở lại form. Tải lại chủ động thay draft bằng cấu hình server.
+
+Backend WEdu áp dụng cấu hình trước request AI tiếp theo; không đồng bộ hạn mức sang DeepSeek. Giữ hạn mức tháng toàn hệ thống, cảnh báo 80%/chặn 100%, không hủy request đang chạy. [Hook](../frontend/presentation/hooks/Admin/useAiManagement.ts), [form](../frontend/presentation/components/Admin/AiBudgetForm.tsx).
+
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+1. Đăng nhập ADMIN → getRoleHome → /admin/users. Truy cập / hoặc /admin cũng về users; TeacherHome không mount cho ADMIN. Navigation chính chỉ Quản lý tài khoản người dùng và Quản lý AI. Menu tài khoản giữ thông tin cá nhân/đăng xuất, ẩn thanh toán.
+2. useAdminUsers lấy danh sách hoặc tìm theo keyword tên/email qua API hiện có; phân trang 10 kết quả ở client. Bộ lọc đổi thì về trang đầu, xóa làm giảm tổng thì clamp trang hiện tại.
+3. Chọn Phân quyền/Khóa/Mở khóa/Xóa → native dialog xác nhận. Đổi quyền chỉ TEACHER/MODERATOR theo BFF hiện có; không submit nếu không đổi role. Bản thân/ADMIN khác không có thao tác; trạng thái unknown không khóa/mở khóa.
+4. Confirm → ref khóa submit đồng thời → AdminService/BFF/usecase/adapter → backend quyết định quyền. Thành công đóng dialog/thông báo; lỗi giữ dialog và message. Cả hai nhánh refresh danh sách, không tự retry mutation. Hủy không gọi API. isActive nhận từ backend quyết định nhãn trạng thái; không suy ra PLUS provisioning.
+
+Không thay đổi chính sách backend hoặc dữ liệu thật trong validation. [Hook](../frontend/presentation/hooks/Admin/useAdminUsers.ts), [dialog](../frontend/presentation/components/Admin/AdminUserActionDialog.tsx), [validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+1. ROLE_ADMIN chọn Quản lý AI → `/admin/ai`; hook lấy report, trạng thái tháng và cấu hình. Bộ lọc from/to bao gồm hai ngày đầu/cuối, tối đa 366 ngày, theo giờ Việt Nam; model lấy từ usage đã ghi và model cấu hình hiện tại. Báo cáo không thay đổi phạm vi hạn mức tháng toàn hệ thống.
+2. Report tổng hợp request, input/output/total tokens, unknownUsageRequests, chi phí ước tính và bù các ngày không có dữ liệu để vẽ SVG. Số dư tài khoản lấy riêng qua DeepSeek `/user/balance`, không chia theo model, không quy đổi CNY/USD. Cache cả lần polling thất bại 60 giây để tránh gọi lặp khi provider lỗi.
+3. Admin lưu budget USD/quota token nullable với revision. PUT thay toàn bộ cấu hình, null tắt giới hạn tương ứng; cấu hình chưa có là revision 0, insert đầu tiên tạo revision 1; sửa stale trả 409. Cấu hình áp dụng ngay cho usage tháng đang có và dùng tiếp các tháng sau; đổi tháng dựa query boundary, không cần job reset.
+4. Trước mọi lần gọi AI của tạo đề/sinh lại, đọc usage và budget ngoài transaction câu hỏi. >=80% cảnh báo; >=100% của một giới hạn trả 429, không gọi provider. Số dư mới xác nhận unavailable cũng trả 429; stale balance không quyết định chặn. DB lỗi hoặc không ghi được STARTED trả 503; model thiếu giá trả 503.
+5. STARTED lưu UUID/time/model và snapshot giá trước HTTP. Khi nhận response, lưu token/cache và tính phí trước khi parse nội dung. Phí ước tính = (cache-hit token × giá hit + cache-miss token × giá miss + output token × giá output) / 1 triệu. Không cộng riêng reasoning token vì đã thuộc completion_tokens. Thiếu cache-hit field coi toàn bộ input là cache miss để ước tính thận trọng. Giá/version của request đang chạy không đổi theo cấu hình mới.
+6. Provider/parse/validation/persistence câu hỏi thất bại không rollback usage đã ghi. Timeout/thiếu usage hoặc không lưu hoàn tất giữ unknown, không tự retry và không tính phần chưa biết vào tổng; UI nêu rõ số request thiếu usage. Request đang chạy được hoàn tất, chấp nhận vượt nhẹ do concurrency. Review nhận lỗi hạn mức/availability giữ code/status và không mất lượt; approve/final reject không cần AI vẫn dùng được.
+
+Không có lịch sử trước triển khai, usage ngoài ứng dụng, backfill hóa đơn hoặc reservation. [Decision](development-decisions.md#quản-lý-usagebudget-ai--2026-11-01), [service](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java), [validation](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+1. Moderator vào /moderator/review, đọc Questions.status=PENDING_REVIEW; tìm/lọc/phân trang giữ trên câu gốc. Card ưu tiên bản sinh lại mới nhất nếu có, cùng số lần từ chối đã ghi nhận.
+2. Duyệt gửi updatedAt/reviewRevision. Backend kiểm tra còn chờ và đúng phiên bản, promote question/options của bản mới nhất nếu có, chuyển APPROVED, xóa QuestionsReview trong transaction. ID/metadata/createdAt giữ nguyên. UI refetch và sửa trang nếu cần.
+3. Từ chối tính lượt kế tiếp. Với lượt 1–4, đọc yêu cầu từ metadata câu gốc và danh mục chương/bài; ghép đầy đủ learningOutcomes bằng "; ". AI sinh đúng một câu. Kiểm tra metadata, số phương án, nội dung và placeholder; con người đánh giá chuyên môn. Khi thành công, kiểm lại phiên bản trong transaction, tăng updatedAt gốc và append snapshot/tăng count, revision. AI lỗi không tăng lượt và không thay dữ liệu.
+4. Moderator xem/sửa bản mới nhất rồi duyệt hoặc từ chối tiếp. Lưu chỉnh sửa không tự duyệt hoặc tăng lượt; thay đổi snapshot cuối, tăng revision/updatedAt, giữ nội dung Questions gốc.
+5. Từ chối khi đã có 4 lần sinh lại thành công không gọi AI; chuyển câu gốc sang NEEDS_CONSIDERATION, giữ nội dung gốc, xóa QuestionsReview và lịch sử. UI loại khỏi hàng chờ.
+
+Chưa đổi cách chọn câu hoặc thêm cảnh báo trong đề. Các đề lưu questionIds vẫn có thể đọc nội dung mới sau duyệt vì ID giữ nguyên. Request cũ/đồng thời không được ghi đè; có thể cùng tốn chi phí gọi AI trước khi một kết quả bị 409. Không có persisted reviewer/reason/audit, tự đánh giá bằng AI, hàng đợi hoặc retry tự động.
+
+[Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [UI hook](../frontend/presentation/hooks/Moderator/usePendingQuestions.ts), [contract](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+
+## Moderator sửa câu hỏi với LaTeX và mô tả ảnh — 2026-10-29
+
+1. Mở Chỉnh sửa: clone nội dung/phương án và updatedAt. Template hiển thị nguyên placeholders; mỗi key math/image duy nhất trong mỗi content có input riêng. `<img_0>` ở câu hỏi độc lập với `<img_0>` ở phương án.
+2. Nhập LaTeX, xem trước KaTeX. Ảnh AI giữ trường mô tả; moderator chọn ảnh JPEG/PNG để thay thế. Ảnh đã có hiển thị preview và có thể giữ nguyên hoặc chọn thay. Thêm tham chiếu bằng nút chèn hoặc nhập template; xóa tham chiếu thì bỏ biến/file tương ứng khỏi payload. Hủy bỏ toàn bộ draft, không gọi API/upload.
+3. Lưu: frontend kiểm tra nội dung/tham chiếu/LaTeX/ảnh, gửi payload JSON + files có namespace; backend xác thực moderator, câu còn pending, phiên bản khớp và binding đầy đủ. Mô tả chưa có ảnh không cho lưu; giữ ảnh cũ chỉ từ database.
+4. Upload ảnh mới vào S3, thay giá trị mô tả trong map chuẩn bị lưu bằng object key. Conditional update MongoDB lưu câu/options và updatedAt, giữ PENDING_REVIEW; chỉ sau thành công dữ liệu persisted mới thay mô tả. Không lưu mô tả riêng, không lưu presigned URL, không sửa QuestionsReview.
+5. Thành công 204: đóng form, refetch danh sách; GET trả URL ký cho key ảnh, công thức theo map. Conflict 409: giữ draft, yêu cầu tải lại; upload/validation lỗi không ghi DB. Cleanup media mới best-effort, không xóa media cũ; outcome DB không xác định giữ media mới và kiểm tra lại qua GET trước retry.
+
+Luồng chỉ chỉnh sửa, không approve hoặc regenerate. [Editor](../frontend/presentation/components/Moderator/PendingQuestionEditForm.tsx), [backend usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/EditPendingQuestionUsecase.java), [API](api-reference.md).
+
+## Moderator xem câu hỏi chờ duyệt — 2026-10-27
+
+Moderator mở `/moderator/review`, UI gọi GET pending qua Next proxy access cookie → Bearer. Backend kiểm tra ROLE_MODERATOR; chỉ đọc Questions.status=PENDING_REVIEW, filter nội dung/chương/bài/loại câu trước count/phân trang cố định 10. Trả mới nhất trước, tên chương/bài và ảnh presigned; không có chương/bài dùng nhãn dự phòng. UI có tổng số, Trang trước/sau, loading/error/retry/empty; đổi bộ lọc trở lại trang 0, tìm kiếm debounce 300 ms. Không lấy từ QuestionsReview.regeneratedQuestions; không backfill legacy null, không thay việc dùng câu AI trong đề.
+
+Tại snapshot 2026-10-27, Duyệt thẳng, Chỉnh sửa, Từ chối – yêu cầu regenerate mới chỉ giao diện; không ghi APPROVED/REJECTED, không gọi AI, không tạo snapshot/audit hoặc gửi thông báo. [Contract](api-reference.md), [page](../frontend/app/(site)/moderator/review/page.tsx).
+
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Câu AI PENDING_REVIEW được lưu trong Questions; IDs chuyển vào QuestionReviewService → QuestionReviewUsecase → entity → repository → QuestionsReview. regeneratedQuestions mặc định rỗng; kiểu phần tử mới RegeneratedQuestionEntity/RegeneratedQuestionDocument cùng cấu trúc Question nhưng hoàn toàn thuộc questionReview, kể cả Content/Variables. Giữ transaction, Telegram và việc dùng câu AI trong đề; không regenerate/append hoặc đổi approve/reject.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
+## Trạng thái câu hỏi — 2026-10-26
+
+ImporterService.parseDocument → QuestionService.insertFromDocx(List<NewQuestionDTO>) gán APPROVED trước khi lưu. Nhánh generateExamQuestions dùng method private insert(questions, "PENDING_REVIEW") cho AI; vẫn gửi Telegram và dùng IDs ngay trong đề. Không lọc status khi chọn lại câu, không thêm API/UI duyệt câu hỏi.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
+Snapshot source 2026-10-24; xem [current-status.md](current-status.md) để hiểu nhãn trạng thái. “Có code” không đồng nghĩa đã xác nhận end-to-end. Đường dẫn backend dưới đây là source thật trong `backend/src/main/java/com/wedu/exam_creation`.
+
+## 1. Đăng ký, đăng nhập và phiên
+
+Luồng xóa tệp moderator (2026-10-25): nút Xóa cạnh Tải xuống trong bảng → hộp thoại có tên tệp → Hủy/Escape đóng mà không gọi API; xác nhận khóa thao tác gửi lặp và gọi DELETE → backend kiểm role/key → S3 DeleteObject → 204. Thành công đóng hộp thoại, thông báo, bỏ dòng đã xóa khỏi cache rồi gọi lại API danh sách tại chỗ. DELETE lỗi giữ hộp thoại để thử lại/hủy; lỗi GET sau DELETE hiển thị như lỗi tải danh sách, không coi là xóa thất bại. Không reload toàn trình duyệt hoặc thêm submission/review state. [Trang files](../frontend/app/(site)/moderator/question-files/page.tsx), [dialog](../frontend/presentation/components/Moderator/DeleteQuestionFileDialog.tsx), [contract](api-reference.md).
+
+**implemented** ở mức local-auth handlers/services; tích hợp chạy thật **unknown**.
+
+1. UI/hooks gọi `AuthService` → Next `/api/auth/login|register`, schema kiểm tra input.
+2. Next tạo use case/repository; Axios gọi `/auth/login|register` Spring.
+3. Backend register kiểm tra confirm/duplicate email, BCrypt password, tạo user mặc định `ROLE_TEACHER`, `FREE`, active, avatar key mặc định. Login kiểm tra user, phương thức GOOGLE, active và password.
+4. Sinh cặp JWT; lưu metadata refresh token; Spring trả user và hai Set-Cookie. Next đọc cookies rồi đặt HttpOnly `accessToken`/`refreshToken`, trả `{user}`.
+5. Proxy xác minh access token bằng JOSE; nếu thiếu/hết hạn dùng refresh cookie gọi Spring regenerate. Proxy thêm `x-account-id`; protected Next routes chuyển access token sang Bearer tới backend.
+
+Bằng chứng: [AuthUsecase.register/login/generateToken](../backend/src/main/java/com/wedu/exam_creation/auth/usecase/AuthUsecase.java), [UserUsecase.createNewUser](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [AuthController](../backend/src/main/java/com/wedu/exam_creation/auth/controller/AuthController.java), [AuthRepositoryImpl](../frontend/infrastructure/repositories/AuthRepositoryImpl.ts), [login route](../frontend/app/api/auth/login/route.ts), [proxy](../frontend/proxy.ts).
+
+Access JWT cấu hình 5 phút; refresh 7 ngày. Backend login/register cookie access maxAge lại là 15 phút; Next cookie là 5 phút. Refresh tra metadata theo JTI/user, không phải refresh-token rotation. Logout xóa refresh token theo access claim parentJti; Next xóa cookies; access JWT cũ không bị blacklist. Đổi mật khẩu kiểm tra mật khẩu cũ/xác nhận rồi thu hồi refresh token **các phiên khác**, giữ JTI hiện tại. Bằng chứng: `AuthUsecase.regenerateAccessToken/logout/changePassword/saveUserAndRevokeRT`, [logout route](../frontend/app/api/auth/logout/route.ts).
+
+## 2. Authorization và role
+
+| Role/điều kiện | Quyền được xác minh | Bằng chứng |
+| --- | --- | --- |
+| Public paths | Login/register/logout/regenerate/forgot/reset, static, Swagger; logout vẫn cần Authorization header trong controller | [SecurityConstants.PUBLIC_PATHS](../backend/src/main/java/com/wedu/exam_creation/security/constant/SecurityConstants.java) |
+| Mọi request khác | Authenticated; filter nạp user và kiểm tra enabled | [SecurityConfig](../backend/src/main/java/com/wedu/exam_creation/config/SecurityConfig.java), [JwtAuthenticationFilter](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/filter/JwtAuthenticationFilter.java) |
+| `ROLE_ADMIN` | `/admin/**`; cấm tự đổi role/khóa/mở/xóa và cấm tác động admin khác trong use case | [AdminController](../backend/src/main/java/com/wedu/exam_creation/admin/controller/AdminController.java), [AdminUsecase](../backend/src/main/java/com/wedu/exam_creation/admin/usecase/AdminUsecase.java) |
+| `ROLE_MODERATOR` | `/moderator/parse`, `/moderator/question-files`; layout moderator kiểm tra role, backend annotation quyết định quyền | [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [ModeratorLayout](../frontend/app/(site)/moderator/layout.tsx) |
+| `ROLE_TEACHER` | Role mặc định local registration; draft/exam dùng owner ID, không annotation teacher riêng | [UserUsecase](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [DraftController](../backend/src/main/java/com/wedu/exam_creation/draft/controller/DraftController.java), [ExamController](../backend/src/main/java/com/wedu/exam_creation/exam/controller/ExamController.java) |
+| `ROLE_USER` | Có trong khởi tạo tài khoản Google; không nằm trong danh sách role admin use case cho phép | [CustomOAuth2UserService.loadUser](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java) |
+| `accountType == PLUS` | Bù câu hỏi thiếu bằng AI; không phải Spring role | [QuestionService.generateExamQuestions](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java) |
+
+Không thấy RoleHierarchy hoặc cơ chế admin tự có quyền moderator. Backend principal chứa authority lấy từ role hiện tại trong DB: [CustomUserDetails.getAuthorities](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/principal/CustomUserDetails.java). Không dùng UI hoặc `x-account-id` như bằng chứng backend đã phân quyền.
+
+Google OAuth2 là **partial**: service có tạo/cập nhật user nhưng role `ROLE_USER`, không set accountType/timestamps tại nhánh tạo mới; avatar là Google URL. Success handler dùng cookie snake_case/path khác, redirect `/dashboard`, không lưu metadata refresh token. Public constants chưa liệt kê `/oauth2/**`, `/login/oauth2/**`; filter JWT có thể cản luồng trước OAuth. Bằng chứng: [CustomOAuth2UserService](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/service/CustomOAuth2UserService.java), [OAuth2AuthenticationSuccessHandler](../backend/src/main/java/com/wedu/exam_creation/security/infrastructure/handler/OAuth2AuthenticationSuccessHandler.java), `SecurityConstants`, `JwtAuthenticationFilter.shouldNotFilter`. Không khẳng định Google login hoạt động thực tế.
+
+## 3. Quên/đặt lại mật khẩu và SMTP
+
+`AuthUsecase.forgotPassword` validate email → `PasswordResetTokenUsecase.requestReset`: yêu cầu user tồn tại, xóa reset token cũ của user, sinh 32 byte random, lưu SHA-256 hash với hạn 15 phút và `used=false`, gửi link `${FRONTEND_URL}/auth/reset-password?token=...`. SMTP dùng HTML email, Gmail STARTTLS 587.
+
+Reset: so khớp confirmation → hash token nhận vào → tìm unused token → kiểm tra expiry → hash/update password → `used=true`. Không thấy thu hồi refresh-token ở luồng reset; lưu password và token chưa được bao bằng transaction trong use case này. SMTP failure có thể để lại token đã lưu, chưa thấy compensation. Bằng chứng: [PasswordResetTokenUsecase](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/usecase/PasswordResetTokenUsecase.java), [repository](../backend/src/main/java/com/wedu/exam_creation/passwordResetToken/infrastructure/repository/PasswordResetTokenRepositoryImpl.java), [MailService](../backend/src/main/java/com/wedu/exam_creation/mail/service/MailService.java), [application.yml](../backend/src/main/resources/application.yml). Trạng thái code: **implemented**; bảo đảm gửi thư/chống race end-to-end: **unknown**.
+
+## 4. Profile và avatar
+
+Username: Next PUT chuyển thành backend PATCH; use case validate nonblank và ≤254 ký tự. Avatar: UI upload → S3 trả key → gọi update profile với key → lưu key mới → xóa ảnh cũ trừ avatar mặc định; lưu thất bại cố xóa ảnh mới; xóa ảnh cũ lỗi gửi Telegram. `getMe` chuyển key thành presigned URL, không ghi URL tạm vào Mongo.
+
+Bằng chứng: [useUpdateAvatar](../frontend/presentation/hooks/Me/useUpdateAvatar.ts), [UserRepositoryImpl frontend](../frontend/infrastructure/repositories/userRepositoryImpl.ts), [UserUsecase.updateAvatar/updateUsername/getMe](../backend/src/main/java/com/wedu/exam_creation/user/usecase/UserUsecase.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java). Xác minh ownership của S3 key đầu vào chưa thấy trong `updateAvatar`; không coi compensation là transaction phân tán.
+
+
+Frontend avatar vẫn **partial**: [UserRepositoryImpl.updateAvatar](../frontend/infrastructure/repositories/userRepositoryImpl.ts) gọi `/user/avatar/${s3Key}` nhưng [UserController](../backend/src/main/java/com/wedu/exam_creation/user/controller/UserController.java) khai báo PATCH `/user/update-avatar` với query s3Key. Hook tạo `new QueryClient()` và invalidate `user-profile`, trong khi [useAuth](../frontend/presentation/hooks/Auth/useAuth.ts) dùng key `user`; chưa làm mới đúng cache provider. Không mô tả luồng này là end-to-end hoàn thiện.
+
+## 5. Upload DOCX, danh sách file và kiểm duyệt
+
+**Upload/list/preview và duyệt/từ chối tệp implemented theo source; không có submission ID hoặc persisted audit.**
+
+1. Teacher UI `/upload` → `StorageService.uploadFileToQuestionBank` → `POST /api/storage/question-file` → `StorageRepositoryImpl` → `POST /storage/question-file` → `S3Service.updateDocumentFile(file, "question-files/" + subject, 50, principal.email)`.
+2. Moderator mở `/moderator/question-files` → `ModeratorService.getQuestionFiles` → Next GET `/api/moderator/question-files` → `GetQuestionFilesUsecase` → repository → Spring GET `/moderator/question-files` → `ModeratorUsecase.listQuestionFiles` → `S3Service.listQuestionFiles("question-files")`. Kết quả là `{key,fileName,size,lastModified,presignedUrl}[]`.
+3. Modal preview → POST `/moderator/question-files/approve` với key, file chỉnh sửa tùy chọn → [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java).approveQuestionFile → đọc bản gốc, validate DOCX → `parseDocument` với subject từ key. Không file chỉnh sửa thì dùng bytes S3 qua StoredDocumentFile; có file thì import bytes bản chỉnh sửa. Parse lỗi giữ tệp gốc; thành công xóa tệp gốc. Xóa lỗi trả IDs và fileDeleted=false; UI chỉ retry xóa trong phiên hiện tại. Không lưu bản chỉnh sửa. `/moderator/parse` cũ giữ multipart/subject và string[] IDs.
+4. Từ chối → form lý do trim 1–2000 ký tự → POST `/moderator/question-files/reject` → xác thực key/email → kiểm tra tệp tồn tại → xóa S3 → MailService.sendQuestionFileRejectionEmail. Email lấy trước dấu '-' cuối trong basename vì tên chuẩn hóa không chứa '-'; giữ được email có dấu '-'. Email không xác định thì không xóa. Xóa lỗi không gửi email. Email lỗi chỉ WARN loại exception, không retry/Telegram, vẫn 204. Email text/plain không diễn giải lý do thành HTML.
+
+Backend DOCX validation: file không rỗng, ≤50 MiB, đuôi `.docx` không phân biệt hoa/thường, ZIP có entry `[Content_Types].xml` và `word/document.xml`; đây chưa phải kiểm định toàn bộ OOXML hay antivirus. Tên file bỏ path gốc/dấu tiếng Việt/ký tự phân cách, ghép PascalCase, thêm `.docx`; key đầu tiên là `question-files/<subject>/<email>-<NormalizedName>.docx`. Cập nhật 2026-10-25: `S3Service.updateDocumentFile → uploadUniqueDocumentFile` ghi bằng `If-None-Match: *`; nếu S3 trả 412 thì thử `<NormalizedName>(1).docx`, `(2)`… theo thứ tự đến tên còn trống. S3 quyết định việc chiếm tên nguyên tử, không HEAD rồi PUT; upload đồng thời không ghi đè nhau. Lỗi 409 thử lại cùng key tối đa 3 lần sau lần đầu; lỗi khác hoặc hết lượt thử được ném lại, không coi là trùng tên. Mỗi lần PUT mở stream mới và API trả đúng key thành công. Subject chưa được chuẩn hóa trong controller. Avatar tách riêng `uploadImageFile(..., "avatars", 5)` dùng Tika JPEG/PNG và UUID.
+
+List S3 duyệt tất cả trang bằng continuation token, bỏ object kết thúc `/`, tạo download URL hạn 60 phút với Content-Disposition attachment/UTF-8 filename. Next GET dùng `Cache-Control: private, no-store`, trả 401 thiếu token, giữ lỗi 401/403 từ upstream và thông báo chung cho lỗi khác. Backend dùng role MODERATOR; lỗi AWS SDK được đổi thành InternalServerException chung. Không log hoặc đưa giá trị URL đã ký vào tài liệu.
+
+Quy tắc conditional write dựa trên [AWS S3 conditional writes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html). Trùng tên xét object hiện tại; key đã xóa hoặc có current delete marker có thể được dùng lại, không bảo đảm tên duy nhất trong toàn bộ version history. Lỗi mạng sau khi S3 đã nhận file vẫn có thể khiến người dùng gửi lại thành một bản mới; thay đổi này chống ghi đè, không bổ sung idempotency theo nội dung.
+
+UI list có loading/empty/error/retry/refetch và tải xuống. Query key `["moderator-question-files", user.id]`, enabled theo role MODERATOR, staleTime 0, refetchOnMount always, retry false. Login/root điều hướng moderator tới `/moderator/question-files`; navbar có menu theo role, vào mục files invalidate query prefix. Login/logout dùng QueryClient từ provider, cancel/clear cache để hạn chế dữ liệu người dùng cũ. `/moderator/review` đã nối danh sách/editor/approve/reject/regenerate; chỉ `/moderator/question-bank` còn placeholder.
+
+**Đối chiếu source 2026-10-25:** UI upload hiện ghi 50 MB, backend kiểm 50 MiB; service `uploadFileToQuestionBank` đã khai báo `Promise<string>`/Axios string, khớp S3 key trả về. `/storage/question-bank`, `/api/storage/question-bank` và GET `/storage/documents` đã không còn trong route source hiện tại. Không coi tên method cũ `uploadFileToQuestionBank` là endpoint còn tồn tại.
+
+Bằng chứng: [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [ModeratorUsecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [Next files GET](../frontend/app/api/moderator/question-files/route.ts), [upload route](../frontend/app/api/storage/question-file/route.ts), [questionFile.entity.ts](../frontend/domain/entities/questionFile.entity.ts), [files page](../frontend/app/(site)/moderator/question-files/page.tsx), [useLogin](../frontend/presentation/hooks/Auth/useLogin.ts), [useNavBar](../frontend/presentation/hooks/layout/useNavBar.ts), [upload UI](../frontend/app/(site)/upload/page.tsx), [StorageService](../frontend/presentation/services/StorageService.ts).
+
+**Không có trong phạm vi đã duyệt:** submission collection, pending/approved/rejected field, reviewer/audit hoặc receipt S3. Email trong filename không thay owner/audit record. Không bảo đảm chống import trùng xuyên moderator/restart/mất phản hồi; tải lại trang mất trạng thái đã import nhưng chưa xóa. AI moderation vẫn là thông báo Telegram và insert/use ngay như phần 8.
+
+## 6. Import DOCX/Pandoc vào ngân hàng
+
+`ImporterService.parseDocument` transaction: validate subject/file → Pandoc workspace `static/uploads/pandoc_<uuid>/input.docx` → process `pandoc -f docx -t json --mathjax --extract-media=...` → upload extracted images vào S3 `media/` → parse metadata title=chapter, subtitle=lesson; heading 1=dạng bài, 2=độ khó, 3=learning outcome, 4=loại câu; paragraphs/body và bullet lists/options → tạo chapter/lesson/bankStats → lưu questions → trả danh sách ID. Workspace local dọn trong finally.
+
+Chapter repository merge theo **chapter name**, không kèm subject; lesson theo name trong chapter; bankStats so dạng bài, loại câu, difficulty/outcomes. Parser hiện tạo một lesson từ subtitle mỗi file. Question content dùng template/variables map math/image. Imported questions được insert thẳng, không có bước approval tiếp.
+
+Bằng chứng: [ImporterService](../backend/src/main/java/com/wedu/exam_creation/importer/service/ImporterService.java), [PandocConverter](../backend/src/main/java/com/wedu/exam_creation/importer/infrastructure/pandoc/PandocConverter.java), [helpers](../backend/src/main/java/com/wedu/exam_creation/importer/infrastructure/pandoc/helper), [ChapterRepositoryImpl.saveChapter](../backend/src/main/java/com/wedu/exam_creation/chapter/infrastructure/repository/ChapterRepositoryImpl.java), [QuestionRepositoryImpl.saveQuestions](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java). Transaction không xóa media S3 đã upload nếu Mongo rollback. Parser merge stat lặp so difficultyLevels thay vì so learningOutcomes; đây là lỗi logic tĩnh cần kiểm chứng bằng fixture, chưa sửa.
 
 ## 7. Draft → matrix → matrixDetails
 
-Cập nhật loading 2026-11-24: `useSelectLessonPage` theo dõi điều hướng Tiếp tục bằng `useTransition`; Loader và khóa submit duy trì trong lúc lưu hoặc chuyển trang, bao gồm nhánh không thay đổi nội dung. Kết thúc mutation không làm form nội dung hiện lại khi trang đích còn chờ. Lỗi lưu/refetch giải phóng trạng thái submitting để thử lại. [Validation và giới hạn](current-status.md#lesson-navigation-loading-fix--2026-11-24).
+Tạo nháp với tên, tổng số câu, questionTypes; ban đầu chapters rỗng. UI chọn chương/bài, gửi `{add:[{id,name}],del:[id]}`. Owner filter đi từ authenticated principal xuống repository.
 
-Cập nhật 2026-11-24: [useSelectChapterPage](../frontend/presentation/hooks/Generate/Child/useSelectChapterPage.ts) chờ refetch bản nháp sau khi lưu chương trước khi chuyển sang nội dung. [useSelectLessonPage](../frontend/presentation/hooks/Generate/Child/useSelectLessonPage.ts) refetch sau khi lưu nội dung và sinh matrix thành công trước khi chuyển bước. Cache chung `["draft", draftId]` nhận snapshot mới; lỗi refetch giữ trang và hiển thị lỗi dù mutation trước đó có thể đã lưu thành công. Hai hook giữ lựa chọn chưa lưu khi nhận snapshot cùng draft/chapter, khởi tạo lại khi đổi draft/chapter. Chương không thay đổi thì chuyển bước mà không PUT. Không đổi contract hay chính sách matrix. [Validation](current-status.md#draft-chapter-and-lesson-cache-fix--2026-11-24).
+`DraftUtil.generateMatrix`: loại câu dùng trọng số Nhiều lựa chọn 30%, Đúng sai 40%, Trả lời ngắn 30%; phần dư dồn loại cuối trong input; difficulty 40/30/20/10 cho Nhận biết/Thông hiểu/Vận dụng/Vận dụng cao, chia dư theo phần thập phân; phân đều vòng tròn theo lessons. Không giả định đây là chính sách giáo dục đã được xác nhận. `generateMatrixDetails` lấy các outcome/dạng bài từ bankStats, tạo tích tổ hợp cho từng ô matrix rồi phân vòng; fallback “Kiến thức tổng hợp”/“Chưa phân loại”. Không giới hạn allocation theo tồn kho câu thực.
+
+Frontend có state/input handler thay count, nhưng handler tiếp tục chỉ gọi generate endpoint, không gửi counts sửa để persist; chưa thấy API lưu matrix chỉnh tay. Bằng chứng: [DraftUsecase](../backend/src/main/java/com/wedu/exam_creation/draft/usecase/DraftUsecase.java), [DraftUtil](../backend/src/main/java/com/wedu/exam_creation/draft/usecase/util/DraftUtil.java), [DraftRepositoryImpl](../backend/src/main/java/com/wedu/exam_creation/draft/infrastructure/repository/DraftRepositoryImpl.java), [useMatrix](../frontend/presentation/hooks/Generate/Child/useMatrix.ts), [useMatrixDetails](../frontend/presentation/hooks/Generate/Child/useMatrixDetails.ts). Draft không có status enum hoặc bước khóa/finalize.
+
+## 8. Sinh đề và AI generation
+
+`ExamUsecase.generateExam`: nạp nháp của user → lấy matrixDetails `selectedCount > 0` → chapter service lấy context → `QuestionService.generateExamQuestions`.
+
+Question service nạp pool theo lesson IDs, match lesson/dạng bài/độ khó/loại câu/outcome; shuffle và lấy đủ trong khả năng, xóa câu đã chọn khỏi pool. Ghi errors cho ô thiếu. Nếu `PLUS` và có yêu cầu thiếu: gọi DeepSeek một batch JSON → parse → insert AI questions → Telegram notifyPendingReview → dùng ngay ID mới trong đề. Code chia kết quả theo số lượng/thứ tự request bằng cursor/subList; chưa validate đủ tổng và metadata từng nhóm. Errors thiếu ban đầu không được xóa sau AI bù. Nếu repository không tìm được **bất kỳ** câu nào ở lessons thì ném NotFound trước AI; không coi đây là AI-first generation.
+
+Lưu `ExamEntity` chứa cấu trúc chapter/lesson snapshot và nhóm question IDs theo type/difficulty; không copy toàn bộ body câu hỏi. Generate trả `{examId, errors}`; không có job ID/status retry/cancel. Đọc đề hydrate nội dung từ Questions, generate presigned ảnh, UI render KaTeX. Xóa đề chỉ xóa document Exam, không xóa câu ngân hàng.
+
+Bằng chứng: [ExamUsecase](../backend/src/main/java/com/wedu/exam_creation/exam/usecase/ExamUsecase.java), [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionRepositoryImpl.findByLessonIds](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/repository/QuestionRepositoryImpl.java), [AIQuestionGenerationService](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AIQuestionGenerationService.java), [ExamResponseDTOMapper](../backend/src/main/java/com/wedu/exam_creation/exam/dto/mapper/ExamResponseDTOMapper.java), [TelegramNotificationService](../backend/src/main/java/com/wedu/exam_creation/notification/telegram/TelegramNotificationService.java).
+
+## 9. Xuất Word
+
+UI → Next `/api/exporter/exam` → backend `ExporterController` với `{examId,examName}` → ExamService kiểm tra owner → lấy groups, gom URLs ảnh → tải song song Base64 → tạo `{examName, questionsSorted, imageCache}` → POST `EXPRESS_EXPORTER_URL + "exam"` → Express `/exporter/exam` → builders/docx → MathJax MathML → OMML → JSZip patch XML → binary DOCX quay về browser. Tên file download có thể lấy từ request, tên trong document lấy từ exam backend; không nhầm hai nguồn.
+
+Bằng chứng: [Next export route](../frontend/app/api/exporter/exam/route.ts), [ExporterController](../backend/src/main/java/com/wedu/exam_creation/exporter/controller/ExporterController.java), [ExporterUsecase](../backend/src/main/java/com/wedu/exam_creation/exporter/usecase/ExporterUsecase.java), [Express route](../exporter-service/src/routes/exporter/exporter.route.ts), [GenerateWordFileUsecase](../exporter-service/src/routes/exporter/usecase/generateWordFile.ts), [latexToOmml](../exporter-service/src/routes/exporter/infrastructure/converter/latexToOmml.ts). Ảnh tải lỗi bị log rồi bỏ khỏi cache; builder chưa kiểm cache trước Buffer.from. [OptionBuilder](../exporter-service/src/routes/exporter/infrastructure/builder/OptionBuilder.ts) còn kiểm `<image_` trong khi regex split dùng `<img_`; hỗ trợ ảnh option vì vậy là partial. Chưa có transaction/job export; không gọi exporter khi tác vụ chỉ cập nhật tài liệu.
+
+## 10. Giao dịch, PLUS và câu hỏi cần xác nhận
+
+- **Giao dịch dữ liệu implemented:** MongoTransactionManager, annotations trong importer/exam/đổi mật khẩu/repository; không phải payment transaction hoặc distributed transaction. Bằng chứng [MongoConfig](../backend/src/main/java/com/wedu/exam_creation/config/MongoConfig.java), `ExamUsecase.generateExam`, `ImporterService.parseDocument`, `AuthUsecase.changePassword`.
+- **Thanh toán implemented trong source:** Bill/usePayment → BFF → PaymentUsecase; PaymentOrders/PaymentEmails, signed checkout, IPN/querydr/Return, transaction cấp PLUS và outbox email. Chưa chứng nhận sandbox end-to-end; xem [trạng thái](current-status.md).
+- **unknown cần chủ dự án xác nhận:** file/câu AI phải được duyệt trước khi dùng hay sau khi dùng? Teacher và moderator liên kết submission ra sao? Admin có nên kiêm moderator? PLUS đã chốt20.000đ/30 ngày, không thêm quota mới; các thay đổi ngoài gói này cần quyết định riêng. Sinh thiếu có được coi thành công? Chính sách matrix mặc định và hỗ trợ Tự luận có chủ đích gì? Reset password có cần thu hồi toàn bộ phiên? Chapter name có duy nhất xuyên môn không? “Giao dịch” mong muốn là thanh toán hay transaction dữ liệu?
+
+## Xem trước tệp câu hỏi chỉ đọc — 2026-10-25
+
+Moderator click dòng/tên tệp ở /moderator/question-files → modal chỉ đọc → tải DOCX qua [API content](api-reference.md) → render bằng docx-preview trong iframe cách ly. Tải khi mở, có loading/error/Thử lại; Đóng hoặc Escape (kể cả khi focus ở iframe) đóng và khôi phục focus. Nút Tải xuống/Xóa ở danh sách không mở preview. Chuyển/đóng file hủy request, không dùng kết quả render cũ.
+
+Preview không có toolbar soạn thảo trực tiếp; moderator tải xuống sửa ngoài hệ thống rồi chọn DOCX chỉnh sửa để xem trước và duyệt theo phần 5. Bố cục/font/ngắt trang có thể khác Word; có Tải xuống file gốc. Trạng thái persisted submission/approval vẫn missing như trước. [Dialog](../frontend/presentation/components/Moderator/QuestionFilePreviewDialog.tsx), [hook](../frontend/presentation/hooks/Moderator/useQuestionFilePreview.ts).
+
+## Backend cung cấp nội dung xem trước — 2026-10-25
+
+Moderator gọi GET /moderator/question-files/content với key từ danh sách → backend kiểm role/key/prefix/.docx → đọc object S3 → trả binary DOCX no-store. Object không còn trả 404; lỗi storage khác trả 500 chung. Đây là đọc nội dung, không sửa/lưu/import tài liệu hoặc chuyển trạng thái duyệt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ModeratorUsecase.java), [API](api-reference.md).
+
+## Backend VNPay / paid PLUS — 2026-11-05
+
+Teacher creates an idempotent order: server fixes price20k/duration30d and expiry5min, stores a random reference with request hash, then signs a checkout URL. Blank VNPAY_BANK_CODE omits bank selection; configured codes are trimmed and signed.
+
+IPN or authenticated owned Return receipt must pass signature/merchant/reference/amount/result checks. Querydr must have a verified response; query response00 alone is not payment success, transaction status00 is also required. One shared Mongo transaction updates order, extends PLUS, and queues one email per result; replay and concurrent callbacks cannot grant twice. A deleted user produces paid/manualReview without recreating an account. Late confirmed success is accepted.
+
+Querydr failures leave payment unconfirmed and return503/Retry-After30, with DB throttle30s/order. Expiry worker runs60s; mail worker15s with max5 attempts and300s lease, retry after60s. Password/role writes update only their own fields so they cannot overwrite paid entitlement. [Use case](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [jobs](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentJobs.java).
+
+## Frontend upgrade/payment flow — 2026-11-06
+
+Teacher chooses upgrade → /me/bill with shared navbar → read plan and effective account. Click opens a blank tab before awaiting create, clears opener, persists idempotency attempt, creates order, then navigates the new tab. Blocked popups create no order; failed create closes the tab and preserves key. An early closed tab retains the order and offers resume.
+
+Restore order reference from Return query, localStorage, then valid session attempt. Poll PENDING every5s; reconcile every30s/focus with overlap guards and backend throttle. Return pairs are captured before cleaning browser URL; after loading an owned order, backend confirmation is preferred to querydr. Cache grants success only from backend; transient receipt failures retry in tab, invalid400/403/404 receipts are discarded. Receipts/signatures are never persisted.
+
+On owned-order404, hide stale checkout and stop automatic reconciliation for that order; show the old reference and an explicit new-purchase action. Only that action retires the key; retain old references in localStorage as support data, not payment history. Querydr503 means awaiting confirmation, not failure. SUCCEEDED refreshes user cache; useAuth updates effective FREE at plusExpiresAt. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts), [result](../frontend/presentation/components/Payment/PaymentResult.tsx).
+
+## ADMIN transaction lookup flow — 2026-11-08
+
+ADMIN mở Quản lý giao dịch → Tra cứu giao dịch → lọc mã đơn/mã VNPay/email/trạng thái/ngày → backend đọc PaymentOrders. SUCCEEDED và transactionNo là dữ liệu đã lưu sau khi xác minh thanh toán; không gọi querydr, không so sánh kết quả provider và không sửa dữ liệu khi tra cứu. Các trạng thái khác vẫn có thể được tìm trong DB. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).

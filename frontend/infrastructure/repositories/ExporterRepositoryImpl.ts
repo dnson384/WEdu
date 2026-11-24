@@ -16,8 +16,18 @@ export class ExporterRepositoryImpl implements IExporterRepository {
     examName: string,
     accessToken: string,
   ): Promise<Buffer> {
+    return this.exportFile("exam", examId, examName, accessToken);
+  }
+
+  async exportMatrix(examId: string, examName: string, accessToken: string): Promise<Buffer> {
+    return this.exportFile("matrix", examId, examName, accessToken);
+  }
+
+  private async exportFile(
+    kind: "exam" | "matrix", examId: string, examName: string, accessToken: string,
+  ): Promise<Buffer> {
     const { data } = await axios.post<Buffer>(
-      `${this.baseUrl}/exporter/exam`,
+      `${this.baseUrl}/exporter/${kind}`,
       { examId, examName },
       {
         responseType: "arraybuffer",

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -12,6 +12,6 @@ import java.time.LocalDateTime;
 public class NewRTRequestDTO {
     private String jti;
     private String userId;
-    private LocalDateTime expiresAt;
-    private LocalDateTime issuedAt;
+    private Instant expiresAt;
+    private Instant issuedAt;
 }

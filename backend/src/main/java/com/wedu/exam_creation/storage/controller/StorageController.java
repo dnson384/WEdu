@@ -1,15 +1,17 @@
 package com.wedu.exam_creation.storage.controller;
 
-import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
+import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import com.wedu.exam_creation.storage.service.S3Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/storage")
@@ -25,32 +27,25 @@ public class StorageController {
             @RequestParam("file") MultipartFile file
     ) {
         try {
-            String s3Key = s3Service.uploadFile(file, "avatars");
-            return ResponseEntity.ok(s3Key);
+            return ResponseEntity.ok(s3Service.uploadImageFile(file, "avatars", 5));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Upload avatar thất bại: " + e.getMessage());
+                    .body("Upload avatar thất bại");
         }
     }
 
-    @PostMapping("/question-bank")
+    @PostMapping("/question-file")
     public ResponseEntity<String> uploadDocumentToQuestionBank(
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam("file") MultipartFile file,
             @RequestParam("subject") String subject
     ) {
         try {
-            String s3Key = s3Service.uploadFile(file, "documents/" + subject);
-            return ResponseEntity.ok(s3Key);
+            return ResponseEntity.ok(s3Service.updateDocumentFile(
+                    file, "question-files/" + subject, 50, principal.getUser().getEmail()));
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Upload document thất bại: " + e.getMessage());
+                    .body("Upload document thất bại");
         }
-    }
-
-    @GetMapping("/documents")
-    @PreAuthorize("hasRole('MODERATOR')")
-    public ResponseEntity<List<S3ObjectInfo>> listDocuments() {
-        List<S3ObjectInfo> files = s3Service.listFiles("documents");
-        return ResponseEntity.ok(files);
     }
 }

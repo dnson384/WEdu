@@ -45,6 +45,8 @@ public class QuestionDocument {
     @Indexed
     private String questionType;
 
+    private String status;
+
     private ContentDocument question;
 
     @Builder.Default

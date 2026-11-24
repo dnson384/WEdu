@@ -1,0 +1,20 @@
+package com.wedu.exam_creation.payment.infrastructure.mapper;
+
+import com.wedu.exam_creation.payment.domain.entity.*;
+import com.wedu.exam_creation.payment.infrastructure.document.*;
+import org.mapstruct.Mapper;
+
+@Mapper(componentModel = "spring")
+public interface PaymentMapper {
+    PaymentOrderEntity toEntity(PaymentOrderDocument document);
+
+    PaymentOrderDocument toDocument(PaymentOrderEntity entity);
+
+    VnpayTransactionDocument toDocument(VnpayTransactionEntity entity);
+
+    VnpayTransactionEntity toEntity(VnpayTransactionDocument document);
+
+    PaymentEmailEntity toEntity(PaymentEmailDocument document);
+
+    PaymentEmailDocument toDocument(PaymentEmailEntity entity);
+}

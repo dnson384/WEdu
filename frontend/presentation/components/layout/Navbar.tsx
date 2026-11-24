@@ -7,13 +7,30 @@ import Logo from "../common/Logo";
 import { icons } from "@/presentation/common/icons";
 import { usePathname } from "next/navigation";
 import useNavBar from "@/presentation/hooks/layout/useNavBar";
+import useAuth from "@/presentation/hooks/Auth/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
+import { Files, ShieldCheck, Library, Activity, Users, CreditCard } from "lucide-react";
 
 interface Data {
   avatarUrl: string;
   username: string;
 }
 
-const DEFAULT_AVATAR = "/frontend/public/default-avatar-user.png";
+const DEFAULT_AVATAR = "/default-avatar-user.png";
+
+function resolveAvatarSrc(value: string | undefined) {
+  const source = value?.trim();
+  if (!source) return DEFAULT_AVATAR;
+  if (source.startsWith("/") && !source.startsWith("//")) return source;
+  try {
+    const url = new URL(source);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? source
+      : DEFAULT_AVATAR;
+  } catch {
+    return DEFAULT_AVATAR;
+  }
+}
 
 const navLinks = [
   {
@@ -39,6 +56,47 @@ const navLinks = [
 ];
 
 export default function NavBar({ avatarUrl, username }: Data) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const isModerator = user.role === "ROLE_MODERATOR";
+  const isAdmin = user.role === "ROLE_ADMIN";
+  const links = isModerator
+    ? [
+        {
+          name: "Quản lý tệp tin câu hỏi",
+          href: "/moderator/question-files",
+          icon: <Files size={20} />,
+        },
+        {
+          name: "Kiểm duyệt câu hỏi",
+          href: "/moderator/review",
+          icon: <ShieldCheck size={20} />,
+        },
+        {
+          name: "Quản lý ngân hàng câu hỏi",
+          href: "/moderator/question-bank",
+          icon: <Library size={20} />,
+        },
+      ]
+    : isAdmin
+      ? [
+          {
+            name: "Quản lý tài khoản người dùng",
+            href: "/admin/users",
+            icon: <Users size={20} />,
+          },
+          {
+            name: "Quản lý AI",
+            href: "/admin/ai",
+            icon: <Activity size={20} />,
+          },
+          {
+            name: "Quản lý giao dịch",
+            href: "/admin/transactions",
+            icon: <CreditCard size={20} />,
+          },
+        ]
+      : navLinks;
   const { isLoggingOut, menu, isUserMenuOpen, toggleUserMenu, userSectionRef } =
     useNavBar();
 
@@ -50,7 +108,10 @@ export default function NavBar({ avatarUrl, username }: Data) {
   };
 
   return (
-    <nav className="fixed z-40 bg-white top-0 left-0 h-screen hidden lg:block lg:w-60 shadow-md px-3 py-6">
+    <nav
+      aria-label="Điều hướng chính"
+      className={`${isModerator || isAdmin ? "relative lg:fixed lg:h-screen" : "fixed h-screen hidden lg:block"} z-40 bg-white top-0 left-0 lg:w-60 shadow-md px-3 py-6`}
+    >
       <div className="h-full flex flex-col justify-between">
         <section id="content">
           <div className="px-3 mb-10">
@@ -58,13 +119,22 @@ export default function NavBar({ avatarUrl, username }: Data) {
           </div>
 
           <div className="flex flex-col gap-2">
-            {navLinks.map((link) => {
+            {links.map((link) => {
               const active = isLinkActive(link.href);
 
               return (
                 <Link
                   key={link.name}
                   href={link.href}
+                  prefetch={false}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => {
+                    if (link.href === "/moderator/question-files") {
+                      void queryClient.invalidateQueries({
+                        queryKey: ["moderator-question-files"],
+                      });
+                    }
+                  }}
                   className={`flex items-center gap-3 text-sm px-3 py-2.5 rounded-lg font-medium transition-colors ${
                     active
                       ? "bg-blue-600 text-white shadow-xs"
@@ -113,15 +183,11 @@ export default function NavBar({ avatarUrl, username }: Data) {
             <div id="user-avatar" className="flex items-center gap-3">
               <div className="relative h-10 w-10 shrink-0">
                 <Image
-                  src={
-                    avatarUrl && avatarUrl.trim() !== ""
-                      ? avatarUrl
-                      : DEFAULT_AVATAR
-                  }
+                  src={resolveAvatarSrc(avatarUrl)}
                   alt={username}
                   width={40}
                   height={40}
-                  quality={90}
+                  quality={75}
                   className={`h-10 w-10 rounded-full object-cover ${
                     pathname.startsWith("/me")
                       ? "border-2 border-white"

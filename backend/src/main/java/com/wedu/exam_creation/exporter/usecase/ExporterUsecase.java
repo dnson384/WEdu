@@ -1,6 +1,9 @@
 package com.wedu.exam_creation.exporter.usecase;
 
 import com.wedu.exam_creation.common.dto.exam.response.ExamDetailDTO;
+import com.wedu.exam_creation.common.dto.exam.response.ExamMatrixDTO;
+import com.wedu.exam_creation.common.exception.InternalServerException;
+import org.springframework.web.client.RestClientException;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionDTO;
 import com.wedu.exam_creation.exam.usecase.ExamService;
 import com.wedu.exam_creation.exporter.dto.request.ImageCacheData;
@@ -84,6 +87,26 @@ public class ExporterUsecase {
         );
 
         return response.getBody();
+    }
+
+    public byte[] exportMatrix(String userId, String examId) {
+        ExamMatrixDTO payload = examService.getExamMatrixById(userId, examId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(EXPRESS_EXPORTER_URL + "matrix",
+                    HttpMethod.POST, new HttpEntity<>(payload, headers), byte[].class);
+            byte[] body = response.getBody();
+            MediaType contentType = response.getHeaders().getContentType();
+            if (body == null || body.length == 0 || contentType == null
+                    || !contentType.isCompatibleWith(MediaType.parseMediaType(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
+                throw new InternalServerException("Dịch vụ xuất ma trận không trả về file DOCX hợp lệ");
+            }
+            return body;
+        } catch (RestClientException ex) {
+            throw new InternalServerException("Không thể xuất ma trận đề. Vui lòng thử lại sau");
+        }
     }
 
     private Map<String, String> fetchImagesAsBase64(Set<String> urls) {

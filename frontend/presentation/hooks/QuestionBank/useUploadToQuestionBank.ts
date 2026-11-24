@@ -8,6 +8,7 @@ import {
   useMemo,
 } from "react";
 import { StorageService } from "@/presentation/services/StorageService";
+import { isAxiosError } from "axios";
 
 export default function useUploadToQuestionBank() {
   const storageService = useMemo(() => new StorageService(), []);
@@ -30,13 +31,15 @@ export default function useUploadToQuestionBank() {
 
   // Kiểm tra định dạng file DOCX
   const validateAndSetFile = (file: File) => {
-    const isDocx =
-      file.name.endsWith(".docx") ||
-      file.type ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    const isDocx = file.name.toLowerCase().endsWith(".docx");
 
     if (!isDocx) {
       setError("Chỉ chấp nhận định dạng file Word (.docx)!");
+      return false;
+    }
+
+    if (file.size === 0 || file.size > 50 * 1024 * 1024) {
+      setError(file.size === 0 ? "Không thể tải lên file rỗng!" : "Dung lượng file tối đa là 50 MB!");
       return false;
     }
 
@@ -87,6 +90,7 @@ export default function useUploadToQuestionBank() {
 
   // Bấm nút Tải lên (Submit)
   const handleSubmitUpload = async () => {
+    if (isUploading) return;
     if (!subject.trim()) {
       setError("Vui lòng nhập tên môn học!");
       return;
@@ -100,6 +104,7 @@ export default function useUploadToQuestionBank() {
     try {
       setIsUploading(true);
       setError(null);
+      setIsSuccess(null);
 
       const formData = new FormData();
       formData.append("file", selectedFile);
@@ -116,10 +121,12 @@ export default function useUploadToQuestionBank() {
         setSubject("");
       }
     } catch (err) {
-      if (err instanceof Error) {
+      setIsSuccess(false);
+      if (isAxiosError<{ message?: string }>(err)) {
+        setError(err.response?.data?.message || "Không thể tải lên tệp tin. Vui lòng thử lại.");
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setIsSuccess(false);
         setError("Có lỗi trong quá trình tải lên câu hỏi.");
       }
     } finally {

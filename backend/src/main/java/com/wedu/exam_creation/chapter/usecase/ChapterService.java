@@ -34,6 +34,10 @@ public class ChapterService {
         return repo.saveChapter(newChapterEntity);
     }
 
+    public List<ChapterResponseDTO> getAll() {
+        return repo.getAll().stream().map(mapper::entityToDTO).toList();
+    }
+
     public List<ChapterResponseDTO> getByIds(List<String> chapterIds) {
         List<ChapterEntity> chapterEntities = repo.getByIds(chapterIds);
 

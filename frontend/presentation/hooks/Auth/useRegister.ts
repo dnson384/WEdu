@@ -80,11 +80,19 @@ export default function useRegister() {
     try {
       const authorized = await authService.register(payload);
       if (authorized) {
-        router.replace("/");
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        router.replace("/auth/verify-email");
       }
     } catch (err) {
       if (isAxiosError(err)) {
         setError(err.response?.data.message);
+      } else {
+        setError("Không thể đăng ký. Vui lòng thử lại sau");
       }
     } finally {
       setIsSubmitting(false);

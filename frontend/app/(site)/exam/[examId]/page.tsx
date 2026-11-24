@@ -17,6 +17,8 @@ export default function Exam() {
     isLoadingExam,
     errorsList,
     noti,
+    isSubmitted,
+    isExportingMatrix,
     handleExportExam,
     handleExportMatrix,
     handleDeleteClick,
@@ -101,6 +103,7 @@ export default function Exam() {
                     <button
                       type="button"
                       onClick={handleExportExam}
+                      disabled={isSubmitted || !examDetail.id}
                       className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl shadow-sm transition active:scale-98 cursor-pointer text-sm"
                     >
                       <svg
@@ -120,9 +123,12 @@ export default function Exam() {
                     </button>
 
                     {/* Xuất ma trận */}
+                    {user.role === "ROLE_TEACHER" && (
                     <button
                       type="button"
                       onClick={handleExportMatrix}
+                      disabled={isSubmitted || !examDetail.id}
+                      aria-busy={isExportingMatrix}
                       className="w-full flex items-center justify-center gap-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50/70 font-medium py-2.5 px-4 rounded-xl shadow-sm transition active:scale-98 cursor-pointer text-sm"
                     >
                       <svg
@@ -138,8 +144,9 @@ export default function Exam() {
                           d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      Xuất ma trận đề
+                      {isExportingMatrix ? "Đang xuất ma trận…" : "Xuất ma trận đề"}
                     </button>
+                    )}
 
                     <hr className="border-gray-100 my-1" />
 
@@ -147,6 +154,7 @@ export default function Exam() {
                     <button
                       type="button"
                       onClick={handleDeleteClick}
+                      disabled={isSubmitted}
                       className="w-full flex items-center justify-center gap-2 border border-red-200 text-red-600 hover:bg-red-50/80 font-medium py-2.5 px-4 rounded-xl transition active:scale-98 cursor-pointer text-sm"
                     >
                       <svg

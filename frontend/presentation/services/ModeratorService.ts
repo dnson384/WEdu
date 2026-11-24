@@ -1,0 +1,79 @@
+import axios from "axios";
+import {
+  PendingQuestionFilters,
+  PendingQuestionPage,
+  QuestionReviewAction,
+  QuestionReviewInput,
+  QuestionReviewResult,
+} from "@/domain/entities/pendingQuestion.entity";
+import { QuestionFileEntity } from "@/domain/entities/questionFile.entity";
+import {
+  ApproveQuestionFileResult,
+  RejectQuestionFileInput,
+} from "@/domain/entities/questionFileReview.entity";
+
+export class ModeratorService {
+  async reviewPendingQuestion(id: string, action: QuestionReviewAction, input: QuestionReviewInput): Promise<QuestionReviewResult | void> {
+    const { data } = await axios.post<QuestionReviewResult | void>(`/api/moderator/questions/${id}/${action}`, input);
+    return data;
+  }
+
+  async editPendingQuestion(id: string, data: FormData): Promise<void> {
+    await axios.patch(`/api/moderator/questions/${id}`, data);
+  }
+
+  async getPendingQuestions(
+    filters: PendingQuestionFilters,
+    signal?: AbortSignal,
+  ): Promise<PendingQuestionPage> {
+    const { data } = await axios.get<PendingQuestionPage>(
+      "/api/moderator/questions/pending",
+      { params: filters, signal },
+    );
+    return data;
+  }
+
+  async approveQuestionFile(
+    key: string,
+    file: File | null,
+  ): Promise<ApproveQuestionFileResult> {
+    const form = new FormData();
+    form.set("key", key);
+    if (file) form.set("file", file);
+    const { data } = await axios.post<ApproveQuestionFileResult>(
+      "/api/moderator/question-files/approve",
+      form,
+    );
+    return data;
+  }
+
+  async rejectQuestionFile(data: RejectQuestionFileInput): Promise<void> {
+    await axios.post("/api/moderator/question-files/reject", data);
+  }
+  async getQuestionFileContent(
+    key: string,
+    signal: AbortSignal,
+  ): Promise<ArrayBuffer> {
+    const { data } = await axios.get<ArrayBuffer>(
+      "/api/moderator/question-files/content",
+      {
+        params: { key },
+        responseType: "arraybuffer",
+        signal,
+      },
+    );
+    return data;
+  }
+  async deleteQuestionFile(key: string): Promise<void> {
+    await axios.delete<void>("/api/moderator/question-files", {
+      params: { key },
+    });
+  }
+
+  async getQuestionFiles(): Promise<QuestionFileEntity[]> {
+    const { data } = await axios.get<QuestionFileEntity[]>(
+      "/api/moderator/question-files",
+    );
+    return data;
+  }
+}

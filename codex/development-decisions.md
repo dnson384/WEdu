@@ -1,0 +1,756 @@
+# WEdu Development Decisions
+
+## Phạm vi KLTN: bỏ hoàn tiền, tra cứu DB — 2026-11-19
+
+User xác nhận gỡ toàn bộ flow hoàn tiền thay vì chỉ disable/ẩn UI, đồng thời chọn ADMIN chỉ tra cứu dữ liệu DB và bỏ Tra cứu VNPay. Quyết định này thay thế phần PLUS refund workflow ngày 2026-11-09 và scope ADMIN provider lookup liên quan. Giữ thanh toán nâng cấp PLUS, callback/IPN có xác minh chữ ký, phân quyền backend, dữ liệu giao dịch đã lưu và tra cứu nội bộ. Không coi việc bỏ hoàn tiền là sửa được lỗi99 của querydr. Không xóa dữ liệu DB thật hoặc tự khôi phục quyền lợi từ refund lịch sử. [Báo cáo gỡ hoàn tiền và tra cứu DB](refund-removal-report.md).
+
+## Frontend origin cho Google/OTP qua proxy — 2026-11-18
+
+User duyệt sửa lỗi redirect `https://localhost:3000` sau xác thực Google qua ngrok: frontend dùng biến server-only `FRONTEND_URL` làm origin cho redirect Google và kiểm origin mutation OTP; fallback request origin cho local khi chưa cấu hình. Không đổi API/schema/nghiệp vụ đăng nhập. Không mở rộng sang redirect của proxy hoặc các feature khác. [Implementation/validation](current-status.md#frontend-origin-cho-googleotp-qua-proxy--2026-11-18).
+
+## Payment embedded VNPay - 2026-11-18
+
+User confirmed the final design: VnpayTransactionDocument is embedded at PaymentOrderDocument.vnpayTransaction, with a corresponding separate VnpayTransactionEntity referenced by PaymentOrderEntity. This supersedes the intermediate two-collection design. Both VNPay types contain only transactionNo, responseCode, transactionStatus and lastVerifiedAt; no duplicate id. Keep ObjectId storage/Java String for userId, request-scoped IP, derived manualReview and AI coverage, and plusLegacyProtected. Java migration supports original flat orders and intermediate split records; no real database migration has run. [Report](payment-storage-refactor-report.md).
+
+## Migration auth chỉ dùng Java — 2026-11-14
+
+User đã confirm thay migration/test JS bằng Java. Migration chỉ chạy khi auth.migration.enabled=true (AUTH_MIGRATION_ENABLED, mặc định false), trước AuthIndexConfig. Giữ preflight trước ghi, normalization email, cleanup emailKey cũ, nâng LOCAL đã liên kết hợp lệ thành MIXED và tính idempotent. Không tự chạy migration trên DB thật trong phiên implement. Không thêm Node/mongosh hoặc dependency/framework migration vào backend. [Implementation/validation](auth-java-migration-implementation-report.md).
+
+## Callback Google dưới /auth — 2026-11-14
+
+User đã yêu cầu chuyển callback backend sang `/auth/login/oauth2/code/google`. YAML redirect template, OAuth processing baseUri, chain matcher và public path đồng bộ; endpoint bắt đầu Google và callback Next giữ nguyên. Không duy trì alias public cho callback cũ. Google Console/environment override phải dùng URL mới. [Implementation/validation](google-auth-implementation-report.md#callback-google-dưới-auth--2026-11-14).
+
+## Email trực tiếp và MIXED — 2026-11-13
+
+User yêu cầu chỉ dùng field email để kiểm tra tài khoản tồn tại và đã duyệt triển khai MIXED. Thay thế lựa chọn emailKey và giữ loginMethod LOCAL sau link của implementation trước: chuẩn hóa trực tiếp email, unique index email; Google lookup theo email, sub chỉ kiểm liên kết. LOCAL có password liên kết Google thành MIXED; GOOGLE-only không có khả năng LOCAL mới thì giữ GOOGLE. Không bổ sung thiết lập mật khẩu cho Google-only. [Implementation/validation](email-login-method-implementation-report.md).
+
+## Đăng ký OTP và Google dành cho Giáo viên — 2026-11-13
+
+User đã duyệt triển khai: mọi đăng ký mới LOCAL/GOOGLE phải OTP trước khi tạo Users/cấp JWT. OTP 6 chữ số, hạn 5 phút, 5 lần sai/mã; resend120 giây, tối đa5 lần gửi/email trong60 phút gần nhất, dùng chung mọi phương thức; phiên tạm30 phút. User mới ROLE_TEACHER/FREE/active, avatar S3 mặc định.
+
+Google chỉ dành cho Giáo viên đang hoạt động. Cho phép liên kết LOCAL, giữ mật khẩu/dữ liệu/quyền lợi. Gmail/Workspace verified trùng tài khoản thì liên kết trực tiếp; email ngoài chưa liên kết phải OTP một lần. Tìm tài khoản bằng email đã chuẩn hóa; Google sub chỉ kiểm tra liên kết sau lookup email. LOCAL liên kết thành công chuyển MIXED, giữ mật khẩu; Google-only vẫn GOOGLE. Không đổi role/backfill ROLE_USER cũ. Quyết định này thay thế OUT_OF_SCOPE và giới hạn OAuth mục2/bảng quyết định cũ chỉ cho phạm vi này. Chuẩn hóa email/index phải hoàn tất trước rollout; không gộp/xóa user trùng. Backend/frontend triển khai đồng bộ vì register đổi sang202. [Implementation/validation](google-auth-implementation-report.md).
+
+## Format ma trận đề theo mẫu — 2026-11-12
+
+Bổ sung đã confirm: tên bài kiểm tra không xuất hiện trong nội dung DOCX, bỏ khỏi cả hai phần ma trận/đặc tả. Tên file tải xuống vẫn là `<tên đề>_ma trận đề.docx`; examName giữ trong payload để dùng cho filename, không render vào document.
+
+User đã confirm style theo mẫu `docs/format_file_ma_tran_de.docx` cung cấp trong phiên triển khai (file không được lưu trong snapshot repo hiện tại), thay thế phần “style làm sau” của lần triển khai ban đầu. Hai bảng có header nhiều tầng, nhóm chương/bài, Arial 12, viền đen, trang Letter ngang, lề 1 inch. Gộp Vận dụng cao vào Vận dụng **chỉ khi xuất**; Nhận biết/Thông hiểu hiển thị Biết/Hiểu. Mọi câu có trọng số bằng nhau trên thang 10: N là tổng selectedCount của matrix, điểm nhóm = count×10/N, tỷ lệ = count×100/N; N=0 trả 0. Tính đủ độ chính xác, hiển thị tối đa 2 chữ số thập phân theo tiếng Việt. Không dùng tỷ trọng cố định 3/4/3 hoặc các số ví dụ không nhất quán trong mẫu. Không đổi API/schema/dữ liệu lưu.
+
+Nguồn mẫu đã dùng để đối chiếu layout, không bị chỉnh sửa trong phiên. Source đối chiếu 2026-11-13 trên main `5baf5e1` đã gồm backend, backend tests, exporter và frontend qua PR #140–143; không chứng nhận deploy hoặc validation mới. [Chi tiết triển khai và giới hạn validation](matrix-export-implementation-report.md#cập-nhật-style-theo-mẫu).
+
+## Xuất ma trận đề — 2026-11-12
+
+User approved implementation: giáo viên xuất snapshot `matrix` và `matrixDetails` đã lưu trong Exam thành một DOCX gồm hai bảng cơ bản. Giữ thứ tự và dòng có selectedCount=0; không tính lại theo câu thực tế khi sinh thiếu. Style chi tiết làm sau. UI xem trước → Next → Java kiểm ROLE_TEACHER/owner → Express `/exporter/matrix` → binary về browser, tên `<tên đề>_ma trận đề.docx`. Đây là bổ sung trong kiến trúc export hiện tại; matrix generation/manual editing và các bug exporter cũ giữ phạm vi trước đó. Không đổi schema, không lưu file xuất.
+
+Bằng chứng và validation: [báo cáo triển khai](matrix-export-implementation-report.md).
+
+## PLUS refund workflow — 2026-11-09
+
+User-approved implementation supersedes the earlier refund exclusion and read-only ADMIN payment scope **only for this workflow**. Teacher submits an owned paid order; ADMIN processes it under Quản lý giao dịch → Xử lý yêu cầu hoàn tiền. Full refund only, within 48 hours of stored paidAt (the local entitlement grant time), assessed at submission. A persisted teacher AI exam result after that grant disqualifies; moderator regeneration, bank-only selection and failed/rolled-back generation do not count.
+
+Accepted pending requests hold new AI generation, including requests from stale authenticated PLUS principals; PLUS expiry continues without compensation. Teacher may cancel before provider processing. Legacy AI evidence is unknown, with a reason-required ADMIN exception; missing payment evidence, in-flight/unknown AI or unverifiable entitlement cannot be overridden. Deterministic ineligibility auto-rejects with a policy reason, never on GET. Provider/network uncertainty is not business ineligibility.
+
+Refund status is separate from payment status. Verified completion removes only the refunded order's remaining entitlement, preserving other purchases. No partial refund, in-app notification inbox, time compensation, or automatic resend of an ambiguous refund. Notify via durable email and the teacher status page. Rollout keeps refund mutations disabled until indexes and sandbox validation are verified; AI tracking runs independently of that flag. Source rechecked 2026-11-10 on main `cbcb49a` requires explicit REFUND_ENABLED with no YAML fallback; this source fact does not certify runtime activation or change the rollout prerequisite. An ambiguous send/commit retains processing for reconciliation/manual investigation; this UI cannot force-mark a refund successful or force-clear unknown AI attempts.
+
+Evidence: RefundUsecase (đã xóa), RefundAiService (đã xóa), RefundEntitlementService (đã xóa). Implementation/validation details: [refund report](refund-implementation-report.md). No real VNPay refund or production activation is certified.
+
+> Cập nhật mới nhất 2026-11-10: phần hoàn tiền ở đầu tài liệu đối chiếu code đã merge vào main `cbcb49a`. Các snapshot theo ngày bên dưới giữ giá trị lịch sử, không chứng nhận deploy hoặc validation mới.
+
+## Snapshot hiện tại — 2026-11-06
+
+Đối chiếu source/config tại commit `abcde6e`. Đồng bộ implementation theo source mà không mở rộng business scope: ADMIN/users+AI, review AI và VNPay/PLUS đã có các phê duyệt ở các mục theo ngày. Bảng quyết định tại mục21 và payment tại mục17 được cập nhật tương ứng; các ràng buộc FROZEN/DEFERRED/OUT_OF_SCOPE/INVESTIGATE_ONLY không liên quan vẫn giữ.
+
+Các mục có ngày cũ là bằng chứng lịch sử của từng lần triển khai; khi mâu thuẫn, dùng snapshot hiện tại và source được dẫn. Không suy ra production hoặc kiểm thử end-to-end đã đạt từ việc có code.
+
+## Khu vực ADMIN hai tính năng — 2026-11-01
+
+Người dùng xác nhận ADMIN chỉ có hai tính năng chính: Quản lý tài khoản người dùng và Quản lý AI. Triển khai trang `/admin/users` dùng API tài khoản đã có; menu ADMIN không ghép menu giáo viên. Sau đăng nhập hoặc vào `/`, ADMIN về `/admin/users`; `/admin` cũng redirect tới trang này. Thông tin cá nhân/đăng xuất giữ trong menu tài khoản, ẩn Thanh toán cho ADMIN.
+
+Danh sách/tìm kiếm, đổi vai trò giáo viên↔kiểm duyệt viên, khóa/mở khóa/xóa dùng contract và quyền backend hiện có. Không bổ sung tạo tài khoản, cấp ADMIN từ UI, thay đổi quyền backend hoặc chính sách truy cập trực tiếp các route giáo viên. UI chặn thao tác lên bản thân/ADMIN khác và yêu cầu xác nhận mutation. [Điều hướng role](../frontend/presentation/utils/roleNavigation.ts), [hook](../frontend/presentation/hooks/Admin/useAdminUsers.ts), [validation](current-status.md#khu-vực-admin-hai-tính-năng--2026-11-01).
+
+
+## Quản lý usage/budget AI — 2026-11-01
+
+Người dùng đã duyệt dashboard ROLE_ADMIN và kiểm soát chi phí/quota DeepSeek. Quyết định này thay thế DEFERRED ở mục 8 chỉ cho usage, dashboard, budget và cost control; không mở lại timeout/retry hoặc edge cases sinh đề.
+
+- Admin đặt budget USD và/hoặc tổng token theo tháng Việt Nam, dùng chung mọi model và cả sinh đề/sinh lại. Chưa cấu hình hoặc giá trị null thì giới hạn tương ứng chưa bật; không tự đặt budget mặc định. Cấu hình áp dụng ngay và tiếp tục qua tháng mới; sửa có revision chống ghi đè.
+- Cảnh báo >=80%, chặn lần gọi mới >=100% của một giới hạn; request đang chạy không bị hủy. Chấp nhận vượt hạn mức do request cuối hoặc đồng thời, không giữ chỗ quota.
+- Số dư từ API DeepSeek; usage từ phản hồi từng lần gọi của ứng dụng, chỉ có lịch sử sau triển khai. Chi phí **ước tính theo giá cao điểm USD**, tách cache hit/miss/output, snapshot giá từng request; không coi là hóa đơn hoặc tổng sử dụng toàn tài khoản.
+- Số dư lỗi dùng snapshot gần nhất và vẫn kiểm tra DB nội bộ. Số dư hết được xác nhận thì chặn; snapshot stale không chặn theo số dư. Không quy đổi CNY/USD. Không tự retry AI.
+- Ghi STARTED trước gọi, hoàn tất usage trước parse câu hỏi, persistence độc lập transaction câu hỏi. Thiếu usage/timeout/ghi hoàn tất thất bại phải hiển thị unknown; không suy ra phí thực bằng 0. DB không thể kiểm tra/ghi STARTED thì chặn trước provider.
+
+Bằng chứng: [AiUsageService](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiUsageService.java), [AiManagementUsecase](../backend/src/main/java/com/wedu/exam_creation/ai/usecase/AiManagementUsecase.java), [trạng thái/validation](current-status.md#quản-lý-usagebudget-ai--2026-11-01).
+
+## Kiểm duyệt câu hỏi AI — 2026-10-31
+
+Người dùng đã duyệt triển khai workflow câu hỏi, thay thế giới hạn read-only/approve-regenerate ngoài scope của các snapshot 26–29/10 cho phần này. ROLE_MODERATOR duyệt bản gốc hoặc bản sinh lại mới nhất. Lần từ chối thành công 1–4 sinh một bản mới để con người kiểm tra; lần 5 không gọi AI, chuyển câu gốc sang `NEEDS_CONSIDERATION`. Lỗi AI/dữ liệu không hợp lệ không mất lượt. Giữ nội dung Questions cho đến khi duyệt, giữ ID/metadata/createdAt khi thay nội dung. Kết thúc bằng duyệt hoặc cân nhắc đều xóa QuestionsReview và lịch sử. Editor sửa bản mới nhất khi có bản sinh lại. Giữ cách chọn câu, dùng câu và hiển thị đề hiện tại; không thêm audit, backfill, hàng đợi hoặc khóa phân tán. AI retry/timeout của luồng sinh đề vẫn giữ phạm vi cũ.
+
+Chấp nhận hai request đồng thời có thể cùng gọi AI; conditional writes và Mongo transaction chỉ cho một kết quả được ghi/tính lượt. [Usecase](../backend/src/main/java/com/wedu/exam_creation/moderator/usecase/ReviewPendingQuestionUsecase.java), [contract](api-reference.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31), [validation](current-status.md#kiểm-duyệt-câu-hỏi-ai--2026-10-31).
+
+
+## Chỉnh sửa câu hỏi, công thức và ảnh — 2026-10-29
+
+Người dùng đã duyệt triển khai editor và lưu thật cho câu PENDING_REVIEW. Template giữ `<math_N>`/`<img_N>`; mỗi key duy nhất có input riêng trong câu hỏi hoặc từng phương án. Công thức nhập LaTeX; ảnh có mô tả AI và upload JPEG/PNG. Chỉ khi Lưu mới upload và thay mô tả bằng S3 object key; mô tả không được lưu riêng. Không đổi số phương án/metadata, không tự duyệt, regenerate, snapshot/audit hoặc sửa importer/exam generation. API PATCH là ngoại lệ bổ sung so với phạm vi read-only 2026-10-27; approve/regenerate vẫn ngoài scope. Repository chỉ nhận/trả entity hoặc scalar, usecase map DTO; class Lombok, không record. [Contract](api-reference.md), [trạng thái](current-status.md).
+
+## Danh sách câu hỏi chờ duyệt — 2026-10-27
+
+Phạm vi người dùng đã duyệt: API chỉ đọc danh sách Questions.status=PENDING_REVIEW, cố định 10 câu/trang, tìm kiếm/lọc trước phân trang và nối frontend thay dữ liệu mẫu. ROLE_MODERATOR, chưa triển khai write API duyệt/sửa/từ chối/regenerate. Không sửa schema/index hoặc khả năng dùng câu AI trong đề. Đây là ngoại lệ bổ sung API đọc so với quyết định 2026-10-26; các phần approve/reject/regenerate/audit/backfill vẫn ngoài scope. [Contract](api-reference.md), [implementation/validation](current-status.md).
+
+## Collection câu hỏi cần duyệt — 2026-10-26
+
+Module questionReview dùng model riêng cho toàn bộ snapshot: RegeneratedQuestionEntity/RegeneratedQuestionDocument, ContentRegeneratedEntity/ContentDocument, VariablesRegeneratedEntity/VariablesDocument. Không import entity/document/mapper từ question. QuestionReviewMapper tự map các kiểu nội bộ. Giữ collection QuestionsReview theo source hiện tại, cùng _id với câu gốc và regeneratedQuestions rỗng khi tạo. Giữ service → usecase → repository và transaction tại QuestionService; không thêm API, regenerate, approve/reject hoặc backfill.
+
+Bằng chứng: [QuestionReviewDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/QuestionReviewDocument.java), [RegeneratedQuestionEntity](../backend/src/main/java/com/wedu/exam_creation/questionReview/domain/entity/RegeneratedQuestionEntity.java), [RegeneratedQuestionDocument](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/document/RegeneratedQuestionDocument.java), [QuestionReviewMapper](../backend/src/main/java/com/wedu/exam_creation/questionReview/infrastructure/mapper/QuestionReviewMapper.java).
+
+## Trạng thái câu hỏi — 2026-10-26
+
+Phạm vi được duyệt 2026-10-26: thêm String status vào QuestionDocument/QuestionEntity. Parse = APPROVED, AI = PENDING_REVIEW; không tạo QuestionStatus.java. Giữ việc dùng ngay và chọn lại câu AI trong đề; không lọc status. Legacy thiếu field là null, không backfill vì chưa xác định nguồn. Đây là ngoại lệ chỉ cho trạng thái ban đầu; workflow duyệt đầy đủ, REJECTED, audit và regenerate vẫn ngoài scope.
+
+Bằng chứng: [QuestionService](../backend/src/main/java/com/wedu/exam_creation/question/usecase/QuestionService.java), [QuestionDocument](../backend/src/main/java/com/wedu/exam_creation/question/infrastructure/document/QuestionDocument.java).
+
+Tài liệu này ghi lại các quyết định phát triển hiện hành của dự án WEdu.
+
+Mục đích của file là phân biệt giữa:
+
+- vấn đề kỹ thuật đã được phát hiện;
+- vấn đề được phép sửa ở thời điểm hiện tại;
+- công việc đã lên kế hoạch nhưng chưa triển khai;
+- công việc tạm hoãn để chờ thêm dữ liệu hoặc tính năng phụ thuộc;
+- phần nằm ngoài phạm vi phát triển hiện tại.
+
+Tài liệu này **không mô tả implementation hiện tại**. Để xem trạng thái source, đọc `current-status.md`, `architecture.md`, `business-flows.md` và các tài liệu kỹ thuật liên quan.
+
+Nếu một vấn đề được ghi nhận trong các tài liệu kỹ thuật nhưng tài liệu này đánh dấu `DEFERRED`, `FROZEN`, `OUT_OF_SCOPE` hoặc `INVESTIGATE_ONLY`, không tự sửa vấn đề đó nếu task hiện tại không yêu cầu rõ ràng.
+
+---
+
+## Snapshot implementation đối chiếu 2026-10-24
+
+Bổ sung phạm vi đã được duyệt 2026-10-25: chỉ triển khai chống ghi đè khi upload DOCX. Giữ tên chuẩn hóa nếu còn trống; nếu trùng trong cùng thư mục thì chọn hậu tố `(1)`, `(2)`… nhỏ nhất còn trống trước `.docx`, kể cả upload đồng thời. `S3Service.updateDocumentFile` dùng conditional PUT và trả key thực tế; không thay schema hoặc triển khai Approve/Reject trong thay đổi này. [Luồng](business-flows.md#5-upload-docx-danh-sách-file-và-kiểm-duyệt), [validation](current-status.md).
+
+Bổ sung phạm vi theo yêu cầu 2026-10-25: moderator được xóa từng tệp trong `question-files/` sau xác nhận ở UI; API dùng S3 DeleteObject và danh sách refetch tại chỗ. Không mở rộng thành approve/reject, audit/submission hoặc purge version history; trạng thái PLANNED của workflow kiểm duyệt vẫn giữ nguyên. [Contract triển khai](api-reference.md), [validation](current-status.md).
+
+Đây là ghi nhận **implementation** từ working tree (gồm staged/unstaged/untracked), không tự thay đổi các quyết định PLANNED/FROZEN/DEFERRED bên dưới hoặc xác nhận nghiệm thu.
+
+- DOCX upload backend đã có `updateDocumentFile` 50 MiB, kiểm extension/ZIP entries, key dưới question-files; image uploader tách riêng. Frontend còn nhãn 25 MB và response type boolean lệch string key. [StorageController](../backend/src/main/java/com/wedu/exam_creation/storage/controller/StorageController.java), [S3Service](../backend/src/main/java/com/wedu/exam_creation/storage/service/S3Service.java), [StorageService](../frontend/presentation/services/StorageService.ts).
+- Moderator list/download đã có API, S3 pagination, Next route và files UI. Review/question-bank là placeholders; chưa submission/approve/reject state. [ModeratorController](../backend/src/main/java/com/wedu/exam_creation/moderator/controller/ModeratorController.java), [files page](../frontend/app/(site)/moderator/question-files/page.tsx).
+- Parse contract đã đồng bộ string[] xuyên frontend/backend. Avatar adapter/cache vẫn còn lỗi đã ghi ở current-status; không tự sửa trong task tài liệu.
+- Chỉ áp dụng môn Vật lý, importer/matrix/export architecture frozen, AI retry/cost và session policy deferred như quyết định hiện có. Không dùng số lượng source mới để tự đóng feature hoặc mở scope.
+## 1. Trạng thái quyết định
+
+Các trạng thái được sử dụng:
+
+| Trạng thái               | Ý nghĩa                                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `FIX_ALLOWED`            | Đã xác định là vấn đề có thể sửa khi task liên quan được giao.                                       |
+| `PLANNED`                | Tính năng/thay đổi đã nằm trong kế hoạch nhưng chưa triển khai.                                      |
+| `DEFERRED`               | Đã biết vấn đề nhưng chủ động hoãn xử lý.                                                            |
+| `FROZEN`                 | Luồng hiện tại được giữ nguyên; không refactor hoặc thay đổi nếu không có yêu cầu trực tiếp.         |
+| `OUT_OF_SCOPE`           | Không thuộc phạm vi phát triển hiện tại.                                                             |
+| `INVESTIGATE_ONLY`       | Được phép kiểm tra, test và thu thập bằng chứng nhưng chưa được thay đổi implementation/schema/data. |
+| `ACCEPTED_CURRENT_SCOPE` | Hạn chế đã biết nhưng được chấp nhận trong phạm vi hiện tại.                                         |
+
+Một technical issue xuất hiện trong `current-status.md` **không đồng nghĩa với việc phải sửa ngay**.
+
+---
+
+# 2. Google OAuth2
+
+**Trạng thái: `OUT_OF_SCOPE`**
+
+Google OAuth2 chưa nằm trong phạm vi phát triển hiện tại.
+
+Code OAuth2 hiện có chỉ được giữ lại để project có thể build, khởi động và chạy mà không phát sinh lỗi do configuration hoặc dependency.
+
+Các inconsistency hiện đã biết gồm:
+
+- `ROLE_USER` khác với local `ROLE_TEACHER`;
+- account type chưa đồng nhất;
+- cookie/token flow khác local authentication;
+- refresh-token metadata chưa đồng nhất;
+- redirect/configuration còn hard-coded hoặc chưa hoàn thiện.
+
+Các vấn đề trên không phải task cần xử lý ở thời điểm hiện tại.
+
+### Quy tắc
+
+Không tự:
+
+- refactor OAuth2;
+- đồng bộ OAuth2 với local JWT;
+- đổi role OAuth2;
+- triển khai account linking;
+- bổ sung refresh-token lifecycle cho OAuth2;
+- thay đổi OAuth2 success handler;
+- thay đổi OAuth2 cookie contract;
+
+trừ khi task hiện tại yêu cầu rõ ràng.
+
+Local email/password authentication là authentication flow chính trong phạm vi hiện tại.
+
+---
+
+# 3. DOCX Import và Pandoc
+
+**Trạng thái: `FROZEN`**
+
+Luồng import DOCX/Pandoc hiện tại đã đáp ứng phạm vi phát triển hiện tại và không được ưu tiên refactor.
+
+Các hạn chế đã biết như:
+
+- chapter merge theo chapter name;
+- Mongo transaction không rollback media đã upload lên S3;
+- parser/bankStats có các điểm cần kiểm chứng;
+- runtime Pandoc/workspace có thể cần cấu hình thêm khi deploy;
+
+vẫn được giữ trong technical documentation.
+
+### Quyết định về chapter
+
+WEdu hiện tại chỉ áp dụng cho **môn Vật lý**.
+
+Do đó nguy cơ hai môn khác nhau có chapter cùng tên chưa phải vấn đề cần xử lý trong phạm vi hiện tại.
+
+**Trạng thái vấn đề chapter merge: `ACCEPTED_CURRENT_SCOPE`.**
+
+Khi WEdu mở rộng sang nhiều môn học, cần thiết kế lại identity/query của chapter để tránh merge chapter giữa các môn.
+
+### Quy tắc
+
+Không tự refactor:
+
+- `PandocConverter`;
+- `ImporterService`;
+- chapter merge strategy;
+- parser heading convention;
+- question placeholder convention;
+- S3 media extraction flow;
+
+nếu task hiện tại không trực tiếp yêu cầu.
+
+---
+
+# 4. Upload DOCX vào Question Bank
+
+**Trạng thái: `PLANNED`**
+
+Ghi nhận lịch sử trước snapshot 24/10: luồng upload question-bank có mismatch:
+
+- UI cho phép DOCX;
+- UI thể hiện giới hạn khoảng 25 MB;
+- tại snapshot cũ, backend upload validation thiên về JPEG/PNG và giới hạn nhỏ hơn.
+
+Backend hiện đã tách validation DOCX 50 MiB theo snapshot trên; frontend hiện trả string S3 key và hiển thị50 MB; các mismatch của snapshot trước không còn dùng để đánh giá contract hiện tại. Quyết định PLANNED được giữ nguyên cho phạm vi chưa hoàn tất, không tự xác nhận feature đã nghiệm thu.
+
+### Phạm vi khi sửa
+
+Task upload DOCX được phép thay đổi:
+
+- MIME validation;
+- file extension validation;
+- file-size validation;
+- multipart configuration nếu cần;
+- frontend/backend contract liên quan trực tiếp đến upload.
+
+### Không mở rộng task
+
+Việc sửa upload DOCX không đồng nghĩa được phép refactor:
+
+- Pandoc parser;
+- moderator workflow;
+- chapter merge;
+- question persistence;
+- AI generation.
+
+---
+
+# 5. File Submission và Moderator Review
+
+**Trạng thái: `ACCEPTED_CURRENT_SCOPE` cho kiểm duyệt tệp chỉ dùng S3 — được duyệt 2026-10-25.**
+
+- Tệp trong `question-files/` là hàng chờ; không thêm submission/database, receipt S3 hoặc audit.
+- Duyệt bản gốc hoặc DOCX chỉnh sửa bằng `ModeratorUsecase.parseDocument`, subject từ key gốc; import thành công rồi xóa tệp gốc, không lưu bản chỉnh sửa lâu dài.
+- Từ chối bắt buộc lý do, email từ basename, xóa S3 rồi gửi email một lần. Email lỗi chỉ ghi log an toàn, vẫn thành công; không Telegram hoặc retry.
+- Chấp nhận không chống xử lý trùng xuyên moderator/restart/mất phản hồi. Import thành công nhưng xóa lỗi chỉ retry xóa trong phiên UI hiện tại; tải lại trang mất trạng thái cục bộ.
+- Giữ importer/Pandoc frozen, không mở rộng sang kiểm duyệt câu AI hoặc persisted audit.
+
+Quyết định này thay thế PLANNED trước đây cho thao tác kiểm duyệt tệp. Các snapshot upload/list phía trên mô tả giai đoạn trước feature này. [Implementation/validation](current-status.md#kiểm-duyệt-tệp-s3--2026-10-25), [API](api-reference.md#duyệttừ-chối-tệp--2026-10-25).
+
+# 6. AI Question Moderation
+
+**Trạng thái: phạm vi kiểm duyệt đã duyệt 2026-10-31; xem mục cập nhật kiểm duyệt ở đầu file.**
+
+Các câu hỏi thiết kế dưới đây là lịch sử trước phê duyệt; không phủ nhận workflow đang có source hoặc mở thêm phạm vi audit/quyền sử dụng câu hỏi.
+
+AI-generated question hiện chưa có moderation state hoàn chỉnh.
+
+Các question do AI sinh hiện được persistence theo model question hiện có và Telegram notification không được coi là persisted review state.
+
+Moderation sẽ được triển khai cùng tính năng kiểm duyệt câu hỏi dành cho `MODERATOR`.
+
+State machine dự kiến cần được thiết kế trước khi implementation, ví dụ:
+
+```text
+PENDING_REVIEW
+      ↓
+Moderator review
+   ↙       ↘
+APPROVED   REJECTED
+```
+
+Đây là hướng thiết kế workflow đầy đủ; schema hiện chỉ lưu trạng thái ban đầu theo cập nhật 2026-10-26 ở đầu tài liệu.
+
+### Quyết định còn phải chốt trước implementation
+
+Cần xác định rõ:
+
+- câu AI `PENDING_REVIEW` có được sử dụng ngay trong đề hay không;
+- câu `REJECTED` có bị xóa hay giữ audit;
+- AI có tự regenerate khi bị reject hay không;
+- số lần regenerate tối đa;
+- ai có quyền approve/reject;
+- metadata/audit nào phải lưu.
+
+Không tự tạo schema hoặc workflow trước khi các quyết định trên được chốt.
+
+---
+
+# 7. AI Response Validation và Retry
+
+**Trạng thái: `DEFERRED`**
+
+Source hiện tại có các assumption về:
+
+- tổng số câu AI trả về;
+- thứ tự câu trả về;
+- chia kết quả bằng cursor/subList;
+- metadata của từng nhóm;
+- errors ban đầu sau khi AI đã bù câu.
+
+Không triển khai validation/retry architecture ở thời điểm hiện tại.
+
+Phần này sẽ được xử lý sau khi AI moderation workflow được thiết kế vì validation, rejection và regeneration có liên quan trực tiếp với nhau.
+
+Không tự:
+
+- thêm retry loop;
+- regenerate question;
+- thay đổi error reconciliation;
+- thay đổi grouping algorithm;
+
+nếu task hiện tại không yêu cầu.
+
+---
+
+# 8. AI Timeout và Cost
+
+**Trạng thái: `DEFERRED`**
+
+Chưa quyết định timeout cuối cùng hoặc cost/quota mechanism cho DeepSeek.
+
+Configuration có thể chứa timeout nhưng việc configuration đó có thực sự được HTTP client sử dụng phải được xem là technical finding riêng.
+
+### Kế hoạch
+
+Trước khi quyết định:
+
+- chạy các test case phức tạp;
+- thu thập latency;
+- thu thập token usage nếu API cung cấp;
+- quan sát failure/timeout;
+- quan sát retry requirement;
+- đánh giá chi phí thực tế.
+
+Sau khi có dữ liệu mới quyết định:
+
+- timeout;
+- retry policy;
+- request limit;
+- quota;
+- cost limit;
+- monitoring/dashboard.
+
+Không tự implement dashboard hoặc cost-control mechanism trước bước đánh giá này.
+
+---
+
+# 9. Question MongoDB Unique Index
+
+**Trạng thái: `INVESTIGATE_ONLY`**
+
+Source hiện tại khai báo compound unique index liên quan:
+
+```text
+(chapterId, lessonId)
+```
+
+Nếu index này thực sự tồn tại trong MongoDB, nó có thể ngăn nhiều question thuộc cùng một lesson.
+
+Business requirement của WEdu cho phép một lesson chứa nhiều question.
+
+Tuy nhiên trạng thái index thực tế trong database và Mongo auto-index creation chưa được xác minh.
+
+### Được phép
+
+- kiểm tra annotation;
+- kiểm tra Mongo configuration;
+- kiểm tra index thực tế trong database;
+- kiểm tra query pattern;
+- đánh giá index phù hợp;
+- viết báo cáo/recommendation.
+
+### Chưa được phép
+
+Không tự:
+
+- drop index;
+- migrate index;
+- thay `unique=true`;
+- tạo replacement index;
+- chạy migration dữ liệu;
+
+nếu task hiện tại chưa yêu cầu rõ ràng.
+
+Nếu sau khi kiểm tra xác nhận unique index tồn tại và gây conflict với business requirement, đề xuất migration trước khi thực hiện.
+
+---
+
+# 10. Matrix Generation
+
+**Trạng thái hiện tại: `FROZEN`**
+
+Matrix hiện được generate tự động theo algorithm hiện có.
+
+Tỷ lệ hiện tại được xem là authoritative behavior của hệ thống trong phạm vi hiện tại.
+
+Người dùng chưa được phép chỉnh thủ công số lượng trong matrix.
+
+Việc frontend có state/input liên quan đến chỉnh count không có nghĩa manual matrix editing đã được hỗ trợ đầy đủ.
+
+### Manual Matrix Editing
+
+**Trạng thái: `DEFERRED`**
+
+Tính năng cho phép teacher chỉnh số lượng câu sau khi generate matrix sẽ được phát triển sau.
+
+Khi triển khai cần thiết kế:
+
+- validation tổng số câu;
+- validation tỷ lệ;
+- persistence;
+- regeneration matrix details;
+- inventory availability;
+- behavior khi quay lại step trước;
+- behavior khi reload.
+
+Không tự thêm persistence cho manual matrix editing trong các task khác.
+
+---
+
+# 11. Exam Generation khi thiếu câu
+
+**Trạng thái: `FROZEN` cho đến khi AI moderation được thiết kế**
+
+Current implementation có thể:
+
+1. tìm question phù hợp từ bank;
+2. ghi nhận phần thiếu;
+3. với PLUS account, gọi AI để bổ sung;
+4. persistence AI questions;
+5. sử dụng các question ID được sinh trong exam.
+
+Một số edge case đã được ghi nhận:
+
+- bank hoàn toàn rỗng có thể fail trước AI branch;
+- errors ban đầu có thể vẫn còn sau khi AI đã bù;
+- AI response count/order chưa được validate đầy đủ.
+
+Các vấn đề này chưa được tự động sửa vì behavior cuối cùng phụ thuộc AI moderation workflow.
+
+---
+
+# 12. DOCX Export
+
+**Trạng thái: `FROZEN` mặc định**
+
+Luồng export hiện tại:
+
+```text
+Frontend
+    ↓
+Spring Boot
+    ↓
+Express exporter
+    ↓
+Spring Boot
+    ↓
+Client
+```
+
+được giữ nguyên.
+
+Không refactor kiến trúc export nếu task không yêu cầu.
+
+Các bug cụ thể đã được ghi nhận như:
+
+- `<image_` và `<img_>` mismatch;
+- missing image cache có thể gây lỗi;
+- build/start output của exporter cần kiểm chứng.
+
+Các bug này có thể được xử lý khi có task bug-fix riêng.
+
+Không dùng bug-fix exporter làm lý do thay đổi toàn bộ exporter architecture hoặc chuyển DOCX generation sang Spring Boot.
+
+---
+
+# 13. Authentication và Session
+
+Local JWT authentication là authentication flow chính.
+
+Access token target TTL hiện tại:
+
+```text
+5 minutes
+```
+
+Refresh token:
+
+```text
+7 days
+```
+
+Access token và refresh token được quản lý thông qua HttpOnly cookie ở frontend/Next flow.
+
+### Known inconsistency
+
+Backend cookie configuration có thể còn giá trị access cookie 15 phút trong khi JWT/Next flow sử dụng 5 phút.
+
+**Trạng thái: `FIX_ALLOWED`.**
+
+Khi task auth bug-fix được giao, được phép đồng bộ cookie lifetime với JWT lifetime.
+
+### Logout
+
+Access JWT hiện không có blacklist và có thể tiếp tục hợp lệ cho đến khi hết TTL.
+
+Với access-token TTL ngắn, đây chưa được xem là blocker trong phạm vi hiện tại.
+
+Không tự triển khai access-token blacklist.
+
+---
+
+# 14. Password Reset và Session Revocation
+
+Reset password hiện chưa chắc chắn thu hồi toàn bộ refresh sessions và token consume chưa được chứng minh atomic trong concurrent requests.
+
+**Trạng thái: `DEFERRED` cho thay đổi nghiệp vụ session revocation.**
+
+Trước khi thay đổi cần quyết định:
+
+> Reset password có bắt buộc logout tất cả thiết bị/session đang đăng nhập hay không?
+
+Không tự thay đổi session revocation policy nếu chưa có quyết định nghiệp vụ.
+
+Security bug độc lập có thể được sửa nếu task yêu cầu và không thay đổi policy trên.
+
+---
+
+# 15. Frontend/Backend Contract Bugs
+
+Các mismatch đã được technical documentation ghi nhận có thể được xử lý trong bug-fixing phase.
+
+**Trạng thái: `FIX_ALLOWED` sau khi xác minh runtime/source.**
+
+Bao gồm:
+
+- moderator parse frontend `boolean` vs backend `List<String>`;
+- frontend `isActived` vs backend `isActive`;
+- React Query profile cache key mismatch;
+- legacy `/api/auth/me` vs `/api/user/me`;
+- chapter frontend type vs backend `bankStats`.
+
+### Quy tắc
+
+Trước khi sửa:
+
+1. đọc cả frontend và backend contract;
+2. kiểm tra call site;
+3. xác minh runtime behavior nếu có thể;
+4. chọn một canonical contract;
+5. sửa tất cả affected types/adapters/call sites;
+6. không thay backend API chỉ để khớp một TypeScript type sai.
+
+---
+
+# 16. Logging dữ liệu nhạy cảm
+
+**Trạng thái: `FIX_ALLOWED`**
+
+Không log:
+
+- password;
+- reset-password payload;
+- JWT;
+- refresh token;
+- API key;
+- credentials;
+- presigned URL đầy đủ nếu chứa credential/query signature.
+
+Các logging statement vi phạm nguyên tắc trên có thể được loại bỏ trong bug-fixing task mà không cần thay đổi business behavior.
+
+---
+
+# 17. Payment và PLUS
+
+**Trạng thái: đã duyệt và có implementation trong source; vận hành chưa được chứng nhận.**
+
+- Chỉ ROLE_TEACHER mua một gói 20.000 VND/30 ngày, cộng từ max(now,hạn hiện tại), không tự trừ tiền và không thêm quota.
+- Đơn mới5 phút; random64hex reference, hash idempotency riêng/unique sparse index, giữ đơn legacy và expiry đã lưu khi retry.
+- Backend kiểm IPN/querydr hoặc signed Return qua API teacher/owner trước khi ghi kết quả, cấp PLUS và enqueue email trong cùng Mongo transaction. URL00 của browser tự nó không cấp quyền.
+- Success hợp lệ đến muộn được xử lý, callback lặp không grant lần hai; querydr chưa xác thực trả503, không suy ra thành công. Return receipt chỉ giữ trong memory của tab, IPN phải đăng ký với VNPay riêng.
+- PLUS có hạn đọc thành FREE khi hết hạn; PLUS legacy/null được giữ. Không invoice thuế/refund tự động hoặc khôi phục đơn đã xóa chỉ từ mã giao dịch.
+
+[PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java), [usePayment](../frontend/presentation/hooks/Payment/usePayment.ts), [API](api-reference.md). Giới hạn sandbox/runtime xem [current-status](current-status.md).
+
+---
+
+# 18. Phân biệt technical finding và development task
+
+Các tài liệu:
+
+```text
+architecture.md
+business-flows.md
+current-status.md
+database-schema.md
+module-map.md
+api-reference.md
+source-catalog.md
+tech-stack.md
+```
+
+có thể ghi nhận vấn đề kỹ thuật.
+
+Việc một vấn đề xuất hiện trong các tài liệu trên **không có nghĩa vấn đề đó được phép sửa ngay**.
+
+Ví dụ:
+
+```text
+current-status:
+"OAuth contract mismatch"
+
+development-decisions:
+OUT_OF_SCOPE
+```
+
+Kết luận:
+
+```text
+Không sửa OAuth.
+```
+
+Tương tự:
+
+```text
+current-status:
+"Question unique chapter+lesson"
+
+development-decisions:
+INVESTIGATE_ONLY
+```
+
+Kết luận:
+
+```text
+Có thể kiểm tra index.
+Không được thay index.
+```
+
+---
+
+# 19. Quy tắc khi thực hiện task
+
+Trước khi implement hoặc bug-fix:
+
+1. Đọc `development-decisions.md`.
+2. Đọc `current-status.md`.
+3. Đọc `module-map.md`.
+4. Đọc tài liệu chuyên biệt theo hướng dẫn trong `AGENTS.md`.
+5. Đọc source hiện tại liên quan trực tiếp đến task.
+6. Xác định phạm vi thay đổi.
+7. Kiểm tra task có đụng `FROZEN`, `DEFERRED`, `OUT_OF_SCOPE` hoặc `INVESTIGATE_ONLY` hay không.
+8. Nếu có, không mở rộng phạm vi nếu người dùng chưa yêu cầu rõ ràng.
+
+Không dùng một bug nhỏ làm lý do thực hiện refactor diện rộng.
+
+---
+
+# 20. Thứ tự ưu tiên khi thông tin xung đột
+
+Khi xác định **business intent/phạm vi phát triển**, ưu tiên yêu cầu người dùng → development-decisions → AGENTS → business-flows. Source không tự mở lại quyết định FROZEN/DEFERRED/OUT_OF_SCOPE/INVESTIGATE_ONLY.
+
+Khi xác định **implementation hiện tại**, ưu tiên source/config → current-status → architecture → module-map → inventory/reference. Khi docs lệch source: đối chiếu bằng chứng, cập nhật tài liệu theo phạm vi task và giữ nguyên business decision nếu người dùng chưa đổi. [AGENTS.md](../AGENTS.md) quy định workflow phê duyệt và commit.
+
+---
+
+# 21. Snapshot quyết định hiện tại
+
+| Area                                 | Decision                                  |
+| ------------------------------------ | ----------------------------------------- |
+| Local authentication                 | Current primary flow                      |
+| Google OAuth2                        | `OUT_OF_SCOPE`                            |
+| DOCX/Pandoc importer                 | `FROZEN`                                  |
+| Multi-subject chapter isolation      | `ACCEPTED_CURRENT_SCOPE` / future scaling |
+| DOCX upload validation | Source có DOCX 50 MiB/string S3 key; phạm vi mở rộng còn `PLANNED`, không tự mở lại |
+| File moderation | `ACCEPTED_CURRENT_SCOPE`: S3 approve/reject đã duyệt 2026-10-25, không persisted submission/audit |
+| AI question moderation | Đã duyệt 2026-10-31: editor/approve/reject/regenerate, tối đa5 lượt và revision guards |
+| AI validation/retry                  | `DEFERRED`                                |
+| AI timeout/cost policy | Generation timeout/retry vẫn `DEFERRED`; usage/budget/cost tracking đã duyệt 2026-11-01 |
+| Question unique Mongo index          | `INVESTIGATE_ONLY`                        |
+| Automatic matrix generation          | `FROZEN`                                  |
+| Manual matrix editing                | `DEFERRED`                                |
+| Exam/AI edge-case changes            | `DEFERRED` until moderation design        |
+| DOCX exporter architecture           | `FROZEN`                                  |
+| Specific exporter bugs               | `FIX_ALLOWED` when assigned               |
+| JWT/cookie TTL mismatch              | `FIX_ALLOWED`                             |
+| Password-reset session policy        | `DEFERRED`                                |
+| Frontend/backend contract mismatches | `FIX_ALLOWED` after verification          |
+| Sensitive logging                    | `FIX_ALLOWED`                             |
+| Payment/PLUS provisioning | Đã duyệt: teacher 20.000đ/30 ngày, đơn5 phút, IPN/querydr/signed Return xác thực, outbox; runtime chưa chứng nhận |
+
+---
+
+## 22. Cập nhật tài liệu này
+
+Cập nhật `development-decisions.md` khi:
+
+- chủ dự án chốt một business rule;
+- một deferred feature được đưa vào development;
+- phạm vi dự án thay đổi;
+- một phần frozen được mở lại;
+- một investigation được chấp thuận triển khai;
+- một feature chuyển từ planned sang implementation.
+
+Không tự chuyển trạng thái chỉ vì code đã được thay đổi ngoài tài liệu.
+
+Khi một decision thay đổi implementation, cập nhật đồng thời các tài liệu liên quan theo `AGENTS.md`.
+
+## Backend payment / PLUS — 2026-11-05
+
+Approved scope: ROLE_TEACHER buys PLUS for 20,000 VND/30 days, additive from max(now,current expiry), no recurring charge. New payment orders expire in 5 minutes; retries preserve stored expiry. New references are random 64 lowercase hex; idempotencyKeyHash is stored separately with a unique sparse index. Legacy references and PLUS without expiry remain compatible.
+
+Only backend-verified IPN, querydr or signed Return receipts may update payment and grant entitlement. The approved Return endpoint requires JWT/teacher/ownership and checks signature, merchant, reference, amount and result before using the same transaction/outbox as IPN. Browser status alone is not evidence. No refund, tax invoice, backfill or payment admin UI. Deleted orders are not reconstructed as paid. Querydr unavailability returns 503/Retry-After 30 without granting access. Evidence: [PaymentUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/PaymentUsecase.java).
+
+## Frontend payment / PLUS — 2026-11-06
+
+Approved scope: teacher upgrade page at /me/bill with the shared navbar, a single20k VND/30day plan, and VNPay checkout in a separate tab. Backend decides availability, payment state and PLUS entitlement. New orders use the backend-provided5min expiry; frontend never extends it or grants access from a browser status code.
+
+Retain idempotency keys across retry/reload, open the payment tab synchronously, and preserve the original page for tracking. An owned-order404 permits only an explicit new purchase with a fresh key while retaining the old reference for reconciliation. Signed Return pairs go to authenticated backend validation and stay in tab memory only. Forward public GET IPN at the exact callback path; keep all other payment APIs protected. Matching backend payment endpoints are already available in main through PR #131; this frontend commit adds the UI and BFF on that updated base. [Hook](../frontend/presentation/hooks/Payment/usePayment.ts).
+
+## ADMIN transaction lookup — 2026-11-08
+
+Approved by the user: add Quản lý giao dịch → Tra cứu giao dịch for ROLE_ADMIN. This supersedes the earlier two-feature ADMIN navigation restriction and the payment-admin-UI exclusion only for read-only lookup.
+
+Search existing PaymentOrders by exact order ID/transactionNo or case-insensitive literal email substring; combine with stored status and Vietnam creation dates, 10 rows/page. Select one order to call VNPay querydr. Never update order/lastVerifiedAt, grant PLUS or enqueue email from this feature. No deleted-order recovery, refunds, exports or batch reconciliation.
+
+Evidence: [AdminTransactionUsecase](../backend/src/main/java/com/wedu/exam_creation/payment/usecase/AdminTransactionUsecase.java), [UI hook](../frontend/presentation/hooks/Admin/useAdminTransactions.ts). Existing teacher payment and other deferred decisions remain unchanged.

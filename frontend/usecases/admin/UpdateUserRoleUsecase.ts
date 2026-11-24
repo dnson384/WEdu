@@ -1,4 +1,4 @@
-import { UserEntity } from "@/domain/entities/user.entity";
+import { AdminUserEntity } from "@/domain/entities/adminUser.entity";
 import { IAdminRepository } from "@/domain/repositories/IAdminRepository";
 
 export class UpdateUserRoleUsecase {
@@ -8,7 +8,7 @@ export class UpdateUserRoleUsecase {
     userId: string,
     role: string,
     accessToken: string,
-  ): Promise<UserEntity> {
+  ): Promise<AdminUserEntity> {
     return this.repo.updateUserRole(userId, role, accessToken);
   }
 }

@@ -1,0 +1,264 @@
+package com.wedu.exam_creation.moderator.usecase;
+
+import com.wedu.exam_creation.chapter.usecase.ChapterService;
+import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
+import com.wedu.exam_creation.common.dto.question.response.*;
+import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
+import com.wedu.exam_creation.common.exception.BadRequestException;
+import com.wedu.exam_creation.common.exception.ForbiddenException;
+import com.wedu.exam_creation.common.exception.InternalServerException;
+import com.wedu.exam_creation.importer.service.ImporterService;
+import com.wedu.exam_creation.mail.service.MailService;
+import com.wedu.exam_creation.moderator.dto.ApproveQuestionFileResponseDTO;
+import com.wedu.exam_creation.moderator.dto.RejectQuestionFileDTO;
+import com.wedu.exam_creation.moderator.infrastructure.StoredDocumentFile;
+import com.wedu.exam_creation.question.usecase.QuestionService;
+import com.wedu.exam_creation.storage.dto.response.S3ObjectInfo;
+import com.wedu.exam_creation.storage.service.S3Service;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+@Service
+public class ModeratorUsecase {
+    private static final Logger log = LoggerFactory.getLogger(ModeratorUsecase.class);
+    private final ImporterService importerService;
+    private final S3Service s3Service;
+    private final MailService mailService;
+    private final ChapterService chapterService;
+    private final QuestionService questionService;
+
+    public ModeratorUsecase(ImporterService importerService, S3Service s3Service, MailService mailService,
+                            ChapterService chapterService, QuestionService questionService) {
+        this.importerService = importerService;
+        this.s3Service = s3Service;
+        this.mailService = mailService;
+        this.chapterService = chapterService;
+        this.questionService = questionService;
+    }
+
+    public PendingQuestionPageDTO listPendingQuestions(String rawPage, String search, String questionType) {
+        int page;
+
+        try {
+            if (!rawPage.matches("[0-9]+")) throw new NumberFormatException();
+            page = Integer.parseInt(rawPage);
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("Trang phải là số nguyên không âm");
+        }
+
+        search = search.trim();
+        questionType = questionType.trim();
+        if (search.length() > 200 || questionType.length() > 100) {
+            throw new BadRequestException("Bộ lọc vượt quá độ dài cho phép");
+        }
+
+        List<ChapterResponseDTO> chapters = chapterService.getAll();
+
+        List<String> chapterIds = new ArrayList<>();
+        List<String> lessonIds = new ArrayList<>();
+
+        String term = search.toLowerCase(Locale.ROOT);
+        if (!term.isEmpty()) {
+            for (ChapterResponseDTO chapter : chapters) {
+                if (chapter.getName() != null && chapter.getName().toLowerCase(Locale.ROOT).contains(term)) {
+                    chapterIds.add(chapter.getId());
+                }
+                if (chapter.getLessons() != null) {
+                    chapter.getLessons().stream()
+                            .filter(lesson -> lesson.getName() != null &&
+                                    lesson.getName().toLowerCase(Locale.ROOT).contains(term))
+                            .forEach(lesson -> lessonIds.add(lesson.getId()));
+                }
+            }
+        }
+
+        PendingQuestionPageDTO result = questionService.findPending(page, search, questionType, chapterIds, lessonIds);
+        for (PendingQuestionDTO question : result.getItems()) {
+            QuestionDTO latest = question.getLatestRegeneratedQuestion();
+
+            if (latest != null) {
+                latest.setQuestion(signContent(latest.getQuestion()));
+                latest.setOptions(latest.getOptions() == null ? List.of() : latest.getOptions().stream().map(this::signContent).toList());
+            }
+
+            question.setChapter("Chương không còn tồn tại");
+            question.setLesson("Bài học không còn tồn tại");
+
+            chapters.stream()
+                    .filter(chapter -> chapter.getId().equals(question.getChapterId()))
+                    .findFirst()
+                    .ifPresent(chapter -> {
+                        question.setChapter(chapter.getName());
+                        if (chapter.getLessons() != null) chapter.getLessons().stream()
+                                .filter(lesson -> lesson.getId().equals(question.getLessonId())).findFirst()
+                                .ifPresent(lesson -> question.setLesson(lesson.getName()));
+                    });
+
+            question.setQuestion(signContent(question.getQuestion()));
+            question.setOptions(question.getOptions() == null ? List.of() : question.getOptions().stream()
+                    .map(this::signContent)
+                    .toList());
+
+            if (question.getLearningOutcomes() == null) {
+                question.setLearningOutcomes(List.of());
+            }
+        }
+
+        return result;
+    }
+
+    private ContentDTO signContent(ContentDTO content) {
+        if (content == null) content = new ContentDTO("", new VariablesDTO());
+        if (content.getTemplate() == null) content.setTemplate("");
+        if (content.getVariables() == null) content.setVariables(new VariablesDTO());
+        var variables = content.getVariables();
+        if (variables.getMath() == null) variables.setMath(new java.util.HashMap<>());
+        var images = new java.util.HashMap<String, String>();
+        if (variables.getImage() != null) variables.getImage().forEach((key, value) -> {
+            if (value != null && !value.isBlank()) {
+                images.put(key, QuestionImageReference.isStoredKey(value) ? s3Service.generatePresignedUrl(value) : value);
+            }
+        });
+        variables.setImage(images);
+        return content;
+    }
+
+    public ApproveQuestionFileResponseDTO approveQuestionFile(CommonUserResponseAllDTO moderator, String key, MultipartFile editedFile) throws Exception {
+        String[] parts = reviewKeyParts(key);
+
+        byte[] original = getQuestionFileContent(key);
+
+        MultipartFile approvedFile = editedFile == null
+                ? new StoredDocumentFile(parts[2], original) : editedFile;
+        s3Service.validateDocumentFile(approvedFile, 50);
+
+        List<String> questionIds;
+
+        try {
+            questionIds = parseDocument(moderator, approvedFile, parts[1]);
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InternalServerException("Không thể nhập câu hỏi từ tài liệu. Tệp gốc được giữ lại");
+        }
+
+        try {
+            deleteQuestionFile(key);
+            return new ApproveQuestionFileResponseDTO(questionIds, true, "Đã duyệt và nhập câu hỏi thành công");
+        } catch (InternalServerException e) {
+            return new ApproveQuestionFileResponseDTO(questionIds, false,
+                    "Đã nhập câu hỏi nhưng chưa xóa được tệp gốc. Chỉ thử lại thao tác xóa, không duyệt lại");
+        }
+    }
+
+    public void rejectQuestionFile(RejectQuestionFileDTO request) {
+        if (request == null || request.reason() == null || request.reason().trim().isEmpty()
+                || request.reason().trim().length() > 2000) {
+            throw new BadRequestException("Lý do từ chối phải có từ 1 đến 2000 ký tự");
+        }
+
+        String[] parts = reviewKeyParts(request.key());
+        String fileName = parts[2];
+
+        int separator = fileName.lastIndexOf('-');
+        if (separator <= 0 || separator >= fileName.length() - 6) {
+            throw new BadRequestException("Không xác định được email người gửi từ tên tệp");
+        }
+
+        String email = fileName.substring(0, separator);
+
+        try {
+            InternetAddress address = new InternetAddress(email, true);
+            address.validate();
+
+            if (!email.equals(address.getAddress()) || !email.contains("@")
+                    || email.chars().anyMatch(Character::isWhitespace)) {
+                throw new AddressException();
+            }
+        } catch (AddressException e) {
+            throw new BadRequestException("Không xác định được email người gửi từ tên tệp");
+        }
+
+        getQuestionFileContent(request.key());
+        deleteQuestionFile(request.key());
+
+        try {
+            mailService.sendQuestionFileRejectionEmail(email, fileName, request.reason().trim());
+        } catch (RuntimeException e) {
+            log.warn("Không gửi được email từ chối tệp câu hỏi sau khi xóa S3; loại lỗi: {}",
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    private String[] reviewKeyParts(String key) {
+        validateQuestionFileKey(key);
+        String[] parts = key.split("/", -1);
+
+        if (parts.length != 3 || parts[1].isBlank() || parts[2].isBlank()
+                || !parts[2].toLowerCase(java.util.Locale.ROOT).endsWith(".docx")) {
+            throw new BadRequestException("Tệp tin câu hỏi không hợp lệ");
+        }
+
+        return parts;
+    }
+
+    public List<S3ObjectInfo> listQuestionFiles() {
+        try {
+            return s3Service.listQuestionFiles("question-files");
+        } catch (software.amazon.awssdk.core.exception.SdkException e) {
+            log.error("Lỗi xảy ra khi lấy danh sách tệp tin câu hỏi từ S3", e);
+            throw new InternalServerException("Không thể lấy danh sách tệp tin câu hỏi");
+        }
+    }
+
+    public void deleteQuestionFile(String key) {
+        validateQuestionFileKey(key);
+        try {
+            s3Service.deleteFile(key);
+        } catch (software.amazon.awssdk.core.exception.SdkException e) {
+            throw new InternalServerException("Không thể xóa tệp tin câu hỏi. Vui lòng thử lại");
+        }
+    }
+
+    private void validateQuestionFileKey(String key) {
+        if (key == null || key.isBlank() || !key.startsWith("question-files/")
+                || key.endsWith("/")
+                || java.util.Arrays.stream(key.split("/", -1))
+                .anyMatch(segment -> segment.equals(".") || segment.equals(".."))) {
+            throw new BadRequestException("Tệp tin câu hỏi không hợp lệ");
+        }
+    }
+
+    public byte[] getQuestionFileContent(String key) {
+        validateQuestionFileKey(key);
+        if (!key.toLowerCase(java.util.Locale.ROOT).endsWith(".docx")) {
+            throw new BadRequestException("Chỉ hỗ trợ xem trước tệp DOCX");
+        }
+        try {
+            return s3Service.readDocumentFile(key);
+        } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
+            if (e.statusCode() == 404) {
+                throw new com.wedu.exam_creation.common.exception.NotFoundException("Tệp tin không còn tồn tại");
+            }
+            throw new InternalServerException("Không thể tải nội dung tệp tin câu hỏi");
+        } catch (software.amazon.awssdk.core.exception.SdkException e) {
+            throw new InternalServerException("Không thể tải nội dung tệp tin câu hỏi");
+        }
+    }
+
+    public List<String> parseDocument(CommonUserResponseAllDTO moderator, MultipartFile file, String subject) throws Exception {
+        if (!moderator.getRole().equals("ROLE_MODERATOR")) {
+            throw new ForbiddenException("Không có quyền truy cập");
+        }
+
+        return importerService.parseDocument(file, subject);
+    }
+}

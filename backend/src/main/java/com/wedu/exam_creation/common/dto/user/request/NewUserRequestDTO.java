@@ -14,29 +14,25 @@ import lombok.NoArgsConstructor;
 public class NewUserRequestDTO {
     @Email(message = "Email không đúng định dạng")
     @NotBlank(message = "Email không được để trống")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+    @Pattern(
+            regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
             message = "Email không được chứa ký tự Unicode")
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 8, max = 32, message = "Mật khẩu phải từ 8-32 ký tự")
-    @Pattern(regexp = "^\\S+$",
-            message = "Mật khẩu không được phép có khoảng trắng")
+    @Pattern(regexp = "^\\S+$", message = "Mật khẩu không được phép có khoảng trắng")
     private String plainPassword;
-
 
     @NotBlank(message = "Xác nhận mật khẩu không được để trống")
     @Size(min = 8, max = 32, message = "Mật khẩu phải từ 8-32 ký tự")
-    @Pattern(regexp = "^\\S+$",
-            message = "Mật khẩu không được phép có khoảng trắng")
+    @Pattern(regexp = "^\\S+$", message = "Mật khẩu không được phép có khoảng trắng")
     private String confirmPassword;
 
     @NotBlank(message = "Tên người dùng không được để trống")
     private String username;
 
-    @Pattern(
-            regexp = "^(LOCAL|GOOGLE)$",
-            message = "Phương thức đăng nhập phải là LOCAL hoặc GOOGLE"
-    )
+    @NotBlank
+    @Pattern(regexp = "^LOCAL$", message = "Biểu mẫu đăng ký chỉ hỗ trợ LOCAL")
     private String loginMethod;
 }

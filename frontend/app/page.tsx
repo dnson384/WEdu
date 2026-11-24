@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { icons } from "@/presentation/common/icons";
 import NavBar from "@/presentation/components/layout/Navbar";
@@ -9,8 +11,20 @@ import useDashboard from "@/presentation/hooks/Dashboard/useDashboard";
 import ExamCard from "@/presentation/components/Exam/ExamCard";
 import DraftCard from "@/presentation/components/Draft/DraftCard";
 import Loader from "@/presentation/components/layout/Loader";
+import { getRoleHome } from "@/presentation/utils/roleNavigation";
 
 export default function Home() {
+  const { user, isLoadingUser } = useAuth();
+  const router = useRouter();
+  const destination = getRoleHome(user.role);
+  useEffect(() => {
+    if (!isLoadingUser && destination !== "/") router.replace(destination);
+  }, [destination, isLoadingUser, router]);
+  if (isLoadingUser || destination !== "/") return <Loader />;
+  return <TeacherHome />;
+}
+
+function TeacherHome() {
   const { user, isLoadingUser } = useAuth();
 
   const {

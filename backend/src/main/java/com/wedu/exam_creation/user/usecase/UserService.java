@@ -3,10 +3,10 @@ package com.wedu.exam_creation.user.usecase;
 import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseDTO;
-import org.springframework.stereotype.Service;
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
@@ -17,6 +17,14 @@ public class UserService {
     }
 
     // GET
+    public boolean hasGoogleLink(String email, String subject) {
+        return userUsecase.hasGoogleLink(email, subject);
+    }
+
+    public CommonUserResponseAllDTO linkGoogle(String id, String subject) {
+        return userUsecase.linkGoogle(id, subject);
+    }
+
     public Optional<CommonUserResponseAllDTO> findByEmail(String email) {
         return userUsecase.findByEmail(email);
     }
@@ -34,7 +42,8 @@ public class UserService {
     }
 
     // POST
-    public CommonUserResponseAllDTO createNewUser(NewUserRequestDTO newUser, String hashedPassword) {
+    public CommonUserResponseAllDTO createNewUser(
+            NewUserRequestDTO newUser, String hashedPassword) {
         return userUsecase.createNewUser(newUser, hashedPassword);
     }
 
@@ -53,6 +62,10 @@ public class UserService {
 
     public CommonUserResponseAllDTO lockUser(String userId) {
         return userUsecase.lockUser(userId);
+    }
+
+    public Instant grantPaidPlus(String userId, Instant now, int days) {
+        return userUsecase.grantPaidPlus(userId, now, days);
     }
 
     // DELETE

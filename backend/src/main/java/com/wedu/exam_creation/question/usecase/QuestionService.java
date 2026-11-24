@@ -1,7 +1,7 @@
 package com.wedu.exam_creation.question.usecase;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.wedu.exam_creation.ai.service.AIQuestionGenerationService;
+import com.wedu.exam_creation.ai.usecase.AIQuestionGenerationService;
 import com.wedu.exam_creation.common.dto.ai.request.GenerateQuestionRequestDTO;
 import com.wedu.exam_creation.common.dto.ai.response.AIQuestionResponseDTO;
 import com.wedu.exam_creation.common.dto.chapter.response.ChapterResponseDTO;
@@ -9,15 +9,20 @@ import com.wedu.exam_creation.common.dto.chapter.response.LessonDataResponseDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamGeneratedDTO;
 import com.wedu.exam_creation.common.dto.exam.response.ExamQuestionGeneratedDTO;
 import com.wedu.exam_creation.common.dto.question.NewQuestionDTO;
-import com.wedu.exam_creation.common.dto.question.response.QuestionDTO;
+import com.wedu.exam_creation.common.dto.question.response.*;
+import com.wedu.exam_creation.common.exception.ConflictException;
 import com.wedu.exam_creation.notification.telegram.TelegramNotificationService;
 import com.wedu.exam_creation.question.domain.entity.QuestionEntity;
 import com.wedu.exam_creation.question.domain.repository.IQuestionRepository;
 import com.wedu.exam_creation.question.dto.mapper.QuestionDTOMapper;
 import com.wedu.exam_creation.question.dto.request.ExamMatrixDetailDTO;
-import org.springframework.stereotype.Service;
-
+import com.wedu.exam_creation.questionReview.usecase.QuestionReviewService;
+import com.wedu.exam_creation.user.usecase.UserService;
+import java.time.Instant;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class QuestionService {
@@ -25,36 +30,167 @@ public class QuestionService {
     private final QuestionDTOMapper mapper;
     private final AIQuestionGenerationService aiQuestionGenerationService;
     private final TelegramNotificationService telegramNotificationService;
+    private final QuestionReviewService questionReviewService;
+    @Autowired private UserService users;
 
-    public QuestionService(IQuestionRepository repo, QuestionDTOMapper mapper, AIQuestionGenerationService aiQuestionGenerationService, TelegramNotificationService telegramNotificationService) {
+    public QuestionService(
+            IQuestionRepository repo,
+            QuestionDTOMapper mapper,
+            AIQuestionGenerationService aiQuestionGenerationService,
+            TelegramNotificationService telegramNotificationService,
+            QuestionReviewService questionReviewService) {
         this.repo = repo;
         this.mapper = mapper;
         this.aiQuestionGenerationService = aiQuestionGenerationService;
         this.telegramNotificationService = telegramNotificationService;
+        this.questionReviewService = questionReviewService;
     }
 
-    public List<String> insert(List<NewQuestionDTO> questions) {
-        List<QuestionEntity> newQuestionsEntity = questions.stream().map(mapper::newQuestionDTOToEntity).toList();
+    public List<String> insertFromDocx(List<NewQuestionDTO> questions) {
+        return insert(questions, "APPROVED");
+    }
+
+    public PendingQuestionPageDTO findPending(
+            int page,
+            String search,
+            String questionType,
+            List<String> chapterIds,
+            List<String> lessonIds) {
+        long total = repo.countPending(search, questionType, chapterIds, lessonIds);
+
+        List<QuestionEntity> questions =
+                repo.findPending(page, search, questionType, chapterIds, lessonIds);
+
+        Map<String, QuestionReviewStateDTO> reviews =
+                questionReviewService.states(
+                        questions.stream().map(QuestionEntity::getId).toList());
+
+        return new PendingQuestionPageDTO(
+                questions.stream()
+                        .map(
+                                entity -> {
+                                    PendingQuestionDTO dto = mapper.entityToPendingDTO(entity);
+                                    attachReview(dto, reviews.get(entity.getId()));
+                                    return dto;
+                                })
+                        .toList(),
+                page,
+                10,
+                total,
+                (total + 9) / 10);
+    }
+
+    public PendingQuestionDTO getPendingForEdit(String id) {
+        QuestionEntity entity = repo.findById(id);
+
+        if (!"PENDING_REVIEW".equals(entity.getStatus())) {
+            throw new ConflictException("Câu hỏi không còn chờ duyệt. Vui lòng tải lại danh sách");
+        }
+
+        PendingQuestionDTO dto = mapper.entityToPendingDTO(entity);
+        attachReview(dto, questionReviewService.state(id));
+        return dto;
+    }
+
+    private void attachReview(PendingQuestionDTO dto, QuestionReviewStateDTO review) {
+        if (review == null) return;
+
+        dto.setReviewRevision(review.getRevision());
+        dto.setRegenerationCount(review.getRegenerationCount());
+        dto.setLatestRegeneratedQuestion(review.getLatestQuestion());
+    }
+
+    public void commitPendingReview(
+            String id, String status, QuestionDTO candidate, Instant version) {
+        if (!repo.updatePendingState(
+                id,
+                status,
+                candidate == null ? null : mapper.contentDTOToEntity(candidate.getQuestion()),
+                candidate == null
+                        ? null
+                        : candidate.getOptions().stream().map(mapper::contentDTOToEntity).toList(),
+                version)) {
+            throw new ConflictException("Câu hỏi đã thay đổi. Vui lòng tải lại danh sách");
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePendingContent(
+            String id,
+            ContentDTO question,
+            List<ContentDTO> options,
+            Instant expectedUpdatedAt,
+            long reviewRevision) {
+        PendingQuestionDTO current = getPendingForEdit(id);
+        if (!Objects.equals(current.getUpdatedAt(), expectedUpdatedAt)
+                || current.getReviewRevision() != reviewRevision) {
+            throw new ConflictException("Câu hỏi đã thay đổi. Vui lòng tải lại danh sách");
+        }
+
+        QuestionDTO candidate = current.getLatestRegeneratedQuestion();
+        if (candidate == null) {
+            updatePendingContent(id, question, options, expectedUpdatedAt);
+        } else {
+            candidate.setQuestion(question);
+            candidate.setOptions(options);
+            commitPendingReview(id, "PENDING_REVIEW", null, expectedUpdatedAt);
+            questionReviewService.saveCandidate(id, candidate, reviewRevision, false);
+        }
+    }
+
+    public void updatePendingContent(
+            String id, ContentDTO question, List<ContentDTO> options, Instant expectedUpdatedAt) {
+        if (!repo.updatePendingContent(
+                id,
+                mapper.contentDTOToEntity(question),
+                options.stream().map(mapper::contentDTOToEntity).toList(),
+                expectedUpdatedAt)) {
+            throw new ConflictException(
+                    "Câu hỏi đã thay đổi. Vui lòng tải lại danh sách trước khi chỉnh sửa");
+        }
+    }
+
+    private List<String> insert(List<NewQuestionDTO> questions, String status) {
+        List<QuestionEntity> newQuestionsEntity =
+                questions.stream()
+                        .map(
+                                question -> {
+                                    QuestionEntity entity = mapper.newQuestionDTOToEntity(question);
+                                    entity.setStatus(status);
+                                    return entity;
+                                })
+                        .toList();
         return repo.saveQuestions(newQuestionsEntity);
     }
 
     public List<QuestionDTO> findByIds(List<String> ids) {
         List<QuestionEntity> questions = repo.findByIds(ids);
-        return questions.stream()
-                .map(mapper::entityToCommonDTO)
-                .toList();
+        return questions.stream().map(mapper::entityToCommonDTO).toList();
     }
 
-    public ExamGeneratedDTO generateExamQuestions(String accountType, List<ChapterResponseDTO> categories, List<ExamMatrixDetailDTO> matrixDetails) throws JsonProcessingException {
+    @Transactional(rollbackFor = Exception.class)
+    public ExamGeneratedDTO generateExamQuestions(
+            String accountType,
+            List<ChapterResponseDTO> categories,
+            List<ExamMatrixDetailDTO> matrixDetails)
+            throws JsonProcessingException {
+        return generateExamQuestions(accountType, categories, matrixDetails, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ExamGeneratedDTO generateExamQuestions(
+            String accountType,
+            List<ChapterResponseDTO> categories,
+            List<ExamMatrixDetailDTO> matrixDetails,
+            String userId)
+            throws JsonProcessingException {
         List<String> errors = new ArrayList<>();
 
         List<GenerateQuestionRequestDTO> aiRequests = new ArrayList<>();
 
         // Tạo mảng lessonId không trùng id
-        List<String> uniqueLessonIds = matrixDetails.stream()
-                .map(ExamMatrixDetailDTO::getLessonId)
-                .distinct()
-                .toList();
+        List<String> uniqueLessonIds =
+                matrixDetails.stream().map(ExamMatrixDetailDTO::getLessonId).distinct().toList();
 
         if (uniqueLessonIds.isEmpty()) {
             return null;
@@ -74,14 +210,20 @@ public class QuestionService {
             }
 
             // Lọc câu hỏi khớp với điều kiện
-            List<QuestionEntity> matchingQuestions = availablePool.stream()
-                    .filter(q -> q.getLessonId().equals(detail.getLessonId()) &&
-                            q.getExerciseType().equals(detail.getExerciseType()) &&
-                            q.getDifficultyLevel().equals(detail.getDifficultyLevel()) &&
-                            q.getQuestionType().equals(detail.getQuestionType()) &&
-                            q.getLearningOutcomes().contains(detail.getLearningOutcome())
-                    )
-                    .toList();
+            List<QuestionEntity> matchingQuestions =
+                    availablePool.stream()
+                            .filter(
+                                    q ->
+                                            q.getLessonId().equals(detail.getLessonId())
+                                                    && q.getExerciseType()
+                                                            .equals(detail.getExerciseType())
+                                                    && q.getDifficultyLevel()
+                                                            .equals(detail.getDifficultyLevel())
+                                                    && q.getQuestionType()
+                                                            .equals(detail.getQuestionType())
+                                                    && q.getLearningOutcomes()
+                                                            .contains(detail.getLearningOutcome()))
+                            .toList();
 
             List<QuestionEntity> shuffledMatches = new ArrayList<>(matchingQuestions);
             Collections.shuffle(shuffledMatches);
@@ -91,19 +233,21 @@ public class QuestionService {
             List<QuestionEntity> selectedQuestions = shuffledMatches.subList(0, takeCount);
 
             // Tính toán và ghi nhận số lượng thiếu cho cặp này
-            ChapterResponseDTO curChapter = categories.stream()
-                    .filter(cate -> cate.getId().equals(detail.getChapterId()))
-                    .findFirst()
-                    .orElse(null);
+            ChapterResponseDTO curChapter =
+                    categories.stream()
+                            .filter(cate -> cate.getId().equals(detail.getChapterId()))
+                            .findFirst()
+                            .orElse(null);
 
             if (curChapter == null) {
                 continue;
             }
 
-            LessonDataResponseDTO curLesson = curChapter.getLessons().stream()
-                    .filter(l -> l.getId().equals(detail.getLessonId()))
-                    .findFirst()
-                    .orElse(null);
+            LessonDataResponseDTO curLesson =
+                    curChapter.getLessons().stream()
+                            .filter(l -> l.getId().equals(detail.getLessonId()))
+                            .findFirst()
+                            .orElse(null);
 
             if (curLesson == null) {
                 continue;
@@ -112,49 +256,50 @@ public class QuestionService {
             // Thiếu cầu hỏi
             int missingCount = detail.getLimit() - takeCount;
             if (missingCount > 0) {
-                String errorMsg = String.format(
-                        "Thiếu %d câu hỏi | Chương: %s | Bài: %s | Loại: %s | Mức độ: %s | YCCĐ: %s",
-                        missingCount,
-                        curChapter.getName(),
-                        curLesson.getName(),
-                        detail.getQuestionType(),
-                        detail.getDifficultyLevel(),
-                        detail.getLearningOutcome()
-                );
+                String errorMsg =
+                        String.format(
+                                "Thiếu %d câu hỏi | Chương: %s | Bài: %s | Loại: %s | Mức độ: %s | YCCĐ: %s",
+                                missingCount,
+                                curChapter.getName(),
+                                curLesson.getName(),
+                                detail.getQuestionType(),
+                                detail.getDifficultyLevel(),
+                                detail.getLearningOutcome());
                 errors.add(errorMsg);
 
-                GenerateQuestionRequestDTO requestDTO = new GenerateQuestionRequestDTO(
-                        missingCount,
-                        curChapter.getId(),
-                        curChapter.getName(),
-                        curLesson.getId(),
-                        curLesson.getName(),
-                        detail.getExerciseType(),
-                        detail.getQuestionType(),
-                        detail.getDifficultyLevel(),
-                        detail.getLearningOutcome()
-                );
+                GenerateQuestionRequestDTO requestDTO =
+                        new GenerateQuestionRequestDTO(
+                                missingCount,
+                                curChapter.getId(),
+                                curChapter.getName(),
+                                curLesson.getId(),
+                                curLesson.getName(),
+                                detail.getExerciseType(),
+                                detail.getQuestionType(),
+                                detail.getDifficultyLevel(),
+                                detail.getLearningOutcome());
 
                 aiRequests.add(requestDTO);
             }
-
 
             if (!selectedQuestions.isEmpty()) {
                 // QUAN TRỌNG: Xóa các câu đã chọn khỏi pool để không bị bốc trùng ở vòng lặp sau
                 availablePool.removeAll(selectedQuestions);
 
-                List<String> selectedIds = selectedQuestions.stream()
-                        .map(QuestionEntity::getId)
-                        .toList();
+                List<String> selectedIds =
+                        selectedQuestions.stream().map(QuestionEntity::getId).toList();
 
                 String groupKey = detail.getQuestionType() + "_" + detail.getDifficultyLevel();
 
                 // Gom nhóm
-                ExamQuestionGeneratedDTO group = groupedResult.computeIfAbsent(groupKey, k -> new ExamQuestionGeneratedDTO(
-                        detail.getQuestionType(),
-                        detail.getDifficultyLevel(),
-                        new ArrayList<>()
-                ));
+                ExamQuestionGeneratedDTO group =
+                        groupedResult.computeIfAbsent(
+                                groupKey,
+                                k ->
+                                        new ExamQuestionGeneratedDTO(
+                                                detail.getQuestionType(),
+                                                detail.getDifficultyLevel(),
+                                                new ArrayList<>()));
 
                 group.getQuestionIds().addAll(selectedIds);
             }
@@ -162,10 +307,22 @@ public class QuestionService {
 
         // Gọi AI Generate câu hỏi nếu là tài khoản plus
         if (accountType.equals("PLUS") && !aiRequests.isEmpty()) {
-            List<AIQuestionResponseDTO> generatedQuestions = aiQuestionGenerationService.generateQuestions(aiRequests);
+            if (userId != null) {
+                com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO user =
+                        users.findById(userId);
+                if (user == null
+                        || !"PLUS".equals(user.getAccountType())
+                        || !Boolean.TRUE.equals(user.getIsActive())) {
+                    throw new ConflictException(
+                            "Quyền PLUS không còn hiệu lực. Vui lòng tải lại tài khoản.");
+                }
+            }
+            List<AIQuestionResponseDTO> generatedQuestions =
+                    aiQuestionGenerationService.generateQuestions(aiRequests);
 
             List<NewQuestionDTO> aiQuestions = toNewQuestionDTO(generatedQuestions);
-            List<String> newQuestionIds = this.insert(aiQuestions);
+            List<String> newQuestionIds = this.insert(aiQuestions, "PENDING_REVIEW");
+            questionReviewService.createForQuestions(newQuestionIds);
 
             telegramNotificationService.notifyPendingReview(newQuestionIds);
 
@@ -176,11 +333,14 @@ public class QuestionService {
                 cursor += count;
 
                 String groupKey = request.getQuestionType() + "_" + request.getDifficultyLevel();
-                ExamQuestionGeneratedDTO group = groupedResult.computeIfAbsent(groupKey, k -> new ExamQuestionGeneratedDTO(
-                        request.getQuestionType(),
-                        request.getDifficultyLevel(),
-                        new ArrayList<>()
-                ));
+                ExamQuestionGeneratedDTO group =
+                        groupedResult.computeIfAbsent(
+                                groupKey,
+                                k ->
+                                        new ExamQuestionGeneratedDTO(
+                                                request.getQuestionType(),
+                                                request.getDifficultyLevel(),
+                                                new ArrayList<>()));
                 group.getQuestionIds().addAll(idsForThisRequest);
             }
         }
@@ -192,17 +352,17 @@ public class QuestionService {
         List<NewQuestionDTO> newQuestionDTOS = new ArrayList<>();
 
         for (AIQuestionResponseDTO ai : aiQuestions) {
-            NewQuestionDTO dto = new NewQuestionDTO(
-                    null,
-                    ai.getChapterId(),
-                    ai.getLessonId(),
-                    ai.getExerciseType(),
-                    ai.getDifficultyLevel(),
-                    List.of(ai.getLearningOutcome()),
-                    ai.getQuestionType(),
-                    ai.getQuestion(),
-                    ai.getOptions()
-            );
+            NewQuestionDTO dto =
+                    new NewQuestionDTO(
+                            null,
+                            ai.getChapterId(),
+                            ai.getLessonId(),
+                            ai.getExerciseType(),
+                            ai.getDifficultyLevel(),
+                            List.of(ai.getLearningOutcome()),
+                            ai.getQuestionType(),
+                            ai.getQuestion(),
+                            ai.getOptions());
 
             newQuestionDTOS.add(dto);
         }

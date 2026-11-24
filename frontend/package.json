@@ -6,11 +6,15 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.2",
+    "docx-preview": "^0.4.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.43.0",
     "isomorphic-dompurify": "^2.35.0",

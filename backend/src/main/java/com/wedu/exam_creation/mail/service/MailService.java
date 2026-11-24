@@ -13,10 +13,35 @@ public class MailService {
     private final JavaMailSender mailSender;
     private final String fromEmail;
 
+    public void sendVerificationOtp(String email, String otp) {
+        sendResult(
+                email,
+                "Mã xác thực email WEdu",
+                "Mã OTP của bạn: "
+                        + otp
+                        + "\n\nMã có hiệu lực 5 phút. Không chia sẻ mã này với người khác.");
+    }
+
+    public void sendPaymentResultEmail(String toEmail, String orderId, String result) {
+        sendResult(toEmail, "Kết quả thanh toán WEdu PLUS", "Mã đơn: " + orderId + "\n\n" + result);
+    }
+
+    private void sendResult(String toEmail, String subject, String content) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromEmail, "WEdu Support");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(content, false);
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new InternalServerException("Không thể gửi email kết quả thanh toán");
+        }
+    }
+
     public MailService(
-            JavaMailSender mailSender,
-            @Value("${spring.mail.username}") String fromEmail
-    ) {
+            JavaMailSender mailSender, @Value("${spring.mail.username}") String fromEmail) {
         this.mailSender = mailSender;
         this.fromEmail = fromEmail;
     }
@@ -55,7 +80,21 @@ public class MailService {
                         mật khẩu của bạn sẽ không thay đổi.
                     </p>
                 </div>
-                """.formatted(resetLink);
+                """
+                .formatted(resetLink);
     }
 
+    public void sendQuestionFileRejectionEmail(String toEmail, String fileName, String reason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromEmail, "WEdu Support");
+            helper.setTo(toEmail);
+            helper.setSubject("Tệp câu hỏi của bạn đã bị từ chối");
+            helper.setText("Tệp câu hỏi: " + fileName + "\n\nLý do từ chối:\n" + reason, false);
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new InternalServerException("Không thể gửi email từ chối tệp câu hỏi");
+        }
+    }
 }

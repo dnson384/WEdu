@@ -6,6 +6,7 @@ export interface UserEntity {
   avatarUrl: string;
   isActived: boolean;
   accountType: string;
+  plusExpiresAt?: string | null;
 }
 
 export interface UserResponseEntity {

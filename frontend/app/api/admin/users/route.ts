@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
     const repo = new AdminRepositoryImpl();
     const usecase = new GetAllUsersUsecase(repo);
     const response = await usecase.execute(accessToken);
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json(response, {
+      status: 200,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   } catch (err) {
     if (isAxiosError(err)) {
       return NextResponse.json(

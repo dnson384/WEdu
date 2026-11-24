@@ -1,6 +1,9 @@
 package com.wedu.exam_creation.exporter.controller;
 
 import com.wedu.exam_creation.exporter.dto.request.ExportRequestDTO;
+import com.wedu.exam_creation.exporter.dto.request.ExportMatrixRequestDTO;
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.wedu.exam_creation.exporter.usecase.ExporterUsecase;
 import com.wedu.exam_creation.security.infrastructure.principal.CustomUserDetails;
 import org.springframework.core.io.ByteArrayResource;
@@ -42,5 +45,21 @@ public class ExporterController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
                 .contentLength(buffer.length)
                 .body(resource);
+    }
+
+    @PostMapping("/matrix")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<Resource> exportMatrix(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @Valid @RequestBody ExportMatrixRequestDTO payload) {
+        byte[] buffer = exporterUsecase.exportMatrix(principal.getUser().getId(), payload.getExamId());
+        String fileName = URLEncoder.encode(payload.getExamName() + "_ma trận đề.docx", StandardCharsets.UTF_8)
+                .replace("+", "%20");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + fileName)
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .contentLength(buffer.length)
+                .body(new ByteArrayResource(buffer));
     }
 }

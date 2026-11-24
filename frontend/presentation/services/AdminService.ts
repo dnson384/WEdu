@@ -1,25 +1,34 @@
-import { UserEntity } from "@/domain/entities/user.entity";
+import { AdminUserEntity } from "@/domain/entities/adminUser.entity";
 import axios from "axios";
 
 export class AdminService {
   constructor() {}
 
-  async getAllUsers(): Promise<UserEntity[]> {
-    const { data } = await axios.get<UserEntity[]>(`/api/admin/users`);
-    return data;
-  }
-
-  async findUsers(keyword: string): Promise<UserEntity[]> {
-    const { data } = await axios.get<UserEntity[]>(`/api/admin/users/search`, {
-      params: {
-        keyword,
-      },
+  async getAllUsers(signal?: AbortSignal): Promise<AdminUserEntity[]> {
+    const { data } = await axios.get<AdminUserEntity[]>(`/api/admin/users`, {
+      signal,
     });
     return data;
   }
 
-  async updateUserRole(userId: string, role: string): Promise<UserEntity> {
-    const { data } = await axios.put<UserEntity>(
+  async findUsers(
+    keyword: string,
+    signal?: AbortSignal,
+  ): Promise<AdminUserEntity[]> {
+    const { data } = await axios.get<AdminUserEntity[]>(
+      `/api/admin/users/search`,
+      {
+        signal,
+        params: {
+          keyword,
+        },
+      },
+    );
+    return data;
+  }
+
+  async updateUserRole(userId: string, role: string): Promise<AdminUserEntity> {
+    const { data } = await axios.put<AdminUserEntity>(
       `/api/admin/${userId}/role`,
       {},
       { params: { role } },
@@ -27,13 +36,17 @@ export class AdminService {
     return data;
   }
 
-  async lockUser(userId: string): Promise<UserEntity> {
-    const { data } = await axios.put<UserEntity>(`/api/admin/${userId}/lock`);
+  async lockUser(userId: string): Promise<AdminUserEntity> {
+    const { data } = await axios.put<AdminUserEntity>(
+      `/api/admin/${userId}/lock`,
+    );
     return data;
   }
 
-  async unLockUser(userId: string): Promise<UserEntity> {
-    const { data } = await axios.put<UserEntity>(`/api/admin/${userId}/unlock`);
+  async unLockUser(userId: string): Promise<AdminUserEntity> {
+    const { data } = await axios.put<AdminUserEntity>(
+      `/api/admin/${userId}/unlock`,
+    );
     return data;
   }
 

@@ -8,7 +8,6 @@ import com.wedu.exam_creation.common.dto.refreshToken.request.NewRTRequestDTO;
 import com.wedu.exam_creation.common.dto.refreshToken.response.RTResponseDTO;
 import com.wedu.exam_creation.common.dto.token.ATPayload;
 import com.wedu.exam_creation.common.dto.token.RTPayload;
-import com.wedu.exam_creation.common.dto.user.request.NewUserRequestDTO;
 import com.wedu.exam_creation.common.dto.user.response.CommonUserResponseAllDTO;
 import com.wedu.exam_creation.common.exception.*;
 import com.wedu.exam_creation.passwordResetToken.usecase.PasswordResetTokenService;
@@ -17,13 +16,12 @@ import com.wedu.exam_creation.security.service.SecurityService;
 import com.wedu.exam_creation.user.dto.request.LoginUserRequestDTO;
 import com.wedu.exam_creation.user.usecase.UserService;
 import io.jsonwebtoken.JwtException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 @Service
 public class AuthUsecase {
@@ -33,7 +31,12 @@ public class AuthUsecase {
     private final PasswordResetTokenService passwordResetTokenService;
     private final AuthDTOMapper mapper;
 
-    public AuthUsecase(UserService userService, SecurityService securityService, RefreshTokenService refreshTokenService, PasswordResetTokenService passwordResetTokenService, AuthDTOMapper mapper) {
+    public AuthUsecase(
+            UserService userService,
+            SecurityService securityService,
+            RefreshTokenService refreshTokenService,
+            PasswordResetTokenService passwordResetTokenService,
+            AuthDTOMapper mapper) {
         this.userService = userService;
         this.securityService = securityService;
         this.refreshTokenService = refreshTokenService;
@@ -41,55 +44,29 @@ public class AuthUsecase {
         this.mapper = mapper;
     }
 
-    public AuthorizedResponseDTO register(NewUserRequestDTO newUser) {
-        if (!newUser.getPlainPassword().equals(newUser.getConfirmPassword())) {
-            throw new BadRequestException("Mật khẩu xác nhận không trùng khớp");
-        }
-
-        Optional<CommonUserResponseAllDTO> userEntityOptional = userService.findByEmail(newUser.getEmail());
-        if (userEntityOptional.isPresent()) {
-            throw new BadRequestException("Tài khoản đã tồn tại");
-        }
-
-        String hashedPassword = securityService.hashPassword(newUser.getPlainPassword());
-
-        CommonUserResponseAllDTO createdUser = userService.createNewUser(newUser, hashedPassword);
-
-        UserResponseDTO userDto = mapper.toUserResponseDTO(createdUser);
-
-        if (userDto == null) {
-            throw new InternalServerException("Lỗi trong quá trình chuyển đổi dữ liệu");
-        }
-
-        TokenResult tokenResult = generateToken(userDto);
-
-        if (!tokenResult.saved) {
-            throw new InternalServerException("Lỗi trong quá trình đăng ký");
-        }
-
-        return new AuthorizedResponseDTO(
-                userDto, tokenResult.accessToken, tokenResult.refreshToken
-        );
-    }
-
     public AuthorizedResponseDTO login(LoginUserRequestDTO payload) {
-        Optional<CommonUserResponseAllDTO> commonUserResponseAllDTO = userService.findByEmail(payload.getEmail());
+        Optional<CommonUserResponseAllDTO> commonUserResponseAllDTO =
+                userService.findByEmail(payload.getEmail());
         if (commonUserResponseAllDTO.isEmpty()) {
             throw new NotFoundException("Tài khoản chưa tồn tại");
         }
 
         CommonUserResponseAllDTO user = commonUserResponseAllDTO.get();
 
-        if (user.getLoginMethod().equals("GOOGLE")) {
+        if ((!"LOCAL".equals(user.getLoginMethod()) && !"MIXED".equals(user.getLoginMethod()))
+                || user.getHashedPassword() == null
+                || user.getHashedPassword().isBlank()) {
             throw new UnAuthorizedException("Sai phương thức đăng nhập");
         }
 
         if (!user.getIsActive()) {
-            throw new ForbiddenException("Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
+            throw new ForbiddenException(
+                    "Tài khoản đã bị khóa! Vui lòng liên hệ xxx để được mở khóa");
         }
 
         // Validate password
-        if (!securityService.validatePassword(payload.getPlainPassword(), user.getHashedPassword())) {
+        if (!securityService.validatePassword(
+                payload.getPlainPassword(), user.getHashedPassword())) {
             throw new UnAuthorizedException("Mật khẩu không chính xác");
         }
 
@@ -102,8 +79,7 @@ public class AuthUsecase {
         }
 
         return new AuthorizedResponseDTO(
-                userDto, tokenResult.accessToken, tokenResult.refreshToken
-        );
+                userDto, tokenResult.accessToken, tokenResult.refreshToken);
     }
 
     public boolean logout(String authorization) {
@@ -113,7 +89,8 @@ public class AuthUsecase {
     }
 
     @Transactional
-    public boolean changePassword(String accessToken, String userId, ChangePasswordRequestDTO payload) {
+    public boolean changePassword(
+            String accessToken, String userId, ChangePasswordRequestDTO payload) {
         ATPayload atPayload = securityService.getPayloadFromAccessToken(accessToken);
 
         if (!payload.getNewPassword().equals(payload.getConfirmNewPassword())) {
@@ -141,7 +118,8 @@ public class AuthUsecase {
         try {
             RTPayload rtPayload = securityService.getPayloadFromRefreshToken(refreshToken);
 
-            RTResponseDTO token = refreshTokenService.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
+            RTResponseDTO token =
+                    refreshTokenService.getRefreshToken(rtPayload.getJti(), rtPayload.getUserId());
 
             if (token == null) {
                 throw new UnAuthorizedException("Phiên đăng nhập đã bị thu hồi");
@@ -153,9 +131,9 @@ public class AuthUsecase {
                 throw new NotFoundException("Người dùng không tồn tại");
             }
 
-            ATPayload atPayload = new ATPayload(
-                    rtPayload.getJti(), user.getId(), user.getEmail(), user.getRole()
-            );
+            ATPayload atPayload =
+                    new ATPayload(
+                            rtPayload.getJti(), user.getId(), user.getEmail(), user.getRole());
 
             return securityService.generateAccessToken(atPayload);
         } catch (JwtException | IllegalArgumentException ex) {
@@ -169,13 +147,14 @@ public class AuthUsecase {
             CommonUserResponseAllDTO updatedUser = userService.updatePassword(user);
 
             if (updatedUser != null) {
-                List<RTResponseDTO> rtResponseDTOS = refreshTokenService.getUserRefreshToken(updatedUser.getId());
+                List<RTResponseDTO> rtResponseDTOS =
+                        refreshTokenService.getUserRefreshToken(updatedUser.getId());
 
-                List<String> tokenJtis = rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
+                List<String> tokenJtis =
+                        rtResponseDTOS.stream().map(RTResponseDTO::getJti).toList();
 
-                List<String> jtisToDelete = tokenJtis.stream()
-                        .filter(token -> !token.equals(jti))
-                        .toList();
+                List<String> jtisToDelete =
+                        tokenJtis.stream().filter(token -> !token.equals(jti)).toList();
 
                 if (jtisToDelete.isEmpty()) {
                     return true;
@@ -206,15 +185,13 @@ public class AuthUsecase {
         String jti = UUID.randomUUID().toString();
 
         // AT
-        ATPayload accessTokenPayload = new ATPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
+        ATPayload accessTokenPayload =
+                new ATPayload(jti, user.getId(), user.getEmail(), user.getRole());
         String accessToken = securityService.generateAccessToken(accessTokenPayload);
 
         // RT
-        RTPayload refreshTokenPayload = new RTPayload(
-                jti, user.getId(), user.getEmail(), user.getRole()
-        );
+        RTPayload refreshTokenPayload =
+                new RTPayload(jti, user.getId(), user.getEmail(), user.getRole());
         String refreshToken = securityService.generateRefreshToken(refreshTokenPayload);
 
         // Luu RT
@@ -224,10 +201,5 @@ public class AuthUsecase {
         return new TokenResult(savedNewRT, accessToken, refreshToken);
     }
 
-    public record TokenResult(
-            boolean saved,
-            String accessToken,
-            String refreshToken
-    ) {
-    }
+    public record TokenResult(boolean saved, String accessToken, String refreshToken) {}
 }

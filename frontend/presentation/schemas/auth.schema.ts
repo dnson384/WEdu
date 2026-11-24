@@ -19,7 +19,7 @@ export const RegisterPayload = z.object({
     .min(8, "Mật khẩu phải từ 8 ký tự")
     .max(32, "Mật khẩu tối đa 32 ký tự"),
   username: z.string().min(1, "Tên người dùng tối thiểu 1 ký tự"),
-  loginMethod: z.enum(["LOCAL", "GOOGLE"]),
+  loginMethod: z.literal("LOCAL"),
 });
 
 export const ResetPasswordPayload = z.object({

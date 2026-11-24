@@ -139,7 +139,7 @@ export default function UploadToQuestionBank() {
                     </span>
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Hỗ trợ tệp định dạng .docx dung lượng tối đa 25MB
+                    Hỗ trợ tệp định dạng .docx dung lượng tối đa 50MB
                   </p>
                 </div>
               </div>

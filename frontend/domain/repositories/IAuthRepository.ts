@@ -1,3 +1,4 @@
+import { AuthFlowResult } from "../entities/verification.entity";
 import {
   LoginPayloadEntity,
   NewUserRequestEntity,
@@ -6,7 +7,7 @@ import {
 import { ChangePasswordEntity } from "../entities/auth.entity";
 
 export interface IAuthRepository {
-  register(payload: NewUserRequestEntity): Promise<AuthorizedResponseEntity>;
+  register(payload: NewUserRequestEntity): Promise<AuthFlowResult>;
   login(payload: LoginPayloadEntity): Promise<AuthorizedResponseEntity>;
   logout(accessToken: string): Promise<boolean>;
   changePassword(
